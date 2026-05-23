@@ -86,7 +86,7 @@ function ListingDetail() {
 
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
         <div>
-          <div className="overflow-hidden rounded-xl border bg-muted">
+          <div className="iridescent-border overflow-hidden rounded-2xl border bg-muted shadow-[var(--shadow-float-lg)]">
             <img
               src={images[0]?.url ?? listingPlaceholder}
               alt={listing.title}
@@ -96,7 +96,7 @@ function ListingDetail() {
           {images.length > 1 && (
             <div className="mt-2 grid grid-cols-5 gap-2">
               {images.slice(1).map((img: any) => (
-                <img key={img.url} src={img.url} alt="" className="aspect-square rounded-lg object-cover" />
+                <img key={img.url} src={img.url} alt="" className="aspect-square rounded-lg object-cover ring-1 ring-white/40" />
               ))}
             </div>
           )}
@@ -104,24 +104,26 @@ function ListingDetail() {
 
         <div>
           <h1 className="font-display text-2xl font-bold md:text-3xl">{listing.title}</h1>
-          <div className="mt-2 text-3xl font-bold text-primary">{priceFmt}</div>
+          <div className="mt-2 inline-block rounded-xl bg-[image:var(--gradient-primary)] px-3 py-1 text-2xl font-extrabold text-white shadow-[var(--shadow-glow-primary)]">
+            {priceFmt}
+          </div>
 
-          <div className="mt-4 flex flex-wrap gap-3 text-sm text-muted-foreground">
+          <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
             {listing.cities && (
-              <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" /> {listing.cities.name}, {listing.cities.region}</span>
+              <span className="chip-glass"><MapPin className="h-3.5 w-3.5" /> {listing.cities.name}, {listing.cities.region}</span>
             )}
             {listing.categories && (
-              <Link to="/search" search={{ category: listing.categories.slug } as any} className="inline-flex items-center gap-1 hover:text-primary">
-                <Tag className="h-4 w-4" /> {listing.categories.name}
+              <Link to="/search" search={{ category: listing.categories.slug } as any} className="chip-glass hover:text-primary">
+                <Tag className="h-3.5 w-3.5" /> {listing.categories.name}
               </Link>
             )}
-            <span className="inline-flex items-center gap-1">
-              <Calendar className="h-4 w-4" /> {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
+            <span className="chip-glass">
+              <Calendar className="h-3.5 w-3.5" /> {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
             </span>
           </div>
 
           {listing.condition && listing.condition !== "not_applicable" && (
-            <span className="mt-3 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-medium capitalize">
+            <span className="mt-3 inline-block rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium capitalize">
               {String(listing.condition).replace("_", " ")}
             </span>
           )}
@@ -130,10 +132,10 @@ function ListingDetail() {
             {listing.description}
           </div>
 
-          <div className="mt-8 rounded-xl border bg-card p-4">
+          <div className="iridescent-border mt-8 rounded-2xl border border-white/40 bg-white/60 p-4 shadow-[var(--shadow-float)] backdrop-blur-xl">
             <div className="text-sm text-muted-foreground">Seller</div>
             <div className="mt-1 font-medium">{listing.profile?.display_name ?? "Seller"}</div>
-            <Button className="mt-3 w-full gap-2" onClick={startThread} disabled={contacting || listing.user_id === user?.id}>
+            <Button className="btn-gradient mt-3 w-full gap-2" onClick={startThread} disabled={contacting || listing.user_id === user?.id}>
               <MessageSquare className="h-4 w-4" /> Message seller
             </Button>
             {user?.id === listing.user_id && (
@@ -147,6 +149,7 @@ function ListingDetail() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }
