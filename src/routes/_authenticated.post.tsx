@@ -106,29 +106,31 @@ function PostListing() {
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
-      <h1 className="font-display text-3xl font-bold">Post a listing</h1>
+      <h1 className="font-display text-3xl font-bold md:text-4xl">
+        Post a <span className="gradient-text">listing</span>
+      </h1>
       <p className="mt-1 text-sm text-muted-foreground">Reach buyers across the country in seconds.</p>
 
-      <form onSubmit={submit} className="mt-6 space-y-5">
+      <form onSubmit={submit} className="mt-6 space-y-5 rounded-3xl border border-white/40 bg-white/60 p-6 shadow-[var(--shadow-float)] backdrop-blur-xl">
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
-          <Input id="title" required maxLength={140} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. 2019 Trek Marlin 7 — Like new" />
+          <Input id="title" required maxLength={140} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. 2019 Trek Marlin 7 — Like new" className="bg-white/70" />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="desc">Description</Label>
-          <Textarea id="desc" required rows={6} maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Condition, size, history, why you're selling…" />
+          <Textarea id="desc" required rows={6} maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Condition, size, history, why you're selling…" className="bg-white/70" />
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="space-y-2 col-span-2 sm:col-span-1">
             <Label>Price</Label>
-            <Input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0 for free" />
+            <Input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0 for free" className="bg-white/70" />
           </div>
           <div className="space-y-2">
             <Label>Currency</Label>
             <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="bg-white/70"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="USD">USD $</SelectItem>
                 <SelectItem value="GBP">GBP £</SelectItem>
@@ -139,7 +141,7 @@ function PostListing() {
           <div className="space-y-2">
             <Label>Condition</Label>
             <Select value={condition} onValueChange={setCondition}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="bg-white/70"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="not_applicable">N/A</SelectItem>
                 <SelectItem value="new">New</SelectItem>
@@ -155,7 +157,7 @@ function PostListing() {
         <div className="space-y-2">
           <Label>Category</Label>
           <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger><SelectValue placeholder="Pick a category" /></SelectTrigger>
+            <SelectTrigger className="bg-white/70"><SelectValue placeholder="Pick a category" /></SelectTrigger>
             <SelectContent>
               {categories?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
@@ -166,7 +168,7 @@ function PostListing() {
           <div className="space-y-2">
             <Label>Country</Label>
             <Select value={country} onValueChange={(v) => { setCountry(v as any); setCityId(""); }}>
-              <SelectTrigger><SelectValue placeholder="Pick country" /></SelectTrigger>
+              <SelectTrigger className="bg-white/70"><SelectValue placeholder="Pick country" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="US">United States</SelectItem>
                 <SelectItem value="UK">United Kingdom</SelectItem>
@@ -177,7 +179,7 @@ function PostListing() {
           <div className="space-y-2">
             <Label>City</Label>
             <Select value={cityId} onValueChange={setCityId} disabled={!country}>
-              <SelectTrigger><SelectValue placeholder={country ? "Pick city" : "Select country first"} /></SelectTrigger>
+              <SelectTrigger className="bg-white/70"><SelectValue placeholder={country ? "Pick city" : "Select country first"} /></SelectTrigger>
               <SelectContent className="max-h-72">
                 {cities?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}, {c.region}</SelectItem>)}
               </SelectContent>
@@ -189,7 +191,7 @@ function PostListing() {
           <Label>Photos (up to 8)</Label>
           <div className="flex flex-wrap gap-2">
             {files.map((f, i) => (
-              <div key={i} className="relative h-20 w-20 overflow-hidden rounded-lg border">
+              <div key={i} className="relative h-20 w-20 overflow-hidden rounded-xl border ring-1 ring-white/40 shadow-[var(--shadow-float)]">
                 <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
                 <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} className="absolute right-0 top-0 rounded-bl bg-black/60 p-0.5 text-white">
                   <X className="h-3 w-3" />
@@ -197,7 +199,7 @@ function PostListing() {
               </div>
             ))}
             {files.length < 8 && (
-              <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-lg border border-dashed text-muted-foreground hover:border-primary hover:text-primary">
+              <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border border-dashed bg-white/50 text-muted-foreground transition hover:border-primary hover:text-primary">
                 <ImagePlus className="h-5 w-5" />
                 <input type="file" accept="image/*" multiple className="hidden" onChange={onFiles} />
               </label>
@@ -205,10 +207,11 @@ function PostListing() {
           </div>
         </div>
 
-        <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+        <Button type="submit" size="lg" className="btn-gradient w-full" disabled={submitting}>
           {submitting ? "Posting…" : "Post listing"}
         </Button>
       </form>
     </div>
   );
 }
+
