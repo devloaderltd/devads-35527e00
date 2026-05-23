@@ -9,6 +9,7 @@ import { ReportDialog } from "@/components/ReportDialog";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { toast } from "sonner";
 import { useState } from "react";
+import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 export const Route = createFileRoute("/listings/$id")({
   component: ListingDetail,
@@ -86,11 +87,11 @@ function ListingDetail() {
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
         <div>
           <div className="overflow-hidden rounded-xl border bg-muted">
-            {images[0] ? (
-              <img src={images[0].url} alt={listing.title} className="aspect-square w-full object-cover" />
-            ) : (
-              <div className="grid aspect-square place-items-center text-6xl text-muted-foreground">📦</div>
-            )}
+            <img
+              src={images[0]?.url ?? listingPlaceholder}
+              alt={listing.title}
+              className="aspect-square w-full object-cover"
+            />
           </div>
           {images.length > 1 && (
             <div className="mt-2 grid grid-cols-5 gap-2">
