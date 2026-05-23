@@ -9,38 +9,166 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ListingsIdRouteImport } from './routes/listings.$id'
+import { Route as AuthenticatedPostRouteImport } from './routes/_authenticated.post'
+import { Route as AuthenticatedMyListingsRouteImport } from './routes/_authenticated.my-listings'
+import { Route as AuthenticatedFavoritesRouteImport } from './routes/_authenticated.favorites'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListingsIdRoute = ListingsIdRouteImport.update({
+  id: '/listings/$id',
+  path: '/listings/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedPostRoute = AuthenticatedPostRouteImport.update({
+  id: '/post',
+  path: '/post',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMyListingsRoute = AuthenticatedMyListingsRouteImport.update({
+  id: '/my-listings',
+  path: '/my-listings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFavoritesRoute = AuthenticatedFavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/search': typeof SearchRoute
+  '/signup': typeof SignupRoute
+  '/favorites': typeof AuthenticatedFavoritesRoute
+  '/my-listings': typeof AuthenticatedMyListingsRoute
+  '/post': typeof AuthenticatedPostRoute
+  '/listings/$id': typeof ListingsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/search': typeof SearchRoute
+  '/signup': typeof SignupRoute
+  '/favorites': typeof AuthenticatedFavoritesRoute
+  '/my-listings': typeof AuthenticatedMyListingsRoute
+  '/post': typeof AuthenticatedPostRoute
+  '/listings/$id': typeof ListingsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/search': typeof SearchRoute
+  '/signup': typeof SignupRoute
+  '/_authenticated/favorites': typeof AuthenticatedFavoritesRoute
+  '/_authenticated/my-listings': typeof AuthenticatedMyListingsRoute
+  '/_authenticated/post': typeof AuthenticatedPostRoute
+  '/listings/$id': typeof ListingsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/search'
+    | '/signup'
+    | '/favorites'
+    | '/my-listings'
+    | '/post'
+    | '/listings/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/search'
+    | '/signup'
+    | '/favorites'
+    | '/my-listings'
+    | '/post'
+    | '/listings/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/login'
+    | '/search'
+    | '/signup'
+    | '/_authenticated/favorites'
+    | '/_authenticated/my-listings'
+    | '/_authenticated/post'
+    | '/listings/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  SearchRoute: typeof SearchRoute
+  SignupRoute: typeof SignupRoute
+  ListingsIdRoute: typeof ListingsIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +176,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/listings/$id': {
+      id: '/listings/$id'
+      path: '/listings/$id'
+      fullPath: '/listings/$id'
+      preLoaderRoute: typeof ListingsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/post': {
+      id: '/_authenticated/post'
+      path: '/post'
+      fullPath: '/post'
+      preLoaderRoute: typeof AuthenticatedPostRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/my-listings': {
+      id: '/_authenticated/my-listings'
+      path: '/my-listings'
+      fullPath: '/my-listings'
+      preLoaderRoute: typeof AuthenticatedMyListingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/favorites': {
+      id: '/_authenticated/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof AuthenticatedFavoritesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedFavoritesRoute: typeof AuthenticatedFavoritesRoute
+  AuthenticatedMyListingsRoute: typeof AuthenticatedMyListingsRoute
+  AuthenticatedPostRoute: typeof AuthenticatedPostRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedFavoritesRoute: AuthenticatedFavoritesRoute,
+  AuthenticatedMyListingsRoute: AuthenticatedMyListingsRoute,
+  AuthenticatedPostRoute: AuthenticatedPostRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  SearchRoute: SearchRoute,
+  SignupRoute: SignupRoute,
+  ListingsIdRoute: ListingsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
