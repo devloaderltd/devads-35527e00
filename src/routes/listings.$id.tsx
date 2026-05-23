@@ -88,7 +88,7 @@ function ListingDetail() {
         <div>
           <div className="overflow-hidden rounded-xl border bg-muted">
             <img
-              src={images[0]?.url ?? "/src/assets/listing-placeholder.jpg"}
+              src={images[0]?.url ?? listingPlaceholder}
               alt={listing.title}
               className="aspect-square w-full object-cover"
             />
