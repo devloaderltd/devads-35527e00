@@ -1,23 +1,79 @@
+# Remaining Work — Marketly
 
-# Classifieds Marketplace — Build Plan (v2)
+The core marketplace (browsing, posting, messaging, favorites, reports, admin moderation) is live. Here is the plan for what's left.
 
-Same as the previously approved plan, with one scope change you requested:
+## 1. Promotions & Payments (Stripe)
 
-## Geographic seed (updated)
+Goal: let sellers pay to **feature** a listing (homepage + top of search) or **bump** it (reset `bumped_at` so it returns to the top of recents).
 
-Instead of one country, seed cities for **three countries**:
-- **United States** — all 50 states, with major cities per state (~300 cities total)
-- **United Kingdom** — all major cities across England, Scotland, Wales, Northern Ireland (~100 cities)
-- **Canada** — all provinces and major cities (~80 cities)
+- Run `recommend_payment_provider`, then enable **Lovable's built-in Stripe payments** (`enable_stripe_payments`). No user API key needed.
+- Create two products via `batch_create_product`:
+  - **Featured listing** — 7 days, ~$9.99
+  - **Bump listing** — single bump, ~$2.99
+- Server function `createPromotionCheckout({ listingId, type })`:
+  - Verifies caller owns the listing (`requireSupabaseAuth`)
+  - Inserts a `payments` row (status=pending)
+  - Returns a Stripe Checkout session URL
+- Webhook route at `src/routes/api/public/stripe-webhook.ts`:
+  - Verifies signature, marks payment `succeeded`
+  - Inserts `listing_promotions` row (featured: ends_at = now + 7d; bump: updates `listings.bumped_at = now()`)
+- UI:
+  - "Promote this listing" button in **My Listings** → dialog with two options → redirects to Stripe Checkout
+  - Success/cancel routes (`/promote/success`, `/promote/cancel`)
+  - Badge "Featured" on `ListingCard` when an active promotion exists
+  - Home + search queries updated to surface featured listings first
 
-Cities table gets a `country` column (US / UK / CA) and a `region` column (state / province / country sub-region). City picker becomes a 2-step: country → city, with search.
+## 2. Profile & Settings Page
 
-Note: "all cities" literally means every town would be tens of thousands of rows. I'll seed all major + mid-size cities (population thresholds: US ≥50k, UK ≥30k, Canada ≥25k). That gives a comprehensive list without bloating the DB. If you want truly every town later, we can import from an open dataset.
+- `_authenticated.settings.tsx` — edit display name, phone, avatar (upload to storage), default city
+- Public seller profile route `users.$id.tsx` — shows display name, avatar, member since, and their active listings
 
-## Everything else unchanged from approved plan
+## 3. Search & Browsing Polish
 
-- **Design:** Modern utility (teal) direction
-- **Build phases:** Cloud + auth → schema + seed → public browsing → posting → messaging/favorites/reports → admin → payments → polish
-- All routes, tables, RLS, server functions, payments approach as previously approved
+- Category landing routes (`categories.$slug.tsx`) using the existing categories table
+- Sort options on `/search` (newest, price asc/desc, featured first)
+- Price range filter + condition filter
+- Pagination (load-more) — currently capped at default 1000-row limit
+- Empty states and skeleton loaders across listing grids
 
-I'll start building immediately on approval.
+## 4. Listing Lifecycle
+
+- Mark as **sold** / **paused** from My Listings (UPDATE `status`)
+- Auto-expire surfacing: filter `expires_at > now()` in public queries
+- "Renew listing" action when expired (extends `expires_at` by 30d)
+
+## 5. Notifications
+
+- Unread message count badge on Header (Messages icon)
+- Simple in-app toast when a new message arrives on any thread (realtime subscribe at root for signed-in users)
+
+## 6. SEO & Metadata
+
+- Per-listing `head()` with title, description, og:image (first listing image), JSON-LD `Product` schema
+- Per-category and per-city head() metadata
+- Sitemap route `api/public/sitemap.xml` generating URLs for active listings
+
+## 7. Final Polish
+
+- Mobile nav drawer in Header (search currently cramped on mobile)
+- 404 / error states for missing listings
+- Confirm-dialog on destructive actions (delete listing, dismiss report)
+- Footer links: About, Safety tips, Terms, Contact (static routes)
+
+## Technical Notes
+
+- All payment writes go through the webhook (RLS blocks direct inserts to `payments` / `listing_promotions`)
+- Featured ordering: `ORDER BY (has_active_promotion) DESC, bumped_at DESC` — implement as a SQL view or compose in the server function
+- Stripe secret managed by Lovable's built-in integration; no manual `STRIPE_SECRET_KEY` needed
+
+## Suggested Build Order
+
+1. Payments + promotions (biggest revenue feature)
+2. Listing lifecycle (sold/paused/renew)
+3. Profile/settings + public seller pages
+4. Search polish (sort, filters, pagination)
+5. Notifications + unread badges
+6. SEO + sitemap
+7. Final UI polish
+
+Reply **approve** to start with step 1, or tell me to reorder / drop sections.
