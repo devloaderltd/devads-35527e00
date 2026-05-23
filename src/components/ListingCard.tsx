@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MapPin, Sparkles } from "lucide-react";
+import { MapPin, Sparkles, Flame } from "lucide-react";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 type Listing = {
@@ -8,8 +8,10 @@ type Listing = {
   price: number | null;
   currency: string;
   condition?: string;
+  bumped_at?: string;
   cities?: { name: string; region: string; country: string } | null;
   listing_images?: { url: string; sort_order: number }[];
+  listing_promotions?: { type: string; ends_at: string }[] | null;
 };
 
 export function ListingCard({ listing, featured }: { listing: Listing; featured?: boolean }) {
@@ -19,25 +21,40 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
       ? new Intl.NumberFormat("en-US", { style: "currency", currency: listing.currency || "USD", maximumFractionDigits: 0 }).format(Number(listing.price))
       : "Contact";
 
+  const isFeatured = featured || listing.listing_promotions?.some((p) => new Date(p.ends_at) > new Date());
+  const isBumped = !isFeatured && listing.bumped_at && (Date.now() - new Date(listing.bumped_at).getTime()) < 24 * 60 * 60 * 1000;
+
   return (
     <Link
       to="/listings/$id"
       params={{ id: listing.id }}
-      className="group hover-float flex flex-col overflow-hidden rounded-2xl glass"
+      className={`group hover-float flex flex-col overflow-hidden rounded-2xl glass ${isFeatured ? "iridescent-border" : ""}`}
     >
       <div className="relative aspect-square overflow-hidden">
         <img
           src={img ?? listingPlaceholder}
           alt={listing.title}
           loading="lazy"
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+          className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
         />
-        <span className="absolute right-2 top-2 rounded-full bg-white/85 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-md shadow-sm">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+        <span
+          className="absolute right-2 top-2 rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-md"
+          style={{ background: "var(--gradient-primary)", backgroundSize: "200% 200%" }}
+        >
           {priceFmt}
         </span>
-        {featured && (
+        {isFeatured && (
           <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full btn-gradient px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-            <Sparkles className="h-3 w-3" /> Featured
+            <Sparkles className="h-3 w-3" /> Premium
+          </span>
+        )}
+        {isBumped && (
+          <span
+            className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow"
+            style={{ background: "var(--gradient-warm)" }}
+          >
+            <Flame className="h-3 w-3" /> Bumped
           </span>
         )}
       </div>

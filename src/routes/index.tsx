@@ -183,30 +183,34 @@ function Home() {
             </div>
           </Link>
 
-          {/* Small glass category — Furniture */}
+          {/* Small colorful category — Furniture (lavender→indigo) */}
           <Link
             to="/search"
             search={{ category: furnitureCat?.slug ?? "furniture" } as any}
-            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] glass p-6 flex flex-col items-center justify-center text-center"
+            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
+            style={{ background: "linear-gradient(135deg, var(--lavender), var(--primary))" }}
           >
-            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white shadow-sm">
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
+            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
               <img src={catFurniture} alt="" className="h-8 w-8 rounded-lg object-cover" />
             </div>
-            <span className="font-display font-bold text-foreground">{furnitureCat?.name ?? "Furniture"}</span>
-            <span className="mt-1 text-xs text-muted-foreground">Browse home goods</span>
+            <span className="font-display font-bold">{furnitureCat?.name ?? "Furniture"}</span>
+            <span className="mt-1 text-xs text-white/85">Browse home goods</span>
           </Link>
 
-          {/* Small glass category — Pets */}
+          {/* Small colorful category — Pets (amber→coral) */}
           <Link
             to="/search"
             search={{ category: petsCat?.slug ?? "pets" } as any}
-            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] bg-white/70 backdrop-blur border border-white/60 p-6 flex flex-col items-center justify-center text-center"
+            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
+            style={{ background: "linear-gradient(135deg, var(--amber), var(--coral))" }}
           >
-            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-secondary/30">
+            <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
+            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
               <img src={catPets} alt="" className="h-8 w-8 rounded-lg object-cover" />
             </div>
-            <span className="font-display font-bold text-foreground">{petsCat?.name ?? "Pets"}</span>
-            <span className="mt-1 text-xs text-muted-foreground">Find a new friend</span>
+            <span className="font-display font-bold">{petsCat?.name ?? "Pets"}</span>
+            <span className="mt-1 text-xs text-white/85">Find a new friend</span>
           </Link>
         </div>
       </section>
