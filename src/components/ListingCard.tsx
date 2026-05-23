@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { MapPin, Sparkles } from "lucide-react";
+import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 type Listing = {
   id: string;
