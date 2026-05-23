@@ -14,16 +14,478 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cities: {
+        Row: {
+          country: Database["public"]["Enums"]["country_code"]
+          created_at: string
+          id: string
+          name: string
+          region: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          country: Database["public"]["Enums"]["country_code"]
+          created_at?: string
+          id?: string
+          name: string
+          region: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          country?: Database["public"]["Enums"]["country_code"]
+          created_at?: string
+          id?: string
+          name?: string
+          region?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_images: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_images_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_promotions: {
+        Row: {
+          created_at: string
+          ends_at: string
+          id: string
+          listing_id: string
+          payment_id: string | null
+          starts_at: string
+          type: Database["public"]["Enums"]["promotion_type"]
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          id?: string
+          listing_id: string
+          payment_id?: string | null
+          starts_at?: string
+          type: Database["public"]["Enums"]["promotion_type"]
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          listing_id?: string
+          payment_id?: string | null
+          starts_at?: string
+          type?: Database["public"]["Enums"]["promotion_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_promotions_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          bumped_at: string
+          category_id: string
+          city_id: string
+          condition: Database["public"]["Enums"]["listing_condition"]
+          created_at: string
+          currency: string
+          description: string
+          expires_at: string
+          id: string
+          price: number | null
+          search_tsv: unknown
+          status: Database["public"]["Enums"]["listing_status"]
+          title: string
+          updated_at: string
+          user_id: string
+          view_count: number
+        }
+        Insert: {
+          bumped_at?: string
+          category_id: string
+          city_id: string
+          condition?: Database["public"]["Enums"]["listing_condition"]
+          created_at?: string
+          currency?: string
+          description: string
+          expires_at?: string
+          id?: string
+          price?: number | null
+          search_tsv?: unknown
+          status?: Database["public"]["Enums"]["listing_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+          view_count?: number
+        }
+        Update: {
+          bumped_at?: string
+          category_id?: string
+          city_id?: string
+          condition?: Database["public"]["Enums"]["listing_condition"]
+          created_at?: string
+          currency?: string
+          description?: string
+          expires_at?: string
+          id?: string
+          price?: number | null
+          search_tsv?: unknown
+          status?: Database["public"]["Enums"]["listing_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listings_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_threads: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          id: string
+          last_message_at: string
+          listing_id: string
+          seller_id: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          listing_id: string
+          seller_id: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          listing_id?: string
+          seller_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_threads_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender_id: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          listing_id: string | null
+          promotion_type: Database["public"]["Enums"]["promotion_type"] | null
+          provider: string
+          provider_session_id: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          listing_id?: string | null
+          promotion_type?: Database["public"]["Enums"]["promotion_type"] | null
+          provider: string
+          provider_session_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          listing_id?: string | null
+          promotion_type?: Database["public"]["Enums"]["promotion_type"] | null
+          provider?: string
+          provider_session_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          city_id: string | null
+          country: Database["public"]["Enums"]["country_code"] | null
+          created_at: string
+          display_name: string
+          email_verified_at: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          city_id?: string | null
+          country?: Database["public"]["Enums"]["country_code"] | null
+          created_at?: string
+          display_name: string
+          email_verified_at?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          city_id?: string | null
+          country?: Database["public"]["Enums"]["country_code"] | null
+          created_at?: string
+          display_name?: string
+          email_verified_at?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          listing_id: string
+          reason: string
+          reporter_id: string
+          status: Database["public"]["Enums"]["report_status"]
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          listing_id: string
+          reason: string
+          reporter_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          listing_id?: string
+          reason?: string
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "user" | "moderator" | "admin"
+      country_code: "US" | "UK" | "CA"
+      listing_condition:
+        | "new"
+        | "like_new"
+        | "good"
+        | "fair"
+        | "poor"
+        | "not_applicable"
+      listing_status: "draft" | "active" | "sold" | "expired" | "removed"
+      payment_status: "pending" | "completed" | "failed" | "refunded"
+      promotion_type: "featured" | "bump" | "highlight"
+      report_status: "open" | "reviewing" | "resolved" | "dismissed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +612,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["user", "moderator", "admin"],
+      country_code: ["US", "UK", "CA"],
+      listing_condition: [
+        "new",
+        "like_new",
+        "good",
+        "fair",
+        "poor",
+        "not_applicable",
+      ],
+      listing_status: ["draft", "active", "sold", "expired", "removed"],
+      payment_status: ["pending", "completed", "failed", "refunded"],
+      promotion_type: ["featured", "bump", "highlight"],
+      report_status: ["open", "reviewing", "resolved", "dismissed"],
+    },
   },
 } as const
