@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
-import heroImg from "@/assets/hero-marketplace.jpg";
+import { ArrowRight, Sparkles, ChevronRight } from "lucide-react";
 import catForSale from "@/assets/cat-for-sale.jpg";
 import catVehicles from "@/assets/cat-vehicles.jpg";
 import catHousing from "@/assets/cat-housing.jpg";
@@ -31,9 +30,14 @@ const CATEGORY_IMAGES: Record<string, string> = {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Marketly — Buy & sell locally across the US, UK, and Canada" },
+      { title: "Marketly — Buy & sell locally across the US, UK & Canada" },
       { name: "description", content: "Find great deals on vehicles, housing, jobs, electronics, furniture and more. Post a free listing in minutes." },
+      { property: "og:title", content: "Marketly — Buy & sell locally" },
+      { property: "og:description", content: "Country-wide classifieds marketplace. Browse or post free listings in minutes." },
+      { property: "og:url", content: "https://devads.lovable.app/" },
+      { property: "og:type", content: "website" },
     ],
+    links: [{ rel: "canonical", href: "https://devads.lovable.app/" }],
   }),
   component: Home,
 });
@@ -76,99 +80,189 @@ function Home() {
   ) ?? [];
   const recent = listings?.filter((l: any) => !featured.includes(l)) ?? [];
 
+  const heroFeatured = featured[0] ?? listings?.[0];
+  const heroImg = heroFeatured?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ?? emptyListingImg;
+  const heroPrice = heroFeatured?.price != null
+    ? new Intl.NumberFormat("en-US", { style: "currency", currency: heroFeatured.currency || "USD", maximumFractionDigits: 0 }).format(Number(heroFeatured.price))
+    : null;
+
+  const cat = (slug: string) => categories?.find((c) => c.slug === slug);
+  const electronicsCat = cat("electronics");
+  const furnitureCat = cat("furniture");
+  const petsCat = cat("pets");
+
   return (
-    <div>
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b bg-gradient-to-br from-accent via-background to-background">
-        <div className="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-[1.1fr_1fr] md:items-center md:py-20">
-          <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3 w-3" /> Free to post, free to browse
+    <div className="pt-4">
+      {/* Hero band */}
+      <section className="container mx-auto px-4 pt-6">
+        <div className="relative overflow-hidden rounded-[2rem] glass-strong p-6 md:p-12 shadow-[var(--shadow-float)]">
+          <div className="absolute -right-24 -bottom-24 h-80 w-80 rounded-full bg-[var(--gradient-primary)] opacity-20 blur-3xl" />
+          <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-accent/40 opacity-40 blur-3xl" />
+          <div className="relative z-10 max-w-2xl">
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground/80">
+              <Sparkles className="h-3 w-3" /> Free to post · Free to browse
             </span>
-            <h1 className="mt-4 font-display text-4xl font-bold leading-tight md:text-6xl">
-              Buy & sell locally — across the country.
+            <h1 className="mt-5 font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
+              Buy &amp; sell locally —{" "}
+              <span className="gradient-text">across the country.</span>
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
               From vintage bikes in Brooklyn to apartments in Manchester — find what's near you, or post your own in under a minute.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild size="lg">
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Button asChild size="lg" className="btn-gradient rounded-2xl border-0 px-7 py-6 text-base font-bold">
                 <Link to="/post">Post a listing</Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
+              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/70 bg-white/60 px-7 py-6 text-base font-bold backdrop-blur hover:bg-white">
                 <Link to="/search">Browse all <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
             </div>
           </div>
-          <div className="relative">
-            <img
-              src={heroImg}
-              alt="Illustration of a vibrant local marketplace with sellers and shoppers"
-              width={1536}
-              height={1024}
-              className="w-full rounded-2xl border bg-card object-cover shadow-sm"
-            />
-          </div>
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="container mx-auto px-4 py-10">
-        <h2 className="mb-4 font-display text-2xl font-semibold">Browse categories</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+      {/* Bento Grid */}
+      <section className="container mx-auto px-4 pt-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4 md:grid-rows-2 md:auto-rows-fr md:h-[560px]">
+          {/* Large featured listing */}
+          {heroFeatured ? (
+            <Link
+              to="/listings/$id"
+              params={{ id: heroFeatured.id }}
+              className="group relative col-span-1 row-span-1 overflow-hidden rounded-[2rem] glass md:col-span-2 md:row-span-2"
+            >
+              <img
+                src={heroImg}
+                alt={heroFeatured.title}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/10 to-transparent" />
+              <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-8">
+                <span className="self-start rounded-full btn-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+                  <Sparkles className="mr-1 inline h-3 w-3" /> Featured
+                </span>
+                <div className="text-white">
+                  <h3 className="font-display text-2xl font-bold leading-tight md:text-3xl">{heroFeatured.title}</h3>
+                  {heroFeatured.cities && (
+                    <p className="mt-1 text-sm text-white/80">
+                      {heroFeatured.cities.name}, {heroFeatured.cities.region}
+                    </p>
+                  )}
+                  {heroPrice && (
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-base font-bold text-foreground backdrop-blur-md">
+                      {heroPrice}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ) : (
+            <div className="col-span-1 row-span-1 rounded-[2rem] glass md:col-span-2 md:row-span-2" />
+          )}
+
+          {/* Medium gradient category — Electronics */}
+          <Link
+            to="/search"
+            search={{ category: electronicsCat?.slug ?? "electronics" } as any}
+            className="group relative col-span-1 overflow-hidden rounded-[2rem] p-6 text-white md:col-span-2 hover-float"
+            style={{ background: "var(--gradient-primary)", backgroundSize: "200% 200%" }}
+          >
+            <div className="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-white/30 blur-2xl" />
+            <div className="relative z-10 flex h-full flex-col justify-between gap-4">
+              <div>
+                <h3 className="font-display text-2xl font-bold md:text-3xl">{electronicsCat?.name ?? "Electronics"}</h3>
+                <p className="mt-1 text-sm text-white/85">Latest gadgets, phones & tech gear</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-widest text-white/80">Explore</span>
+                <span className="rounded-full bg-white/20 p-3 backdrop-blur-md transition group-hover:bg-white/30">
+                  <ChevronRight className="h-5 w-5" />
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Small glass category — Furniture */}
+          <Link
+            to="/search"
+            search={{ category: furnitureCat?.slug ?? "furniture" } as any}
+            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] glass p-6 flex flex-col items-center justify-center text-center"
+          >
+            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white shadow-sm">
+              <img src={catFurniture} alt="" className="h-8 w-8 rounded-lg object-cover" />
+            </div>
+            <span className="font-display font-bold text-foreground">{furnitureCat?.name ?? "Furniture"}</span>
+            <span className="mt-1 text-xs text-muted-foreground">Browse home goods</span>
+          </Link>
+
+          {/* Small glass category — Pets */}
+          <Link
+            to="/search"
+            search={{ category: petsCat?.slug ?? "pets" } as any}
+            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] bg-white/70 backdrop-blur border border-white/60 p-6 flex flex-col items-center justify-center text-center"
+          >
+            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-secondary/30">
+              <img src={catPets} alt="" className="h-8 w-8 rounded-lg object-cover" />
+            </div>
+            <span className="font-display font-bold text-foreground">{petsCat?.name ?? "Pets"}</span>
+            <span className="mt-1 text-xs text-muted-foreground">Find a new friend</span>
+          </Link>
+        </div>
+      </section>
+
+      {/* Category chip strip */}
+      <section className="container mx-auto px-4 pt-8">
+        <h2 className="sr-only">All categories</h2>
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
           {categories?.map((c) => (
             <Link
               key={c.id}
               to="/search"
               search={{ category: c.slug } as any}
-              className="group overflow-hidden rounded-xl border bg-card transition hover:border-primary hover:shadow-sm"
+              className="group flex flex-shrink-0 items-center gap-2 rounded-full glass px-4 py-2 text-sm font-medium hover:border-primary/50"
             >
-              <div className="aspect-square overflow-hidden bg-muted">
-                <img
-                  src={CATEGORY_IMAGES[c.slug] ?? emptyListingImg}
-                  alt={c.name}
-                  loading="lazy"
-                  width={512}
-                  height={512}
-                  className="h-full w-full object-cover transition group-hover:scale-105"
-                />
-              </div>
-              <div className="p-3 font-medium group-hover:text-primary">{c.name}</div>
+              <img
+                src={CATEGORY_IMAGES[c.slug] ?? emptyListingImg}
+                alt=""
+                className="h-6 w-6 rounded-full object-cover"
+              />
+              {c.name}
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Featured */}
-      {featured.length > 0 && (
-        <section className="container mx-auto px-4 pb-8">
+      {/* Featured row */}
+      {featured.length > 1 && (
+        <section className="container mx-auto px-4 pt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-promo" /> Featured listings
+              <Sparkles className="h-5 w-5 text-primary" /> Featured listings
             </h2>
           </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {featured.map((l: any) => <ListingCard key={l.id} listing={l} featured />)}
+            {featured.slice(1).map((l: any) => <ListingCard key={l.id} listing={l} featured />)}
           </div>
         </section>
       )}
 
-      {/* Recent */}
-      <section className="container mx-auto px-4 pb-16">
+      {/* Recent listings */}
+      <section className="container mx-auto px-4 pt-10 pb-16">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-2xl font-semibold">Recent listings</h2>
-          <Link to="/search" className="text-sm text-primary hover:underline">View all →</Link>
+          <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
         </div>
         {isLoading ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted" />
+              <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-white/40" />
             ))}
           </div>
         ) : recent.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border bg-card p-10 text-center text-muted-foreground">
+          <div className="flex flex-col items-center gap-3 rounded-2xl glass p-10 text-center text-muted-foreground">
             <img src={emptyListingImg} alt="" width={160} height={160} loading="lazy" className="h-40 w-40 object-contain" />
-            <div>No listings yet. <Link to="/post" className="text-primary hover:underline">Be the first to post!</Link></div>
+            <div>No listings yet. <Link to="/post" className="font-medium text-primary hover:underline">Be the first to post!</Link></div>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">

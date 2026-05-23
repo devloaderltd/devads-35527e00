@@ -77,7 +77,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Marketly",
+          url: "https://devads.lovable.app",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://devads.lovable.app/search?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }),
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -109,9 +125,9 @@ function RootComponent() {
         <main className="flex-1">
           <Outlet />
         </main>
-        <footer className="border-t bg-muted/30 py-8 text-center text-sm text-muted-foreground">
+        <footer className="mt-16 border-t border-white/40 bg-white/30 backdrop-blur-md py-8 text-center text-sm text-muted-foreground">
           <div className="container mx-auto px-4">
-            © {new Date().getFullYear()} Marketly. Buy and sell across the US, UK & Canada.
+            © {new Date().getFullYear()} Marketly — Buy and sell across the US, UK & Canada.
           </div>
         </footer>
       </div>
