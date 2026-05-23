@@ -74,11 +74,13 @@ function AdminPage() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="mb-4 font-display text-2xl font-bold">Moderation</h1>
+      <h1 className="mb-4 font-display text-2xl font-bold"><span className="gradient-text">Moderation</span></h1>
       <div className="space-y-3">
-        {reports?.length === 0 && <p className="text-sm text-muted-foreground">No reports.</p>}
+        {reports?.length === 0 && (
+          <div className="rounded-2xl glass p-10 text-center text-sm text-muted-foreground">No reports.</div>
+        )}
         {reports?.map((r) => (
-          <div key={r.id} className="rounded-xl border bg-card p-4">
+          <div key={r.id} className="rounded-2xl glass p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -95,16 +97,16 @@ function AdminPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {r.listing && r.listing.status !== "removed" && (
-                  <Button size="sm" variant="destructive" onClick={() => removeListing.mutate(r.listing!.id)}>
+                  <Button size="sm" variant="destructive" className="rounded-full" onClick={() => removeListing.mutate(r.listing!.id)}>
                     Remove listing
                   </Button>
                 )}
                 {r.status === "open" && (
                   <>
-                    <Button size="sm" variant="outline" onClick={() => resolveReport.mutate({ id: r.id, status: "dismissed" })}>
+                    <Button size="sm" variant="outline" className="rounded-full bg-white/60 backdrop-blur" onClick={() => resolveReport.mutate({ id: r.id, status: "dismissed" })}>
                       Dismiss
                     </Button>
-                    <Button size="sm" onClick={() => resolveReport.mutate({ id: r.id, status: "resolved" })}>
+                    <Button size="sm" className="btn-gradient rounded-full border-0" onClick={() => resolveReport.mutate({ id: r.id, status: "resolved" })}>
                       Resolve
                     </Button>
                   </>

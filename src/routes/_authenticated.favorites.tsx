@@ -28,10 +28,10 @@ function Favorites() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="font-display text-3xl font-bold">Favorites</h1>
+      <h1 className="font-display text-3xl font-bold">Your <span className="gradient-text">favorites</span></h1>
       {isLoading ? null : !data?.length ? (
-        <div className="mt-6 rounded-xl border bg-card p-10 text-center text-muted-foreground">
-          No favorites yet. <Link to="/search" className="text-primary hover:underline">Browse listings</Link>.
+        <div className="mt-6 rounded-2xl glass p-10 text-center text-muted-foreground">
+          No favorites yet. <Link to="/search" className="font-medium text-primary hover:underline">Browse listings</Link>.
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
