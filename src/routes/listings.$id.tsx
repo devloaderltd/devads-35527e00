@@ -9,6 +9,7 @@ import { ReportDialog } from "@/components/ReportDialog";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { toast } from "sonner";
 import { useState } from "react";
+import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 export const Route = createFileRoute("/listings/$id")({
   component: ListingDetail,
