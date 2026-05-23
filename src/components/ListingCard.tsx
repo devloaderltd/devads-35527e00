@@ -26,11 +26,12 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
       className="group flex flex-col overflow-hidden rounded-xl border bg-card transition hover:border-primary hover:shadow-md"
     >
       <div className="relative aspect-square overflow-hidden bg-muted">
-        {img ? (
-          <img src={img} alt={listing.title} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-4xl text-muted-foreground">📦</div>
-        )}
+        <img
+          src={img ?? listingPlaceholder}
+          alt={listing.title}
+          loading="lazy"
+          className="h-full w-full object-cover transition group-hover:scale-105"
+        />
         {featured && (
           <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-promo px-2 py-0.5 text-xs font-semibold text-promo-foreground">
             <Sparkles className="h-3 w-3" /> Featured
