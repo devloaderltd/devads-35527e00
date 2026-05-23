@@ -1,9 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Calendar, Tag, ChevronLeft } from "lucide-react";
+import { MapPin, Calendar, Tag, ChevronLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
+import { ReportDialog } from "@/components/ReportDialog";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/listings/$id")({
   component: ListingDetail,
@@ -11,6 +15,11 @@ export const Route = createFileRoute("/listings/$id")({
 
 function ListingDetail() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [contacting, setContacting] = useState(false);
+
+
   const { data: listing, isLoading, error } = useQuery({
     queryKey: ["listing", id],
     queryFn: async () => {
@@ -37,6 +46,30 @@ function ListingDetail() {
 
   if (isLoading) return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
   if (error || !listing) return <div className="container mx-auto px-4 py-10">Listing not found.</div>;
+
+  const startThread = async () => {
+    if (!user) { navigate({ to: "/login" }); return; }
+    if (listing.user_id === user.id) { toast.error("You can't message yourself."); return; }
+    setContacting(true);
+    const { data: existing } = await supabase
+      .from("message_threads")
+      .select("id")
+      .eq("listing_id", listing.id)
+      .eq("buyer_id", user.id)
+      .eq("seller_id", listing.user_id)
+      .maybeSingle();
+    let threadId = existing?.id;
+    if (!threadId) {
+      const { data: created, error: insErr } = await supabase
+        .from("message_threads")
+        .insert({ listing_id: listing.id, buyer_id: user.id, seller_id: listing.user_id })
+        .select("id").single();
+      if (insErr) { setContacting(false); toast.error(insErr.message); return; }
+      threadId = created.id;
+    }
+    setContacting(false);
+    navigate({ to: "/messages/$threadId", params: { threadId: threadId! } });
+  };
 
   const images = (listing.listing_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
   const priceFmt = listing.price != null
@@ -98,7 +131,12 @@ function ListingDetail() {
           <div className="mt-8 rounded-xl border bg-card p-4">
             <div className="text-sm text-muted-foreground">Seller</div>
             <div className="mt-1 font-medium">{listing.profile?.display_name ?? "Seller"}</div>
-            <Button className="mt-3 w-full" disabled>Message seller (coming soon)</Button>
+            <Button className="mt-3 w-full gap-2" onClick={startThread} disabled={contacting || listing.user_id === user?.id}>
+              <MessageSquare className="h-4 w-4" /> Message seller
+            </Button>
+            <div className="mt-2 flex justify-end">
+              <ReportDialog listingId={listing.id} />
+            </div>
           </div>
         </div>
       </div>
