@@ -7,6 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import { MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/messages")({
+  head: () => ({ meta: [{ title: "Messages — Marketly" }, { name: "description", content: "Your conversations with buyers and sellers on Marketly." }] }),
   component: MessagesLayout,
 });
 
@@ -50,22 +51,22 @@ function MessagesLayout() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="mb-4 font-display text-2xl font-bold">Messages</h1>
+      <h1 className="mb-4 font-display text-2xl font-bold"><span className="gradient-text">Messages</span></h1>
       <div className="grid gap-4 md:grid-cols-[320px_1fr]">
-        <aside className="rounded-xl border bg-card">
+        <aside className="rounded-2xl glass overflow-hidden">
           {threads && threads.length === 0 && (
             <div className="p-6 text-center text-sm text-muted-foreground">
               <MessageSquare className="mx-auto mb-2 h-6 w-6" />
               No conversations yet.
             </div>
           )}
-          <ul className="divide-y">
+          <ul className="divide-y divide-white/40">
             {threads?.map((t) => (
               <li key={t.id}>
                 <Link
                   to="/messages/$threadId"
                   params={{ threadId: t.id }}
-                  className={`block p-3 hover:bg-secondary ${activeId === t.id ? "bg-secondary" : ""}`}
+                  className={`block p-3 transition hover:bg-white/40 ${activeId === t.id ? "bg-white/60" : ""}`}
                 >
                   <div className="truncate text-sm font-medium">{t.other?.display_name ?? "User"}</div>
                   <div className="truncate text-xs text-muted-foreground">{t.listing?.title}</div>
@@ -77,7 +78,7 @@ function MessagesLayout() {
             ))}
           </ul>
         </aside>
-        <section className="rounded-xl border bg-card min-h-[60vh]">
+        <section className="rounded-2xl glass min-h-[60vh]">
           <Outlet />
         </section>
       </div>

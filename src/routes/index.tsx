@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, ChevronRight } from "lucide-react";
+import { ArrowRight, Sparkles, ChevronRight, Flame } from "lucide-react";
 import catForSale from "@/assets/cat-for-sale.jpg";
 import catVehicles from "@/assets/cat-vehicles.jpg";
 import catHousing from "@/assets/cat-housing.jpg";
@@ -78,7 +78,10 @@ function Home() {
   const featured = listings?.filter((l: any) =>
     l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date())
   ) ?? [];
-  const recent = listings?.filter((l: any) => !featured.includes(l)) ?? [];
+  const bumped = (listings ?? []).filter((l: any) =>
+    !featured.includes(l) && l.bumped_at && (Date.now() - new Date(l.bumped_at).getTime()) < 24 * 60 * 60 * 1000
+  ).slice(0, 12);
+  const recent = listings?.filter((l: any) => !featured.includes(l) && !bumped.includes(l)) ?? [];
 
   const heroFeatured = featured[0] ?? listings?.[0];
   const heroImg = heroFeatured?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ?? emptyListingImg;
@@ -251,10 +254,29 @@ function Home() {
         </section>
       )}
 
+      {/* Trending / Bumped rail */}
+      {bumped.length > 0 && (
+        <section className="container mx-auto px-4 pt-10">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
+              <Flame className="h-5 w-5" style={{ color: "var(--coral)" }} /> <span className="gradient-text-warm">Trending now</span>
+            </h2>
+            <Link to="/search" className="text-sm font-medium text-primary hover:underline">See all →</Link>
+          </div>
+          <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar snap-x snap-mandatory">
+            {bumped.map((l: any) => (
+              <div key={l.id} className="w-44 flex-shrink-0 snap-start sm:w-56">
+                <ListingCard listing={l} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Recent listings */}
       <section className="container mx-auto px-4 pt-10 pb-16">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-2xl font-semibold">Recent listings</h2>
+          <h2 className="font-display text-2xl font-semibold">Latest listings</h2>
           <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
         </div>
         {isLoading ? (

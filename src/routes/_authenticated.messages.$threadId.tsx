@@ -92,7 +92,7 @@ function ThreadView() {
 
   return (
     <div className="flex h-[70vh] flex-col">
-      <div className="flex items-center justify-between border-b p-3">
+      <div className="flex items-center justify-between border-b border-white/40 p-3">
         <div className="text-sm">
           <div className="text-xs text-muted-foreground">Listing</div>
           {thread?.listing ? (
@@ -109,7 +109,10 @@ function ThreadView() {
           const mine = m.sender_id === user?.id;
           return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+              <div
+                className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm ${mine ? "text-white" : "bg-white/70 backdrop-blur"}`}
+                style={mine ? { background: "var(--gradient-primary)", backgroundSize: "200% 200%" } : undefined}
+              >
                 {m.body}
               </div>
             </div>
@@ -117,9 +120,9 @@ function ThreadView() {
         })}
         <div ref={endRef} />
       </div>
-      <form onSubmit={onSubmit} className="flex gap-2 border-t p-3">
-        <Input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a message…" />
-        <Button type="submit" disabled={send.isPending || !body.trim()}>
+      <form onSubmit={onSubmit} className="flex gap-2 border-t border-white/40 p-3">
+        <Input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a message…" className="rounded-full bg-white/70 backdrop-blur" />
+        <Button type="submit" disabled={send.isPending || !body.trim()} className="btn-gradient rounded-full border-0">
           <Send className="h-4 w-4" />
         </Button>
       </form>
