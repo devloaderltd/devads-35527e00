@@ -1,79 +1,59 @@
-# Remaining Work — Marketly
+# Seed Marketly with realistic users, listings & images
 
-The core marketplace (browsing, posting, messaging, favorites, reports, admin moderation) is live. Here is the plan for what's left.
+## What you'll get
 
-## 1. Promotions & Payments (Stripe)
+- **6 demo users** with real auth accounts (sign-in works), display names, avatars, and home cities
+- **12 listings** spread across categories (Vehicles, Housing, Electronics, Furniture, Pets, For Sale) in US / UK / CA cities
+- **1 AI-generated photo per listing** (12 images), uploaded to the existing `listing-images` storage bucket
+- 2 of the 12 listings flagged as **Featured** so the "Featured listings" row on the home page lights up
 
-Goal: let sellers pay to **feature** a listing (homepage + top of search) or **bump** it (reset `bumped_at` so it returns to the top of recents).
+## Sample listings (titles, prices)
 
-- Run `recommend_payment_provider`, then enable **Lovable's built-in Stripe payments** (`enable_stripe_payments`). No user API key needed.
-- Create two products via `batch_create_product`:
-  - **Featured listing** — 7 days, ~$9.99
-  - **Bump listing** — single bump, ~$2.99
-- Server function `createPromotionCheckout({ listingId, type })`:
-  - Verifies caller owns the listing (`requireSupabaseAuth`)
-  - Inserts a `payments` row (status=pending)
-  - Returns a Stripe Checkout session URL
-- Webhook route at `src/routes/api/public/stripe-webhook.ts`:
-  - Verifies signature, marks payment `succeeded`
-  - Inserts `listing_promotions` row (featured: ends_at = now + 7d; bump: updates `listings.bumped_at = now()`)
-- UI:
-  - "Promote this listing" button in **My Listings** → dialog with two options → redirects to Stripe Checkout
-  - Success/cancel routes (`/promote/success`, `/promote/cancel`)
-  - Badge "Featured" on `ListingCard` when an active promotion exists
-  - Home + search queries updated to surface featured listings first
+| Category | Title | City | Price |
+|---|---|---|---|
+| Vehicles | 2019 Trek Marlin 7 mountain bike — like new | Brooklyn, NY | $480 |
+| Vehicles | 2017 Honda Civic LX, 62k miles, clean title | Austin, TX | $13,900 |
+| Housing | Sunny 1BR apartment, Northern Quarter | Manchester, UK | £950/mo |
+| Housing | Cozy studio near McGill, all-inclusive | Montréal, CA | C$1,250/mo |
+| Electronics | MacBook Air M2, 16GB / 512GB, AppleCare till 2026 | San Francisco, CA | $1,100 |
+| Electronics | Sony WH-1000XM5 headphones, sealed box | London, UK | £260 |
+| Furniture | Mid-century walnut sideboard | Toronto, CA | C$420 |
+| Furniture | West Elm Andes 3-seat sofa, charcoal | Chicago, IL | $700 |
+| Pets | Adopt: 2yo tabby cat, fully vetted | Bristol, UK | Free |
+| Pets | Rehoming aquarium setup, 40 gal complete | Seattle, WA | $180 |
+| For Sale | Vintage Polaroid SX-70 + film | Vancouver, CA | C$220 |
+| For Sale | Peloton Bike+ with shoes (size 10) | Boston, MA | $1,650 |
 
-## 2. Profile & Settings Page
+Two are marked Featured: the Trek bike and the MacBook Air.
 
-- `_authenticated.settings.tsx` — edit display name, phone, avatar (upload to storage), default city
-- Public seller profile route `users.$id.tsx` — shows display name, avatar, member since, and their active listings
+## How it'll be built
 
-## 3. Search & Browsing Polish
+```text
+1. Create 6 auth users via admin API (server script)
+   └─ handle_new_user trigger auto-creates profiles + 'user' role
+2. Update each profile with display_name, avatar_url, city_id
+3. Pick a random matching city per listing
+4. Insert 12 listings (one-off SQL insert, owner = one of the 6 users)
+5. For each listing:
+   ├─ Generate a realistic product/place photo (1024×1024)
+   ├─ Upload to listing-images bucket at <user_id>/<listing_id>/0.jpg
+   └─ Insert listing_images row pointing at the public URL
+6. Insert 2 listing_promotions rows (type=featured, ends_at=+7d) for the
+   two Featured items
+```
 
-- Category landing routes (`categories.$slug.tsx`) using the existing categories table
-- Sort options on `/search` (newest, price asc/desc, featured first)
-- Price range filter + condition filter
-- Pagination (load-more) — currently capped at default 1000-row limit
-- Empty states and skeleton loaders across listing grids
+### Technical details
 
-## 4. Listing Lifecycle
+- **Users**: created via `supabaseAdmin.auth.admin.createUser({ email, password, email_confirm: true })` from a one-off Node script run via `bun`. Emails like `mia.chen@demo.marketly.app`, password `Demo123!` so they're visible in the demo. Existing `handle_new_user` trigger handles profile + role.
+- **Avatars**: 6 generated portrait illustrations saved to `src/assets/` (not uploaded to storage — referenced by the seed script as data URLs uploaded to `listing-images` bucket under an `avatars/` prefix, since that bucket is public).
+- **Listing images**: generated via the agent's `imagegen--generate_image` tool to `/tmp/seed/*.jpg`, then uploaded to the `listing-images` public bucket through the admin client. Each gets a sensible prompt (e.g. "Photo of a red Trek Marlin 7 mountain bike leaning on a brick wall, natural light").
+- **Cities**: queried at seed time from the existing `cities` table by name+country so we don't hardcode UUIDs.
+- **Idempotency**: the seed script checks for an existing user by email before creating, and short-circuits if all 6 demo users already exist, so running it twice won't duplicate data.
 
-- Mark as **sold** / **paused** from My Listings (UPDATE `status`)
-- Auto-expire surfacing: filter `expires_at > now()` in public queries
-- "Renew listing" action when expired (extends `expires_at` by 30d)
+## What I won't touch
 
-## 5. Notifications
+- No schema changes — uses existing tables, RLS, triggers, and the existing `listing-images` bucket
+- No changes to the home page, listing card, or detail page (those were just updated)
+- No real customer data — every email ends in `@demo.marketly.app`
 
-- Unread message count badge on Header (Messages icon)
-- Simple in-app toast when a new message arrives on any thread (realtime subscribe at root for signed-in users)
-
-## 6. SEO & Metadata
-
-- Per-listing `head()` with title, description, og:image (first listing image), JSON-LD `Product` schema
-- Per-category and per-city head() metadata
-- Sitemap route `api/public/sitemap.xml` generating URLs for active listings
-
-## 7. Final Polish
-
-- Mobile nav drawer in Header (search currently cramped on mobile)
-- 404 / error states for missing listings
-- Confirm-dialog on destructive actions (delete listing, dismiss report)
-- Footer links: About, Safety tips, Terms, Contact (static routes)
-
-## Technical Notes
-
-- All payment writes go through the webhook (RLS blocks direct inserts to `payments` / `listing_promotions`)
-- Featured ordering: `ORDER BY (has_active_promotion) DESC, bumped_at DESC` — implement as a SQL view or compose in the server function
-- Stripe secret managed by Lovable's built-in integration; no manual `STRIPE_SECRET_KEY` needed
-
-## Suggested Build Order
-
-1. Payments + promotions (biggest revenue feature)
-2. Listing lifecycle (sold/paused/renew)
-3. Profile/settings + public seller pages
-4. Search polish (sort, filters, pagination)
-5. Notifications + unread badges
-6. SEO + sitemap
-7. Final UI polish
-
-Reply **approve** to start with step 1, or tell me to reorder / drop sections.
+Approve and I'll generate the images and run the seed.
