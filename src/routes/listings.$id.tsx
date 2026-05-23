@@ -20,13 +20,18 @@ function ListingDetail() {
           *,
           categories(name, slug),
           cities(name, region, country),
-          listing_images(url, sort_order),
-          profiles!listings_user_id_fkey(display_name, avatar_url)
+          listing_images(url, sort_order)
         `)
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("id", data.user_id)
+        .maybeSingle();
+      return { ...data, profile };
     },
   });
 
