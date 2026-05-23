@@ -4,6 +4,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
+import heroImg from "@/assets/hero-marketplace.jpg";
+import catForSale from "@/assets/cat-for-sale.jpg";
+import catVehicles from "@/assets/cat-vehicles.jpg";
+import catHousing from "@/assets/cat-housing.jpg";
+import catJobs from "@/assets/cat-jobs.jpg";
+import catServices from "@/assets/cat-services.jpg";
+import catElectronics from "@/assets/cat-electronics.jpg";
+import catFurniture from "@/assets/cat-furniture.jpg";
+import catPets from "@/assets/cat-pets.jpg";
+import catCommunity from "@/assets/cat-community.jpg";
+import emptyListingImg from "@/assets/listing-placeholder.jpg";
+
+const CATEGORY_IMAGES: Record<string, string> = {
+  "for-sale": catForSale,
+  vehicles: catVehicles,
+  housing: catHousing,
+  jobs: catJobs,
+  services: catServices,
+  electronics: catElectronics,
+  furniture: catFurniture,
+  pets: catPets,
+  community: catCommunity,
+};
 
 export const Route = createFileRoute("/")({
   head: () => ({
