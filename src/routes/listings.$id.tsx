@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { ReportDialog } from "@/components/ReportDialog";
+import { PromoteDialog } from "@/components/PromoteDialog";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -134,6 +135,11 @@ function ListingDetail() {
             <Button className="mt-3 w-full gap-2" onClick={startThread} disabled={contacting || listing.user_id === user?.id}>
               <MessageSquare className="h-4 w-4" /> Message seller
             </Button>
+            {user?.id === listing.user_id && (
+              <div className="mt-2">
+                <PromoteDialog listingId={listing.id} />
+              </div>
+            )}
             <div className="mt-2 flex justify-end">
               <ReportDialog listingId={listing.id} />
             </div>
