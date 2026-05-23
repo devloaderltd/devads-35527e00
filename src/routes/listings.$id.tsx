@@ -47,6 +47,30 @@ function ListingDetail() {
   if (isLoading) return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
   if (error || !listing) return <div className="container mx-auto px-4 py-10">Listing not found.</div>;
 
+  const startThread = async () => {
+    if (!user) { navigate({ to: "/login" }); return; }
+    if (listing.user_id === user.id) { toast.error("You can't message yourself."); return; }
+    setContacting(true);
+    const { data: existing } = await supabase
+      .from("message_threads")
+      .select("id")
+      .eq("listing_id", listing.id)
+      .eq("buyer_id", user.id)
+      .eq("seller_id", listing.user_id)
+      .maybeSingle();
+    let threadId = existing?.id;
+    if (!threadId) {
+      const { data: created, error: insErr } = await supabase
+        .from("message_threads")
+        .insert({ listing_id: listing.id, buyer_id: user.id, seller_id: listing.user_id })
+        .select("id").single();
+      if (insErr) { setContacting(false); toast.error(insErr.message); return; }
+      threadId = created.id;
+    }
+    setContacting(false);
+    navigate({ to: "/messages/$threadId", params: { threadId: threadId! } });
+  };
+
   const images = (listing.listing_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
   const priceFmt = listing.price != null
     ? new Intl.NumberFormat("en-US", { style: "currency", currency: listing.currency || "USD", maximumFractionDigits: 0 }).format(Number(listing.price))
