@@ -77,23 +77,30 @@ function SearchPage() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <div className="mb-6 grid gap-3 md:grid-cols-[1fr_180px_180px_180px]">
+      <div className="mb-6">
+        <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
+          Browse <span className="gradient-text">listings</span>
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">Find something great near you.</p>
+      </div>
+      <div className="mb-6 grid gap-3 rounded-2xl border border-white/40 bg-white/55 p-3 shadow-[var(--shadow-float)] backdrop-blur-xl md:grid-cols-[1fr_180px_180px_180px]">
         <Input
           placeholder="Search…"
           defaultValue={search.q ?? ""}
+          className="bg-white/70"
           onKeyDown={(e) => {
             if (e.key === "Enter") update({ q: (e.target as HTMLInputElement).value || undefined });
           }}
         />
         <Select value={search.category ?? "all"} onValueChange={(v) => update({ category: v === "all" ? undefined : v })}>
-          <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+          <SelectTrigger className="bg-white/70"><SelectValue placeholder="Category" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All categories</SelectItem>
             {categories?.map((c) => <SelectItem key={c.id} value={c.slug}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={search.country ?? "all"} onValueChange={(v) => update({ country: v === "all" ? undefined : v, city: undefined })}>
-          <SelectTrigger><SelectValue placeholder="Country" /></SelectTrigger>
+          <SelectTrigger className="bg-white/70"><SelectValue placeholder="Country" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All countries</SelectItem>
             <SelectItem value="US">United States</SelectItem>
@@ -106,13 +113,14 @@ function SearchPage() {
           onValueChange={(v) => update({ city: v === "all" ? undefined : v })}
           disabled={!search.country}
         >
-          <SelectTrigger><SelectValue placeholder={search.country ? "City" : "Pick country"} /></SelectTrigger>
+          <SelectTrigger className="bg-white/70"><SelectValue placeholder={search.country ? "City" : "Pick country"} /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All cities</SelectItem>
             {cities?.map((c) => <SelectItem key={c.id} value={c.slug}>{c.name}, {c.region}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
+
 
       {isLoading ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
