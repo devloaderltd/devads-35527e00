@@ -166,8 +166,9 @@ function Home() {
             ))}
           </div>
         ) : recent.length === 0 ? (
-          <div className="rounded-xl border bg-card p-10 text-center text-muted-foreground">
-            No listings yet. <Link to="/post" className="text-primary hover:underline">Be the first to post!</Link>
+          <div className="flex flex-col items-center gap-3 rounded-xl border bg-card p-10 text-center text-muted-foreground">
+            <img src={emptyListingImg} alt="" width={160} height={160} loading="lazy" className="h-40 w-40 object-contain" />
+            <div>No listings yet. <Link to="/post" className="text-primary hover:underline">Be the first to post!</Link></div>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
