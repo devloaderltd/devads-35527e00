@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Plus, User as UserIcon, LogOut, Heart, Package } from "lucide-react";
+import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,7 +71,13 @@ export function Header() {
                   <Link to="/my-listings"><Package className="mr-2 h-4 w-4" /> My listings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link to="/messages"><MessageSquare className="mr-2 h-4 w-4" /> Messages</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/favorites"><Heart className="mr-2 h-4 w-4" /> Favorites</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin"><ShieldCheck className="mr-2 h-4 w-4" /> Moderation</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut}>
