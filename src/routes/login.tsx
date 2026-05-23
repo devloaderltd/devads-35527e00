@@ -29,24 +29,29 @@ function LoginPage() {
 
   return (
     <div className="container mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-10">
-      <h1 className="font-display text-3xl font-bold">Sign in</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Welcome back to Marketly.</p>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in…" : "Sign in"}
-        </Button>
-      </form>
-      <p className="mt-4 text-center text-sm text-muted-foreground">
-        New here? <Link to="/signup" className="text-primary hover:underline">Create account</Link>
-      </p>
+      <div className="iridescent-border rounded-3xl border border-white/40 bg-white/65 p-8 shadow-[var(--shadow-float-lg)] backdrop-blur-2xl">
+        <h1 className="font-display text-3xl font-bold">
+          Welcome <span className="gradient-text">back</span>
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">Sign in to continue to Marketly.</p>
+        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="bg-white/70" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="bg-white/70" />
+          </div>
+          <Button type="submit" className="btn-gradient w-full" disabled={loading}>
+            {loading ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          New here? <Link to="/signup" className="text-primary hover:underline">Create account</Link>
+        </p>
+      </div>
     </div>
   );
 }
+
