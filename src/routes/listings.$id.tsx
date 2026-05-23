@@ -97,7 +97,7 @@ function ListingDetail() {
 
           <div className="mt-8 rounded-xl border bg-card p-4">
             <div className="text-sm text-muted-foreground">Seller</div>
-            <div className="mt-1 font-medium">{listing.profiles?.display_name ?? "Seller"}</div>
+            <div className="mt-1 font-medium">{listing.profile?.display_name ?? "Seller"}</div>
             <Button className="mt-3 w-full" disabled>Message seller (coming soon)</Button>
           </div>
         </div>
