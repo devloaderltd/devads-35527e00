@@ -80,7 +80,7 @@ function Home() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden border-b bg-gradient-to-br from-accent via-background to-background">
-        <div className="container mx-auto px-4 py-12 md:py-20">
+        <div className="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-[1.1fr_1fr] md:items-center md:py-20">
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
               <Sparkles className="h-3 w-3" /> Free to post, free to browse
@@ -100,6 +100,15 @@ function Home() {
               </Button>
             </div>
           </div>
+          <div className="relative">
+            <img
+              src={heroImg}
+              alt="Illustration of a vibrant local marketplace with sellers and shoppers"
+              width={1536}
+              height={1024}
+              className="w-full rounded-2xl border bg-card object-cover shadow-sm"
+            />
+          </div>
         </div>
       </section>
 
@@ -112,10 +121,19 @@ function Home() {
               key={c.id}
               to="/search"
               search={{ category: c.slug } as any}
-              className="group rounded-xl border bg-card p-4 transition hover:border-primary hover:shadow-sm"
+              className="group overflow-hidden rounded-xl border bg-card transition hover:border-primary hover:shadow-sm"
             >
-              <div className="text-2xl">{c.icon ?? "🏷️"}</div>
-              <div className="mt-2 font-medium group-hover:text-primary">{c.name}</div>
+              <div className="aspect-square overflow-hidden bg-muted">
+                <img
+                  src={CATEGORY_IMAGES[c.slug] ?? emptyListingImg}
+                  alt={c.name}
+                  loading="lazy"
+                  width={512}
+                  height={512}
+                  className="h-full w-full object-cover transition group-hover:scale-105"
+                />
+              </div>
+              <div className="p-3 font-medium group-hover:text-primary">{c.name}</div>
             </Link>
           ))}
         </div>
