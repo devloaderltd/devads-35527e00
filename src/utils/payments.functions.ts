@@ -76,14 +76,14 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       return_url: data.returnUrl,
       customer: customerId,
       payment_intent_data: { description: productDescription },
-      managed_payments: { enabled: true } as any,
       metadata: {
         userId: data.userId ?? "",
         listing_id: data.listingId,
         promotion_type: data.promotionType,
         managed_payments: "true",
       },
-    });
+      managed_payments: { enabled: true },
+    } as any);
 
     return session.client_secret;
   });
