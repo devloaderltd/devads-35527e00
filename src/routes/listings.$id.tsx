@@ -1,14 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Calendar, Tag, ChevronLeft, MessageSquare } from "lucide-react";
+import {
+  MapPin, Calendar, Tag, ChevronLeft, ChevronRight, MessageSquare,
+  Share2, Eye, Package,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { ReportDialog } from "@/components/ReportDialog";
 import { PromoteDialog } from "@/components/PromoteDialog";
+import { FavoriteButton } from "@/components/FavoriteButton";
+import { ListingCard } from "@/components/ListingCard";
 import { toast } from "sonner";
-import { useState } from "react";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 export const Route = createFileRoute("/listings/$id")({
@@ -20,7 +25,8 @@ function ListingDetail() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [contacting, setContacting] = useState(false);
-
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
 
   const { data: listing, isLoading, error } = useQuery({
     queryKey: ["listing", id],
@@ -39,10 +45,36 @@ function ListingDetail() {
       if (!data) return null;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select("id, display_name, avatar_url, created_at")
         .eq("id", data.user_id)
         .maybeSingle();
       return { ...data, profile };
+    },
+  });
+
+  // Fire-and-forget view increment
+  useEffect(() => {
+    if (!listing?.id) return;
+    supabase.rpc("increment_listing_view", { _listing_id: listing.id });
+  }, [listing?.id]);
+
+  // Other listings by the same seller
+  const { data: more } = useQuery({
+    queryKey: ["more-from-seller", listing?.user_id, listing?.id],
+    enabled: !!listing?.user_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("listings")
+        .select(`id, title, price, currency, bumped_at,
+          cities(name, region, country),
+          listing_images(url, sort_order),
+          listing_promotions(type, ends_at)`)
+        .eq("user_id", listing!.user_id)
+        .eq("status", "active")
+        .neq("id", listing!.id)
+        .order("bumped_at", { ascending: false })
+        .limit(4);
+      return data ?? [];
     },
   });
 
@@ -73,10 +105,35 @@ function ListingDetail() {
     navigate({ to: "/messages/$threadId", params: { threadId: threadId! } });
   };
 
+  const share = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const data = { title: listing.title, text: listing.title, url };
+    try {
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share(data);
+        return;
+      }
+    } catch { /* user cancelled */ }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard");
+    } catch {
+      toast.error("Couldn't share this listing");
+    }
+  };
+
   const images = (listing.listing_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
+  const hero = images[activeIdx]?.url ?? listingPlaceholder;
   const priceFmt = listing.price != null
     ? new Intl.NumberFormat("en-US", { style: "currency", currency: listing.currency || "USD", maximumFractionDigits: 0 }).format(Number(listing.price))
     : "Contact for price";
+
+  const prev = () => setActiveIdx((i) => (i - 1 + Math.max(images.length, 1)) % Math.max(images.length, 1));
+  const next = () => setActiveIdx((i) => (i + 1) % Math.max(images.length, 1));
+
+  const seller = listing.profile;
+  const sellerInitials = (seller?.display_name || "?")
+    .split(/\s+/).map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -86,17 +143,52 @@ function ListingDetail() {
 
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
         <div>
-          <div className="iridescent-border overflow-hidden rounded-2xl border bg-muted shadow-[var(--shadow-float-lg)]">
-            <img
-              src={images[0]?.url ?? listingPlaceholder}
-              alt={listing.title}
-              className="aspect-square w-full object-cover"
-            />
+          <div className="iridescent-border relative overflow-hidden rounded-2xl border bg-muted shadow-[var(--shadow-float-lg)]">
+            <button
+              type="button"
+              onClick={() => setLightbox(true)}
+              className="block w-full"
+              aria-label="Open image"
+            >
+              <img
+                src={hero}
+                alt={listing.title}
+                className="aspect-square w-full object-cover"
+              />
+            </button>
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={prev}
+                  aria-label="Previous image"
+                  className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 backdrop-blur shadow hover:bg-white"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={next}
+                  aria-label="Next image"
+                  className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 backdrop-blur shadow hover:bg-white"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-2.5 py-0.5 text-xs font-medium text-white">
+                  {activeIdx + 1} / {images.length}
+                </div>
+              </>
+            )}
           </div>
           {images.length > 1 && (
             <div className="mt-2 grid grid-cols-5 gap-2">
-              {images.slice(1).map((img: any) => (
-                <img key={img.url} src={img.url} alt="" className="aspect-square rounded-lg object-cover ring-1 ring-white/40" />
+              {images.map((img: any, i: number) => (
+                <button
+                  key={img.url}
+                  onClick={() => setActiveIdx(i)}
+                  className={`overflow-hidden rounded-lg ring-1 transition ${i === activeIdx ? "ring-2 ring-primary" : "ring-white/40 hover:ring-white"}`}
+                  aria-label={`Show image ${i + 1}`}
+                >
+                  <img src={img.url} alt="" className="aspect-square w-full object-cover" />
+                </button>
               ))}
             </div>
           )}
@@ -120,6 +212,9 @@ function ListingDetail() {
             <span className="chip-glass">
               <Calendar className="h-3.5 w-3.5" /> {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
             </span>
+            <span className="chip-glass">
+              <Eye className="h-3.5 w-3.5" /> {listing.view_count ?? 0} views
+            </span>
           </div>
 
           {listing.condition && listing.condition !== "not_applicable" && (
@@ -128,16 +223,69 @@ function ListingDetail() {
             </span>
           )}
 
+          <div className="mt-4 flex flex-wrap gap-2">
+            <FavoriteButton listingId={listing.id} variant="inline" showLabel />
+            <button
+              type="button"
+              onClick={share}
+              className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-3 py-2 text-sm font-medium backdrop-blur hover:bg-white"
+            >
+              <Share2 className="h-4 w-4" /> Share
+            </button>
+          </div>
+
           <div className="mt-6 whitespace-pre-wrap text-[0.95rem] leading-relaxed">
             {listing.description}
           </div>
 
-          <div className="iridescent-border mt-8 rounded-2xl border border-white/40 bg-white/60 p-4 shadow-[var(--shadow-float)] backdrop-blur-xl">
-            <div className="text-sm text-muted-foreground">Seller</div>
-            <div className="mt-1 font-medium">{listing.profile?.display_name ?? "Seller"}</div>
-            <Button className="btn-gradient mt-3 w-full gap-2" onClick={startThread} disabled={contacting || listing.user_id === user?.id}>
-              <MessageSquare className="h-4 w-4" /> Message seller
-            </Button>
+          {/* Seller card */}
+          <div className="iridescent-border mt-8 rounded-2xl border border-white/40 bg-white/65 p-4 shadow-[var(--shadow-float)] backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              {seller?.avatar_url ? (
+                <img src={seller.avatar_url} alt="" className="h-12 w-12 rounded-xl object-cover ring-1 ring-white/60" />
+              ) : (
+                <div
+                  className="grid h-12 w-12 place-items-center rounded-xl text-lg font-bold text-white"
+                  style={{ background: "var(--gradient-primary)" }}
+                >
+                  {sellerInitials}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <Link
+                  to="/sellers/$id"
+                  params={{ id: listing.user_id }}
+                  className="block truncate font-medium hover:text-primary"
+                >
+                  {seller?.display_name ?? "Seller"}
+                </Link>
+                <div className="text-xs text-muted-foreground">
+                  {seller?.created_at
+                    ? `Member ${formatDistanceToNow(new Date(seller.created_at), { addSuffix: true })}`
+                    : "Marketly seller"}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                className="rounded-full bg-white/70"
+                asChild
+              >
+                <Link to="/sellers/$id" params={{ id: listing.user_id }}>
+                  <Package className="mr-2 h-4 w-4" /> View profile
+                </Link>
+              </Button>
+              <Button
+                className="btn-gradient gap-2 rounded-full border-0"
+                onClick={startThread}
+                disabled={contacting || listing.user_id === user?.id}
+              >
+                <MessageSquare className="h-4 w-4" /> Message
+              </Button>
+            </div>
+
             {user?.id === listing.user_id && (
               <div className="mt-2">
                 <PromoteDialog listingId={listing.id} />
@@ -150,6 +298,30 @@ function ListingDetail() {
         </div>
       </div>
 
+      {more && more.length > 0 && (
+        <section className="mt-12">
+          <h2 className="font-display text-xl font-bold">
+            More from <span className="gradient-text">this seller</span>
+          </h2>
+          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {more.map((l: any) => <ListingCard key={l.id} listing={l} />)}
+          </div>
+        </section>
+      )}
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/85 p-4"
+          onClick={() => setLightbox(false)}
+        >
+          <img
+            src={hero}
+            alt={listing.title}
+            className="max-h-[90vh] max-w-[95vw] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

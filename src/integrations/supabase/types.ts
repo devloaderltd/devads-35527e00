@@ -367,6 +367,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           city_id: string | null
           country: Database["public"]["Enums"]["country_code"] | null
           created_at: string
@@ -378,6 +379,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           city_id?: string | null
           country?: Database["public"]["Enums"]["country_code"] | null
           created_at?: string
@@ -389,6 +391,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           city_id?: string | null
           country?: Database["public"]["Enums"]["country_code"] | null
           created_at?: string
@@ -470,6 +473,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_listing_view: {
+        Args: { _listing_id: string }
+        Returns: undefined
       }
     }
     Enums: {

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { MapPin, Sparkles, Flame } from "lucide-react";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 type Listing = {
@@ -57,6 +58,7 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
             <Flame className="h-3 w-3" /> Bumped
           </span>
         )}
+        <FavoriteButton listingId={listing.id} />
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
         <div className="line-clamp-2 text-sm font-medium text-foreground">{listing.title}</div>

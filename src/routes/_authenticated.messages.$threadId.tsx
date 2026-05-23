@@ -30,7 +30,10 @@ function ThreadView() {
       if (!data) return null;
       const { data: listing } = await supabase
         .from("listings").select("id, title").eq("id", data.listing_id).maybeSingle();
-      return { ...data, listing };
+      const otherId = data.buyer_id === user?.id ? data.seller_id : data.buyer_id;
+      const { data: other } = await supabase
+        .from("profiles").select("id, display_name, avatar_url").eq("id", otherId).maybeSingle();
+      return { ...data, listing, other };
     },
   });
 
@@ -92,17 +95,36 @@ function ThreadView() {
 
   return (
     <div className="flex h-[70vh] flex-col">
-      <div className="flex items-center justify-between border-b border-white/40 p-3">
-        <div className="text-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-white/40 p-3">
+        <div className="min-w-0 text-sm">
           <div className="text-xs text-muted-foreground">Listing</div>
           {thread?.listing ? (
-            <Link to="/listings/$id" params={{ id: thread.listing.id }} className="font-medium hover:text-primary">
+            <Link to="/listings/$id" params={{ id: thread.listing.id }} className="block truncate font-medium hover:text-primary">
               {thread.listing.title}
             </Link>
           ) : (
             <span className="text-muted-foreground">—</span>
           )}
         </div>
+        {thread?.other && (
+          <Link
+            to="/sellers/$id"
+            params={{ id: thread.other.id }}
+            className="flex shrink-0 items-center gap-2 rounded-full bg-white/60 px-2 py-1 text-sm backdrop-blur hover:bg-white"
+          >
+            {thread.other.avatar_url ? (
+              <img src={thread.other.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+            ) : (
+              <div
+                className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold text-white"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                {(thread.other.display_name || "?").slice(0, 1).toUpperCase()}
+              </div>
+            )}
+            <span className="max-w-[10rem] truncate">{thread.other.display_name}</span>
+          </Link>
+        )}
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-3">
         {messages?.map((m) => {

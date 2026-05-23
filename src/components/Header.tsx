@@ -68,6 +68,9 @@ export function Header() {
                 <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" /> Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/my-listings"><Package className="mr-2 h-4 w-4" /> My listings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
