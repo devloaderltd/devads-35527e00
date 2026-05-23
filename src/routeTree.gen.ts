@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as AuthenticatedPostRouteImport } from './routes/_authenticated.post'
 import { Route as AuthenticatedMyListingsRouteImport } from './routes/_authenticated.my-listings'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated.messages'
@@ -22,6 +23,7 @@ import { Route as AuthenticatedFavoritesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated.messages.index'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -50,6 +52,11 @@ const IndexRoute = IndexRouteImport.update({
 const ListingsIdRoute = ListingsIdRouteImport.update({
   id: '/listings/$id',
   path: '/listings/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedPostRoute = AuthenticatedPostRouteImport.update({
@@ -89,6 +96,12 @@ const AuthenticatedMessagesThreadIdRoute =
     path: '/$threadId',
     getParentRoute: () => AuthenticatedMessagesRoute,
   } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -100,9 +113,11 @@ export interface FileRoutesByFullPath {
   '/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/my-listings': typeof AuthenticatedMyListingsRoute
   '/post': typeof AuthenticatedPostRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -113,9 +128,11 @@ export interface FileRoutesByTo {
   '/favorites': typeof AuthenticatedFavoritesRoute
   '/my-listings': typeof AuthenticatedMyListingsRoute
   '/post': typeof AuthenticatedPostRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -129,9 +146,11 @@ export interface FileRoutesById {
   '/_authenticated/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/_authenticated/my-listings': typeof AuthenticatedMyListingsRoute
   '/_authenticated/post': typeof AuthenticatedPostRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -145,9 +164,11 @@ export interface FileRouteTypes {
     | '/messages'
     | '/my-listings'
     | '/post'
+    | '/checkout/return'
     | '/listings/$id'
     | '/messages/$threadId'
     | '/messages/'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -158,9 +179,11 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/my-listings'
     | '/post'
+    | '/checkout/return'
     | '/listings/$id'
     | '/messages/$threadId'
     | '/messages'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
@@ -173,9 +196,11 @@ export interface FileRouteTypes {
     | '/_authenticated/messages'
     | '/_authenticated/my-listings'
     | '/_authenticated/post'
+    | '/checkout/return'
     | '/listings/$id'
     | '/_authenticated/messages/$threadId'
     | '/_authenticated/messages/'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,7 +209,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
+  CheckoutReturnRoute: typeof CheckoutReturnRoute
   ListingsIdRoute: typeof ListingsIdRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -229,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/listings/$id'
       fullPath: '/listings/$id'
       preLoaderRoute: typeof ListingsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/post': {
@@ -280,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMessagesThreadIdRouteImport
       parentRoute: typeof AuthenticatedMessagesRoute
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -324,7 +365,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
+  CheckoutReturnRoute: CheckoutReturnRoute,
   ListingsIdRoute: ListingsIdRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
