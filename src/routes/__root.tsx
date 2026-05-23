@@ -125,9 +125,9 @@ function RootComponent() {
         <main className="flex-1">
           <Outlet />
         </main>
-        <footer className="border-t bg-muted/30 py-8 text-center text-sm text-muted-foreground">
+        <footer className="mt-16 border-t border-white/40 bg-white/30 backdrop-blur-md py-8 text-center text-sm text-muted-foreground">
           <div className="container mx-auto px-4">
-            © {new Date().getFullYear()} Marketly. Buy and sell across the US, UK & Canada.
+            © {new Date().getFullYear()} Marketly — Buy and sell across the US, UK & Canada.
           </div>
         </footer>
       </div>
