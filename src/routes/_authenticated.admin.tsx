@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  head: () => ({ meta: [{ title: "Moderation — Marketly" }, { name: "robots", content: "noindex" }] }),
   component: AdminPage,
 });
 

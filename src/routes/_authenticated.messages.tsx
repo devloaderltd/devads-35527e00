@@ -7,6 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import { MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/messages")({
+  head: () => ({ meta: [{ title: "Messages — Marketly" }, { name: "description", content: "Your conversations with buyers and sellers on Marketly." }] }),
   component: MessagesLayout,
 });
 
