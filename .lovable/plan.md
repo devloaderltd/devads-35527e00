@@ -1,59 +1,60 @@
-# Seed Marketly with realistic users, listings & images
+## Redesign Marketly — Vapor Glass
 
-## What you'll get
+Locked direction: light iridescent backdrop, glassmorphic cards, soft 3D shadows, animated gradient CTAs. Mobile-first. Per-route SEO.
 
-- **6 demo users** with real auth accounts (sign-in works), display names, avatars, and home cities
-- **12 listings** spread across categories (Vehicles, Housing, Electronics, Furniture, Pets, For Sale) in US / UK / CA cities
-- **1 AI-generated photo per listing** (12 images), uploaded to the existing `listing-images` storage bucket
-- 2 of the 12 listings flagged as **Featured** so the "Featured listings" row on the home page lights up
+### 1. Design tokens (`src/styles.css`)
 
-## Sample listings (titles, prices)
+Replace the theme with the Vapor Chrome palette:
 
-| Category | Title | City | Price |
-|---|---|---|---|
-| Vehicles | 2019 Trek Marlin 7 mountain bike — like new | Brooklyn, NY | $480 |
-| Vehicles | 2017 Honda Civic LX, 62k miles, clean title | Austin, TX | $13,900 |
-| Housing | Sunny 1BR apartment, Northern Quarter | Manchester, UK | £950/mo |
-| Housing | Cozy studio near McGill, all-inclusive | Montréal, CA | C$1,250/mo |
-| Electronics | MacBook Air M2, 16GB / 512GB, AppleCare till 2026 | San Francisco, CA | $1,100 |
-| Electronics | Sony WH-1000XM5 headphones, sealed box | London, UK | £260 |
-| Furniture | Mid-century walnut sideboard | Toronto, CA | C$420 |
-| Furniture | West Elm Andes 3-seat sofa, charcoal | Chicago, IL | $700 |
-| Pets | Adopt: 2yo tabby cat, fully vetted | Bristol, UK | Free |
-| Pets | Rehoming aquarium setup, 40 gal complete | Seattle, WA | $180 |
-| For Sale | Vintage Polaroid SX-70 + film | Vancouver, CA | C$220 |
-| For Sale | Peloton Bike+ with shoes (size 10) | Boston, MA | $1,650 |
+- `--background` ≈ #f8fafc with sitewide radial gradient (lavender top-right, cyan bottom-left)
+- `--foreground` deep indigo (#1e1b4b)
+- `--primary` indigo #818cf8, `--accent` cyan #67e8f9, `--secondary` lavender #c4b5fd, `--ice` #a5f3fc
+- Add semantic tokens: `--gradient-primary` (indigo→cyan), `--gradient-hero`, `--glass-bg` (white/40), `--glass-border` (white/60), `--shadow-soft`, `--shadow-float` (multi-layered)
+- Add `--font-display: 'Space Grotesk'`, `--font-body: 'DM Sans'`
+- Add keyframes: `gradient-shift` (animated CTA), `float`, `shimmer`; utility classes `.btn-gradient`, `.glass-card`, `.iridescent-border`
+- Load Google Fonts in `__root.tsx` head
 
-Two are marked Featured: the Trek bike and the MacBook Air.
+Dark mode tokens kept consistent.
 
-## How it'll be built
+### 2. Shared chrome
 
-```text
-1. Create 6 auth users via admin API (server script)
-   └─ handle_new_user trigger auto-creates profiles + 'user' role
-2. Update each profile with display_name, avatar_url, city_id
-3. Pick a random matching city per listing
-4. Insert 12 listings (one-off SQL insert, owner = one of the 6 users)
-5. For each listing:
-   ├─ Generate a realistic product/place photo (1024×1024)
-   ├─ Upload to listing-images bucket at <user_id>/<listing_id>/0.jpg
-   └─ Insert listing_images row pointing at the public URL
-6. Insert 2 listing_promotions rows (type=featured, ends_at=+7d) for the
-   two Featured items
-```
+- `src/components/SiteHeader.tsx` — new sticky floating glass nav (logo gradient tile, search pill, post button, sign-in). Mobile: collapse search into icon, show drawer for menu.
+- `src/components/SiteFooter.tsx` — minimal glass footer with links + brand.
+- `src/components/ListingCard.tsx` — redesign as rounded-[1.5rem] glass card with image, price chip, location, hover-float shadow.
+- `src/components/CategoryTile.tsx` — small/medium bento tile variants (icon + label, optional gradient bg).
 
-### Technical details
+### 3. Homepage (`src/routes/index.tsx`)
 
-- **Users**: created via `supabaseAdmin.auth.admin.createUser({ email, password, email_confirm: true })` from a one-off Node script run via `bun`. Emails like `mia.chen@demo.marketly.app`, password `Demo123!` so they're visible in the demo. Existing `handle_new_user` trigger handles profile + role.
-- **Avatars**: 6 generated portrait illustrations saved to `src/assets/` (not uploaded to storage — referenced by the seed script as data URLs uploaded to `listing-images` bucket under an `avatars/` prefix, since that bucket is public).
-- **Listing images**: generated via the agent's `imagegen--generate_image` tool to `/tmp/seed/*.jpg`, then uploaded to the `listing-images` public bucket through the admin client. Each gets a sensible prompt (e.g. "Photo of a red Trek Marlin 7 mountain bike leaning on a brick wall, natural light").
-- **Cities**: queried at seed time from the existing `cities` table by name+country so we don't hardcode UUIDs.
-- **Idempotency**: the seed script checks for an existing user by email before creating, and short-circuits if all 6 demo users already exist, so running it twice won't duplicate data.
+Replace current hero + grid with:
+- Hero band: gradient-glass card, eyebrow chip, large headline (gradient span on accent phrase), subhead, two CTAs (solid indigo + glass outline).
+- Bento grid (md:grid-cols-4, 2 rows on desktop, single column mobile): large featured listing tile (image + price chip), medium gradient category tile (Electronics), small glass category tiles (Furniture, Pets) — pulled from existing categories + featured listings.
+- Below: "Latest listings" section using `ListingCard` grid (existing data query kept).
+- Categories strip + city filter retained, restyled as glass chips.
 
-## What I won't touch
+### 4. Other routes — apply theme
 
-- No schema changes — uses existing tables, RLS, triggers, and the existing `listing-images` bucket
-- No changes to the home page, listing card, or detail page (those were just updated)
-- No real customer data — every email ends in `@demo.marketly.app`
+Restyle (tokens only, no logic changes):
+- `src/routes/listings.tsx` (browse), `src/routes/listings.$id.tsx`, `src/routes/listings.new.tsx`
+- `src/routes/auth.*`, `src/routes/account.*`, `src/routes/checkout.return.tsx`
+- `src/components/PaymentTestModeBanner.tsx`, `PromoteDialog.tsx`
 
-Approve and I'll generate the images and run the seed.
+All pages use `SiteHeader` + sitewide radial-gradient body background.
+
+### 5. SEO
+
+- `__root.tsx`: viewport, charset, og:site_name, default Organization JSON-LD, no canonical here.
+- Per-route `head()`: unique title (<60ch), description (<160ch), og:title/description/url, canonical (leaf only). Use `https://devads.lovable.app` base.
+- Single H1 per page, semantic `<header>/<main>/<section>/<footer>`, alt text on listing images, lazy loading already in place.
+- Add `BreadcrumbList` JSON-LD on listing detail; `Product` JSON-LD on `listings.$id` from loader data.
+- Verify `public/robots.txt` allows crawling; `sitemap.xml` lists `/`, `/listings`, `/auth`.
+
+### 6. Responsive QA
+
+Mobile viewport (393px) is the design target. Tap targets ≥44px, no horizontal scroll, bento collapses to single column, header search collapses to icon.
+
+### Technical notes
+
+- No DB / server-fn / auth changes. Pure presentation.
+- Keep existing TanStack Query loaders and routing intact.
+- Tokens live in `src/styles.css` only — components reference `bg-primary`, `bg-accent`, `text-foreground`, custom utility classes. No raw hex in TSX.
+- Animation via Tailwind keyframes + CSS, no new libs.
