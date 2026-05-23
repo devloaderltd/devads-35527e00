@@ -10,6 +10,7 @@ import {
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
@@ -95,6 +96,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthInvalidator />
       <div className="flex min-h-screen flex-col">
+        <PaymentTestModeBanner />
         <Header />
         <main className="flex-1">
           <Outlet />
