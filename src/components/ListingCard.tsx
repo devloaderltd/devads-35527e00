@@ -23,24 +23,26 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
     <Link
       to="/listings/$id"
       params={{ id: listing.id }}
-      className="group flex flex-col overflow-hidden rounded-xl border bg-card transition hover:border-primary hover:shadow-md"
+      className="group hover-float flex flex-col overflow-hidden rounded-2xl glass"
     >
-      <div className="relative aspect-square overflow-hidden bg-muted">
+      <div className="relative aspect-square overflow-hidden">
         <img
           src={img ?? listingPlaceholder}
           alt={listing.title}
           loading="lazy"
-          className="h-full w-full object-cover transition group-hover:scale-105"
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
         />
+        <span className="absolute right-2 top-2 rounded-full bg-white/85 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-md shadow-sm">
+          {priceFmt}
+        </span>
         {featured && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-promo px-2 py-0.5 text-xs font-semibold text-promo-foreground">
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full btn-gradient px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
             <Sparkles className="h-3 w-3" /> Featured
           </span>
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
-        <div className="text-base font-semibold text-primary">{priceFmt}</div>
-        <div className="line-clamp-2 text-sm">{listing.title}</div>
+        <div className="line-clamp-2 text-sm font-medium text-foreground">{listing.title}</div>
         {listing.cities && (
           <div className="mt-auto flex items-center gap-1 pt-1 text-xs text-muted-foreground">
             <MapPin className="h-3 w-3" />

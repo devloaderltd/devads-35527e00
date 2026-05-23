@@ -32,25 +32,25 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur">
-      <div className="container mx-auto flex h-16 items-center gap-3 px-4">
-        <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">M</span>
+    <header className="sticky top-3 z-40 mx-3 mt-3 md:mx-6">
+      <div className="mx-auto flex max-w-6xl items-center gap-3 rounded-2xl glass-strong px-3 py-2.5">
+        <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
+          <span className="grid h-9 w-9 place-items-center rounded-xl btn-gradient text-white shadow-inner">M</span>
           <span className="hidden sm:inline">Marketly</span>
         </Link>
 
-        <form onSubmit={onSearch} className="relative ml-2 hidden flex-1 max-w-xl md:block">
+        <form onSubmit={onSearch} className="relative ml-2 hidden flex-1 max-w-md md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search listings, brands, categories…"
-            className="pl-9"
+            placeholder="Search listings…"
+            className="rounded-full border-white/60 bg-white/60 pl-9 focus-visible:bg-white"
           />
         </form>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button asChild size="sm" className="gap-1">
+          <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0">
             <Link to="/post">
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Post</span>
@@ -60,11 +60,11 @@ export function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-full">
+                <Button variant="outline" size="icon" className="rounded-full bg-white/60 backdrop-blur">
                   <UserIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 rounded-xl">
                 <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
@@ -86,21 +86,25 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="rounded-full bg-white/60 backdrop-blur">
               <Link to="/login">Sign in</Link>
             </Button>
           )}
         </div>
       </div>
 
-      <form onSubmit={onSearch} className="relative border-t bg-background px-4 py-2 md:hidden">
-        <Search className="absolute left-7 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search listings…"
-          className="pl-9"
-        />
+      <form onSubmit={onSearch} className="relative mx-auto mt-2 max-w-6xl md:hidden">
+        <div className="rounded-2xl glass px-3 py-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search listings…"
+              className="rounded-full border-white/60 bg-white/70 pl-9"
+            />
+          </div>
+        </div>
       </form>
     </header>
   );
