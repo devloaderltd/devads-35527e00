@@ -78,7 +78,10 @@ function Home() {
   const featured = listings?.filter((l: any) =>
     l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date())
   ) ?? [];
-  const recent = listings?.filter((l: any) => !featured.includes(l)) ?? [];
+  const bumped = (listings ?? []).filter((l: any) =>
+    !featured.includes(l) && l.bumped_at && (Date.now() - new Date(l.bumped_at).getTime()) < 24 * 60 * 60 * 1000
+  ).slice(0, 12);
+  const recent = listings?.filter((l: any) => !featured.includes(l) && !bumped.includes(l)) ?? [];
 
   const heroFeatured = featured[0] ?? listings?.[0];
   const heroImg = heroFeatured?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ?? emptyListingImg;
