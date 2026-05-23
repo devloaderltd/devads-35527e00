@@ -19,30 +19,6 @@ function ListingDetail() {
   const navigate = useNavigate();
   const [contacting, setContacting] = useState(false);
 
-  const startThread = async () => {
-    if (!user) { navigate({ to: "/login" }); return; }
-    if (!listing) return;
-    if (listing.user_id === user.id) { toast.error("You can't message yourself."); return; }
-    setContacting(true);
-    const { data: existing } = await supabase
-      .from("message_threads")
-      .select("id")
-      .eq("listing_id", listing.id)
-      .eq("buyer_id", user.id)
-      .eq("seller_id", listing.user_id)
-      .maybeSingle();
-    let threadId = existing?.id;
-    if (!threadId) {
-      const { data: created, error } = await supabase
-        .from("message_threads")
-        .insert({ listing_id: listing.id, buyer_id: user.id, seller_id: listing.user_id })
-        .select("id").single();
-      if (error) { setContacting(false); toast.error(error.message); return; }
-      threadId = created.id;
-    }
-    setContacting(false);
-    navigate({ to: "/messages/$threadId", params: { threadId: threadId! } });
-  };
 
   const { data: listing, isLoading, error } = useQuery({
     queryKey: ["listing", id],
