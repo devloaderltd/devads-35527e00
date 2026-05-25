@@ -368,8 +368,11 @@ function ListingDetail() {
                     ? `Member ${formatDistanceToNow(new Date(seller.created_at), { addSuffix: true })}`
                     : "CallEscort24 seller"}
                 </div>
-                <div className="mt-1">
+                <div className="mt-1 flex flex-wrap items-center gap-2">
                   <SellerRatingBadge sellerId={listing.user_id} />
+                  <a href={`/sellers/${listing.user_id}#reviews`} className="text-xs font-medium text-primary hover:underline">
+                    See all reviews →
+                  </a>
                 </div>
               </div>
 
