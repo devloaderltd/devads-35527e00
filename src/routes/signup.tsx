@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
@@ -42,7 +43,10 @@ function SignupPage() {
           Join <span className="gradient-text">CallEscort24</span>
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">Free forever. Post in seconds.</p>
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <div className="mt-6">
+          <SocialAuthButtons />
+        </div>
+        <form onSubmit={onSubmit} className="mt-2 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Display name</Label>
             <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} className="bg-white/70" />
