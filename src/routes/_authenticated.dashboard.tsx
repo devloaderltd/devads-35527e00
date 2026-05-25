@@ -15,11 +15,33 @@ import {
 } from "recharts";
 import { format, subDays, startOfDay, formatDistanceToNow } from "date-fns";
 import { getMyListingAnalytics } from "@/lib/extras.functions";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { DashboardWorkspaceSidebar } from "@/components/DashboardWorkspaceSidebar";
+import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { ExpiringSoonCard } from "@/components/ExpiringSoonCard";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — CallEscort24" }, { name: "robots", content: "noindex" }] }),
-  component: DashboardPage,
+  component: DashboardShell,
 });
+
+function DashboardShell() {
+  return (
+    <SidebarProvider defaultOpen={false}>
+      <div className="flex w-full">
+        <DashboardWorkspaceSidebar />
+        <SidebarInset className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 border-b border-border/40 bg-white/40 px-3 py-2 backdrop-blur dark:bg-white/5 sm:px-4">
+            <SidebarTrigger />
+            <span className="text-xs font-medium text-muted-foreground">Workspace</span>
+          </div>
+          <DashboardPage />
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  );
+}
+
 
 const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8", "#5aa9ff", "#9a8cff"];
 
@@ -144,7 +166,12 @@ function DashboardPage() {
           </TabsList>
         </div>
 
-        <TabsContent value="analytics" className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <TabsContent value="analytics" className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <OnboardingChecklist userId={user?.id} />
+            <ExpiringSoonCard userId={user?.id} />
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <ChartCard title="Listings created (last 30 days)">
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={charts?.days ?? []}>
@@ -192,6 +219,7 @@ function DashboardPage() {
               </PieChart>
             </ResponsiveContainer>
           </ChartCard>
+          </div>
         </TabsContent>
 
         <TabsContent value="performance" className="mt-4 space-y-6">
