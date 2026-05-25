@@ -278,7 +278,7 @@ function ListingDetail() {
               )}
               {listing.item_age && (
                 <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
-                  <dt className="text-muted-foreground">Item age</dt>
+                  <dt className="text-muted-foreground">Age</dt>
                   <dd className="truncate text-right font-medium">{listing.item_age}</dd>
                 </div>
               )}
