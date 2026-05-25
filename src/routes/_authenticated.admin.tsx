@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,6 +17,7 @@ import {
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
 import { SeedDemoButton } from "@/components/admin/SeedDemoButton";
+import { getMyRoles } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Marketly" }, { name: "robots", content: "noindex" }] }),
@@ -26,22 +28,17 @@ const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8"
 
 function AdminPage() {
   const { user, loading: authLoading } = useAuth();
+  const fetchMyRoles = useServerFn(getMyRoles);
   const rolesQ = useQuery({
     queryKey: ["my-roles", user?.id],
-    enabled: !!user,
+    enabled: !authLoading && !!user,
     staleTime: 0,
     refetchOnMount: "always",
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user!.id);
-      if (error) {
-        console.error("[admin] role fetch error", error);
-        throw error;
-      }
-      return (data ?? []).map((r) => r.role as string);
+      const result = await fetchMyRoles();
+      return result.roles;
     },
+    retry: 2,
   });
   const roles = rolesQ.data;
   const isAdmin = roles?.includes("admin");
