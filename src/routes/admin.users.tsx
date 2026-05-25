@@ -69,6 +69,13 @@ function UsersPage() {
   const unban = useMutation({ mutationFn: (userId: string) => unbanFn({ data: { userId } }), onSuccess: () => { toast.success("Unbanned"); refresh(); }, onError: (e: Error) => toast.error(e.message) });
   const del = useMutation({ mutationFn: (userId: string) => delFn({ data: { userId } }), onSuccess: () => { toast.success("Deleted"); refresh(); setActive(null); }, onError: (e: Error) => toast.error(e.message) });
   const reset = useMutation({ mutationFn: (email: string) => resetFn({ data: { email } }), onSuccess: () => toast.success("Reset link generated"), onError: (e: Error) => toast.error(e.message) });
+  const bulk = useMutation({
+    mutationFn: (v: { action: "ban" | "unban" | "delete"; days?: number }) => bulkFn({ data: { ids: [...selected], action: v.action, days: v.days } }),
+    onSuccess: () => { toast.success("Done"); setSelected(new Set()); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const toggle = (id: string) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleAll = () => setSelected(s => s.size === users.length ? new Set() : new Set(users.map(u => u.id)));
 
   const users = (usersQ.data?.users ?? []) as ListUser[];
   const total = usersQ.data?.total ?? 0;
