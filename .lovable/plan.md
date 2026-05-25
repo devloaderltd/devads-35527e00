@@ -1,26 +1,47 @@
-Most of the listings, messages, and profile upgrades from the previous turns are already in place (status filter chips with counts, sort dropdown, per-card actions menu, renew flow, expiring-soon badges, thread thumbnails, unread dots, quick-reply chips, editable profile + avatar upload + stat tiles). The only piece still missing is a clear **Account settings** surface on the profile page, plus one small messages polish.
+Building all three areas of polish. Prioritizing the items with the biggest user impact first.
 
-## What I'll add
+## 1. Messages — server-backed read state + presence
 
-### 1. Account Settings card on `/profile`
-Add a second card below the profile form with three grouped sections:
+**DB migration** — new table `thread_reads (thread_id uuid, user_id uuid, last_read_at timestamptz, primary key (thread_id, user_id))` with RLS limiting rows to `auth.uid() = user_id`. Add `archived_by uuid[]` and `muted_by uuid[]` columns to `message_threads` so each participant can archive/mute independently. Enable realtime on `messages` and `message_threads`.
 
-- **Email & verification** — show `user.email` (read-only), a "Verified" / "Not verified" badge, and a "Resend verification" button when not verified (calls `supabase.auth.resend`).
-- **Security** — "Change password" button that opens a small inline form (current → new → confirm) using `supabase.auth.updateUser({ password })`. Shows success/error via toast.
-- **Danger zone** — "Sign out everywhere" (calls `supabase.auth.signOut({ scope: 'global' })`) and "Delete account" (opens a confirm dialog that requires typing the email, then calls a new `deleteOwnAccount` server function using `supabaseAdmin.auth.admin.deleteUser(userId)` after re-verifying the caller via `requireSupabaseAuth`).
+**Frontend**
+- Replace the `localStorage` last-read map with reads/writes against `thread_reads` (upsert when opening a thread).
+- Thread list shows a numeric unread badge per thread (count of messages newer than my `last_read_at`).
+- Page header unread total recomputed from the same source.
+- Add a per-thread overflow menu (archive / unarchive, mute / unmute) and an "Archived" tab in the thread list.
+- Smarter quick-replies: different chip sets for buyer vs seller, plus an extra "Sorry, it's sold" chip when the listing's status is `sold`.
+- Realtime presence channel per thread to show a "typing…" line under the header and a "seen" tick on my last sent message when the other side's `last_read_at` >= that message's `created_at`.
 
-Visual treatment: same iridescent-border glass card style as the existing profile form, with section dividers and muted labels so the hierarchy is obvious.
+## 2. My Listings — bulk actions, expiry banner, sparkline
 
-### 2. Messages polish
-- Keep the quick-reply chip row visible **above the input on every message** (currently only shown when the thread is empty), so sellers can one-tap common replies mid-conversation. Tapping a chip fills the input (doesn't auto-send) so it can be edited.
-- Add an unread count badge next to the "Messages" page title (sum of threads where `last_message_at > localStorage lastRead`).
+**Frontend only** (uses existing `listings` + `listing_events` tables).
+- Add a "Select" toggle that reveals a checkbox on each card and shows a sticky bottom action bar with "Renew 30 days", "Mark sold", "Delete" for all selected listings.
+- Top banner shows when ≥1 active listing expires in ≤3 days: "N listings expiring soon" + "Renew all" button (batched update).
+- Per-card 14-day views sparkline rendered from `listing_events` where `type = 'view'` grouped by day. Tiny inline SVG, no chart library needed.
+
+## 3. Profile — 2FA, connected accounts, notification preferences
+
+**DB migration** — new table `notification_preferences (user_id uuid pk, email_on_message bool default true, email_on_expiring bool default true, email_on_offer bool default true, updated_at timestamptz)` with RLS scoped to owner. Seed-on-read via upsert.
+
+**Frontend additions to AccountSettingsCard**
+- **Two-factor auth** section: enroll TOTP via `supabase.auth.mfa.enroll({ factorType: 'totp' })`, show the QR (data URL returned by Supabase) + secret, verify with a 6-digit code, and list enrolled factors with an "Unenroll" button.
+- **Connected accounts**: detect Google identity in `user.identities`; show Connected/Not connected with a Link button (calls `lovable.auth.signInWithOAuth('google', …)`) and Unlink (`supabase.auth.unlinkIdentity(...)`).
+- **Notification preferences**: three toggles bound to the new table; saved with a single "Save preferences" button.
 
 ## Files
 
-- `src/lib/account.functions.ts` (new) — `deleteOwnAccount` server fn with `requireSupabaseAuth` + `supabaseAdmin.auth.admin.deleteUser`.
-- `src/components/AccountSettingsCard.tsx` (new) — the settings card described above.
-- `src/routes/_authenticated.profile.tsx` — mount `<AccountSettingsCard />` under the profile form.
-- `src/routes/_authenticated.messages.tsx` — add unread count badge in the heading.
-- `src/routes/_authenticated.messages.$threadId.tsx` — always render the quick-reply row above the input.
+New
+- `supabase/migrations/<ts>_messages_reads_and_prefs.sql` — `thread_reads`, `archived_by/muted_by`, `notification_preferences`, realtime publication.
+- `src/components/TwoFactorSection.tsx`
+- `src/components/ConnectedAccountsSection.tsx`
+- `src/components/NotificationPreferencesSection.tsx`
+- `src/components/ThreadSparkline.tsx`
+- `src/components/BulkActionBar.tsx`
 
-No DB migrations required; admin delete uses the existing service-role client.
+Edited
+- `src/routes/_authenticated.messages.tsx` — read state from DB, archived tab, numeric unread badges, archive/mute menu.
+- `src/routes/_authenticated.messages.$threadId.tsx` — upsert read on open, presence-based typing + seen receipt, context-aware quick replies.
+- `src/routes/_authenticated.my-listings.tsx` — bulk select bar, expiring banner, per-card sparkline.
+- `src/components/AccountSettingsCard.tsx` — mount the three new sections.
+
+No new packages. No edge functions. All work stays in TanStack server functions where server-side is needed; the rest is browser Supabase + realtime.

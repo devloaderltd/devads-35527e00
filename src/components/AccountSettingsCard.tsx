@@ -14,6 +14,9 @@ import {
 import { Mail, ShieldCheck, KeyRound, LogOut, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { deleteOwnAccount } from "@/lib/account.functions";
+import { TwoFactorSection } from "@/components/TwoFactorSection";
+import { ConnectedAccountsSection } from "@/components/ConnectedAccountsSection";
+import { NotificationPreferencesSection } from "@/components/NotificationPreferencesSection";
 
 export function AccountSettingsCard() {
   const { user } = useAuth();
@@ -164,6 +167,10 @@ export function AccountSettingsCard() {
           </Button>
         </div>
       </section>
+
+      <TwoFactorSection />
+      <ConnectedAccountsSection />
+      <NotificationPreferencesSection />
 
       {/* Danger zone */}
       <section className="mt-5 rounded-2xl border border-red-200/70 bg-red-50/60 p-4">

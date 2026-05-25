@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, ChevronLeft } from "lucide-react";
+import { Send, ChevronLeft, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/messages/$threadId")({
@@ -17,7 +17,10 @@ function ThreadView() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [body, setBody] = useState("");
+  const [typing, setTyping] = useState(false);
+  const [otherLastRead, setOtherLastRead] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const typingTimer = useRef<number | null>(null);
 
   const { data: thread } = useQuery({
     queryKey: ["thread", threadId],
@@ -29,11 +32,11 @@ function ThreadView() {
         .maybeSingle();
       if (!data) return null;
       const { data: listing } = await supabase
-        .from("listings").select("id, title").eq("id", data.listing_id).maybeSingle();
+        .from("listings").select("id, title, status").eq("id", data.listing_id).maybeSingle();
       const otherId = data.buyer_id === user?.id ? data.seller_id : data.buyer_id;
       const { data: other } = await supabase
         .from("profiles").select("id, display_name, avatar_url").eq("id", otherId).maybeSingle();
-      return { ...data, listing, other };
+      return { ...data, listing, other, otherId };
     },
   });
 
@@ -49,6 +52,7 @@ function ThreadView() {
     },
   });
 
+  // Realtime new messages
   useEffect(() => {
     const ch = supabase
       .channel(`messages-${threadId}`)
@@ -61,24 +65,70 @@ function ThreadView() {
     return () => { supabase.removeChannel(ch); };
   }, [threadId, qc]);
 
+  // Server-backed read state: upsert when opening / on new messages
+  useEffect(() => {
+    if (!user || !messages?.length) return;
+    supabase.from("thread_reads").upsert(
+      { thread_id: threadId, user_id: user.id, last_read_at: new Date().toISOString() },
+      { onConflict: "thread_id,user_id" }
+    ).then(() => qc.invalidateQueries({ queryKey: ["threads"] }));
+  }, [messages?.length, threadId, user, qc]);
+
+  // Watch other party's read state
+  useEffect(() => {
+    if (!thread?.otherId) return;
+    const fetchOther = async () => {
+      const { data } = await supabase
+        .from("thread_reads")
+        .select("last_read_at")
+        .eq("thread_id", threadId)
+        .eq("user_id", thread.otherId)
+        .maybeSingle();
+      setOtherLastRead(data?.last_read_at ?? null);
+    };
+    fetchOther();
+    const ch = supabase
+      .channel(`reads-${threadId}`)
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "thread_reads",
+        filter: `thread_id=eq.${threadId}`,
+      }, fetchOther)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [threadId, thread?.otherId]);
+
+  // Presence-based typing indicator
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase.channel(`presence-${threadId}`, { config: { presence: { key: user.id } } });
+    ch.on("presence", { event: "sync" }, () => {
+      const state = ch.presenceState() as Record<string, Array<{ typing?: boolean }>>;
+      const others = Object.entries(state).filter(([k]) => k !== user.id);
+      setTyping(others.some(([, v]) => v.some(p => p.typing)));
+    });
+    ch.subscribe(async (status) => {
+      if (status === "SUBSCRIBED") await ch.track({ typing: false });
+    });
+    return () => { supabase.removeChannel(ch); };
+  }, [threadId, user]);
+
+  const broadcastTyping = (isTyping: boolean) => {
+    if (!user) return;
+    supabase.channel(`presence-${threadId}`, { config: { presence: { key: user.id } } }).track({ typing: isTyping });
+  };
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-    // Mark thread as read in localStorage
-    if (typeof window !== "undefined" && messages?.length) {
-      try {
-        const map = JSON.parse(localStorage.getItem("thread_last_read") || "{}");
-        map[threadId] = new Date().toISOString();
-        localStorage.setItem("thread_last_read", JSON.stringify(map));
-      } catch { /* ignore */ }
-    }
-  }, [messages?.length, threadId]);
+  }, [messages?.length]);
 
-  const QUICK_REPLIES = [
-    "Is it still available?",
-    "Can you do a better price?",
-    "When can I pick it up?",
-    "Where are you located?",
-  ];
+  const QUICK_REPLIES = useMemo(() => {
+    if (!thread) return [];
+    const isSeller = thread.seller_id === user?.id;
+    const sold = thread.listing?.status === "sold";
+    if (sold) return ["Sorry, this one is sold.", "I'll let you know if I have another.", "Thanks for the interest!"];
+    if (isSeller) return ["Yes, it's still available.", "Best price I can do.", "When can you pick it up?", "Want to see more photos?"];
+    return ["Is it still available?", "Can you do a better price?", "When can I pick it up?", "Where are you located?"];
+  }, [thread, user?.id]);
 
   const send = useMutation({
     mutationFn: async (text: string) => {
@@ -95,6 +145,7 @@ function ThreadView() {
     },
     onSuccess: () => {
       setBody("");
+      broadcastTyping(false);
       qc.invalidateQueries({ queryKey: ["messages", threadId] });
       qc.invalidateQueries({ queryKey: ["threads"] });
     },
@@ -107,6 +158,16 @@ function ThreadView() {
     if (!text) return;
     send.mutate(text);
   };
+
+  const onBodyChange = (v: string) => {
+    setBody(v);
+    broadcastTyping(true);
+    if (typingTimer.current) window.clearTimeout(typingTimer.current);
+    typingTimer.current = window.setTimeout(() => broadcastTyping(false), 2000);
+  };
+
+  const myLastMsg = [...(messages ?? [])].reverse().find(m => m.sender_id === user?.id);
+  const seen = myLastMsg && otherLastRead && new Date(otherLastRead) >= new Date(myLastMsg.created_at);
 
   return (
     <div className="flex h-[70vh] flex-col">
@@ -148,6 +209,11 @@ function ThreadView() {
           </Link>
         )}
       </div>
+      {typing && (
+        <div className="px-4 py-1 text-xs italic text-muted-foreground">
+          {thread?.other?.display_name ?? "User"} is typing…
+        </div>
+      )}
       <div className="flex-1 space-y-2 overflow-y-auto p-3">
         {messages?.map((m) => {
           const mine = m.sender_id === user?.id;
@@ -162,6 +228,11 @@ function ThreadView() {
             </div>
           );
         })}
+        {seen && (
+          <div className="flex justify-end pr-1 text-[10px] text-muted-foreground">
+            <CheckCheck className="mr-0.5 h-3 w-3 text-primary" /> Seen
+          </div>
+        )}
         <div ref={endRef} />
       </div>
       <div className="border-t border-white/40 p-3">
@@ -178,7 +249,7 @@ function ThreadView() {
           ))}
         </div>
         <form onSubmit={onSubmit} className="flex gap-2">
-          <Input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a message…" className="rounded-full bg-white/70 backdrop-blur" />
+          <Input value={body} onChange={(e) => onBodyChange(e.target.value)} placeholder="Write a message…" className="rounded-full bg-white/70 backdrop-blur" />
           <Button type="submit" disabled={send.isPending || !body.trim()} className="btn-gradient rounded-full border-0">
             <Send className="h-4 w-4" />
           </Button>

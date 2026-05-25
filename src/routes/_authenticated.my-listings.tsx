@@ -7,11 +7,14 @@ import { ListingCard } from "@/components/ListingCard";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { ListingSparkline } from "@/components/ThreadSparkline";
+import { BulkActionBar } from "@/components/BulkActionBar";
 
 export const Route = createFileRoute("/_authenticated/my-listings")({
   head: () => ({ meta: [{ title: "My listings — CallEscort24" }] }),
@@ -39,6 +42,10 @@ function MyListings() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("newest");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggle = (id: string) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const clearSel = () => setSelected(new Set());
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-listings", user?.id],
@@ -113,6 +120,58 @@ function MyListings() {
     qc.invalidateQueries({ queryKey: ["my-listings"] });
   };
 
+  const expiringSoonList = useMemo(() => (data ?? []).filter(r => {
+    if (r.status !== "active") return false;
+    const days = (new Date(r.expires_at).getTime() - Date.now()) / 86400000;
+    return days > 0 && days <= 3;
+  }), [data]);
+
+  const bulkRenew = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    const next = new Date(Date.now() + 30 * 86400000).toISOString();
+    const { error } = await supabase.from("listings")
+      .update({ expires_at: next, status: "active", bumped_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`Renewed ${ids.length} listing${ids.length === 1 ? "" : "s"}`);
+    clearSel();
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
+  const bulkSold = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    const { error } = await supabase.from("listings").update({ status: "sold" }).in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`Marked ${ids.length} as sold`);
+    clearSel();
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} listing${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    const { error } = await supabase.from("listings").delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    clearSel();
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
+  const renewAllExpiring = async () => {
+    const ids = expiringSoonList.map(r => r.id);
+    if (!ids.length) return;
+    const next = new Date(Date.now() + 30 * 86400000).toISOString();
+    const { error } = await supabase.from("listings")
+      .update({ expires_at: next, bumped_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`Renewed ${ids.length} expiring listing${ids.length === 1 ? "" : "s"}`);
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -122,10 +181,32 @@ function MyListings() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">{counts.all} total · {counts.active} active</p>
         </div>
-        <Button asChild className="btn-gradient rounded-full border-0">
-          <Link to="/post"><Plus className="mr-1 h-4 w-4" /> New listing</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className={`rounded-full bg-white/60 ${selectMode ? "border-primary text-primary" : ""}`}
+            onClick={() => { setSelectMode(s => !s); clearSel(); }}
+          >
+            <CheckSquare className="mr-1 h-4 w-4" /> {selectMode ? "Done" : "Select"}
+          </Button>
+          <Button asChild className="btn-gradient rounded-full border-0">
+            <Link to="/post"><Plus className="mr-1 h-4 w-4" /> New listing</Link>
+          </Button>
+        </div>
       </div>
+
+      {expiringSoonList.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 backdrop-blur">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
+          <div className="text-sm text-amber-900">
+            <span className="font-semibold">{expiringSoonList.length}</span>{" "}
+            {expiringSoonList.length === 1 ? "listing is" : "listings are"} expiring in the next 3 days.
+          </div>
+          <Button size="sm" className="ml-auto rounded-full bg-amber-600 text-white hover:bg-amber-700" onClick={renewAllExpiring}>
+            <RefreshCw className="mr-1 h-3.5 w-3.5" /> Renew all
+          </Button>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {(["all", "active", "expired", "draft"] as Filter[]).map((f) => (
@@ -174,6 +255,16 @@ function MyListings() {
               <div key={l.id} className="flex flex-col gap-2">
                 <div className="relative">
                   <ListingCard listing={l} />
+                  {selectMode && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(l.id); }}
+                      className="absolute left-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/85 backdrop-blur shadow"
+                      aria-label="Select listing"
+                    >
+                      <Checkbox checked={selected.has(l.id)} className="pointer-events-none" />
+                    </button>
+                  )}
                   <div className="absolute right-2 top-2 z-10">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -236,6 +327,8 @@ function MyListings() {
                   </span>
                 </div>
 
+                <ListingSparkline listingId={l.id} />
+
                 {l.status === "active" && (
                   <div className="px-1">
                     <PromoteDialog listingId={l.id} />
@@ -246,6 +339,14 @@ function MyListings() {
           })}
         </div>
       )}
+
+      <BulkActionBar
+        count={selected.size}
+        onRenew={bulkRenew}
+        onSold={bulkSold}
+        onDelete={bulkDelete}
+        onClear={clearSel}
+      />
     </div>
   );
 }
