@@ -80,6 +80,23 @@ function Home() {
     },
   });
 
+  const { data: siteStats } = useQuery({
+    queryKey: ["site-stats"],
+    queryFn: async () => {
+      const [listingsRes, sellersRes, citiesRes] = await Promise.all([
+        supabase.from("listings").select("id", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("cities").select("id", { count: "exact", head: true }),
+      ]);
+      return {
+        listings: listingsRes.count ?? 0,
+        sellers: sellersRes.count ?? 0,
+        cities: citiesRes.count ?? 0,
+      };
+    },
+    staleTime: 10 * 60_000,
+  });
+
   const featured = listings?.filter((l: any) =>
     l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date())
   ) ?? [];
