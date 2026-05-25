@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, ShieldCheck, MapPin } from "lucide-react";
+import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, ShieldCheck, MapPin, LayoutDashboard } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCity } from "@/lib/city-context";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,7 @@ export function Header() {
           >
             <MapPin className="h-4 w-4 text-primary" />
           </Button>
+          <ThemeToggle />
           <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0">
             <Link to="/post">
               <Plus className="h-4 w-4" />
@@ -90,6 +92,9 @@ export function Header() {
               <DropdownMenuContent align="end" className="w-56 rounded-xl">
                 <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" /> Profile</Link>
                 </DropdownMenuItem>
