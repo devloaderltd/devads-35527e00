@@ -60,14 +60,13 @@ export function CitySelectorDialog({ dismissable }: { dismissable: boolean }) {
       }}
     >
       <DialogContent
-        className="max-w-lg p-0 gap-0 overflow-hidden"
+        className={`max-w-lg p-0 gap-0 overflow-hidden ${allowDismiss ? "" : "[&>button]:hidden"}`}
         onInteractOutside={(e) => {
           if (!allowDismiss) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
           if (!allowDismiss) e.preventDefault();
         }}
-        showCloseButton={allowDismiss}
       >
         <DialogHeader className="p-6 pb-3">
           <DialogTitle className="flex items-center gap-2 font-display text-xl">
