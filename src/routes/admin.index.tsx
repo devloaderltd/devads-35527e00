@@ -294,12 +294,40 @@ function UsersTab() {
 
   return (
     <Card className={panelCls + " border-0"}>
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base text-slate-100">Users ({users?.length ?? 0})</CardTitle>
-        <Input placeholder="Search name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
+        <Input placeholder="Search name…" value={q} onChange={(e) => setQ(e.target.value)} className="w-full rounded-full border-white/10 bg-white/5 text-slate-100 sm:max-w-xs" />
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile: stacked cards */}
+        <div className="space-y-2 p-3 md:hidden">
+          {filtered.map((u) => (
+            <div key={u.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-medium text-slate-100">{u.display_name}</div>
+                  <div className="mt-0.5 text-xs text-slate-400">Joined {format(new Date(u.created_at), "MMM d, yyyy")}</div>
+                </div>
+                <div className="flex flex-wrap justify-end gap-1">
+                  {u.roles.map(r => <Badge key={r} variant={r === "admin" ? "default" : "secondary"} className="capitalize">{r}</Badge>)}
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="flex-1 rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"
+                  onClick={() => setRole.mutate({ userId: u.id, role: "moderator", add: !u.roles.includes("moderator") })}>
+                  {u.roles.includes("moderator") ? "Demote mod" : "Make mod"}
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1 rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"
+                  onClick={() => setRole.mutate({ userId: u.id, role: "admin", add: !u.roles.includes("admin") })}>
+                  {u.roles.includes("admin") ? "Demote admin" : "Make admin"}
+                </Button>
+              </div>
+            </div>
+          ))}
+          {!filtered.length && <div className="px-2 py-8 text-center text-sm text-slate-400">No users.</div>}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-white/5 text-left text-xs uppercase text-slate-400">
               <tr>
