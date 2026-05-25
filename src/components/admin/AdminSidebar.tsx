@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Flag, Package, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, FileClock, ShieldCheck,
+  ShieldAlert, Sparkles,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -18,12 +19,14 @@ const groups = [
     items: [
       { title: "Users", url: "/admin/users", icon: Users },
       { title: "Reports", url: "/admin/reports", icon: Flag },
+      { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert },
     ],
   },
   {
     label: "Content",
     items: [
       { title: "Listings", url: "/admin/listings", icon: Package },
+      { title: "Homepage", url: "/admin/homepage", icon: Sparkles },
       { title: "Categories", url: "/admin/categories", icon: Tag },
       { title: "Cities", url: "/admin/cities", icon: MapPin },
     ],

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { MapPin, Calendar, Package, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { SellerReviews } from "@/components/SellerReviews";
 
 export const Route = createFileRoute("/sellers/$id")({
   head: () => ({
@@ -122,6 +123,8 @@ function SellerPage() {
           {listings.map((l: any) => <ListingCard key={l.id} listing={l} />)}
         </div>
       )}
+
+      <SellerReviews sellerId={id} />
     </div>
   );
 }
