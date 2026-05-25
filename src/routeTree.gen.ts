@@ -27,6 +27,7 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminListingsRouteImport } from './routes/admin.listings'
+import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
 import { Route as AdminHomepageRouteImport } from './routes/admin.homepage'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
@@ -135,6 +136,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
 const AdminListingsRoute = AdminListingsRouteImport.update({
   id: '/listings',
   path: '/listings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInsightsRoute = AdminInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminHomepageRoute = AdminHomepageRouteImport.update({
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/homepage': typeof AdminHomepageRoute
+  '/admin/insights': typeof AdminInsightsRoute
   '/admin/listings': typeof AdminListingsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/moderation': typeof AdminModerationRoute
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/homepage': typeof AdminHomepageRoute
+  '/admin/insights': typeof AdminInsightsRoute
   '/admin/listings': typeof AdminListingsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/moderation': typeof AdminModerationRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/homepage': typeof AdminHomepageRoute
+  '/admin/insights': typeof AdminInsightsRoute
   '/admin/listings': typeof AdminListingsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/moderation': typeof AdminModerationRoute
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/homepage'
+    | '/admin/insights'
     | '/admin/listings'
     | '/admin/login'
     | '/admin/moderation'
@@ -420,6 +430,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/homepage'
+    | '/admin/insights'
     | '/admin/listings'
     | '/admin/login'
     | '/admin/moderation'
@@ -460,6 +471,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/homepage'
+    | '/admin/insights'
     | '/admin/listings'
     | '/admin/login'
     | '/admin/moderation'
@@ -622,6 +634,13 @@ declare module '@tanstack/react-router' {
       path: '/listings'
       fullPath: '/admin/listings'
       preLoaderRoute: typeof AdminListingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/insights': {
+      id: '/admin/insights'
+      path: '/insights'
+      fullPath: '/admin/insights'
+      preLoaderRoute: typeof AdminInsightsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/homepage': {
@@ -817,6 +836,7 @@ interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCitiesRoute: typeof AdminCitiesRoute
   AdminHomepageRoute: typeof AdminHomepageRoute
+  AdminInsightsRoute: typeof AdminInsightsRoute
   AdminListingsRoute: typeof AdminListingsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminModerationRoute: typeof AdminModerationRoute
@@ -834,6 +854,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCitiesRoute: AdminCitiesRoute,
   AdminHomepageRoute: AdminHomepageRoute,
+  AdminInsightsRoute: AdminInsightsRoute,
   AdminListingsRoute: AdminListingsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminModerationRoute: AdminModerationRoute,
