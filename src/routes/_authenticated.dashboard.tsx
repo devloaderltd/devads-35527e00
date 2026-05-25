@@ -1,14 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3, Wallet, BookmarkCheck, Search, Activity, Phone } from "lucide-react";
+import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3, Wallet, BookmarkCheck, Search, Activity, Phone, Star } from "lucide-react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend, AreaChart, Area,
@@ -19,9 +20,15 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import { DashboardWorkspaceSidebar } from "@/components/DashboardWorkspaceSidebar";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { ExpiringSoonCard } from "@/components/ExpiringSoonCard";
+import { DashboardReviewsPanel } from "@/components/DashboardReviewsPanel";
+
+const dashboardSearchSchema = z.object({
+  tab: z.enum(["analytics", "performance", "listings", "reviews"]).optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — CallEscort24" }, { name: "robots", content: "noindex" }] }),
+  validateSearch: dashboardSearchSchema,
   component: DashboardShell,
 });
 
