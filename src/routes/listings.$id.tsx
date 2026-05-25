@@ -342,6 +342,9 @@ function ListingDetail() {
                   )}
                 </div>
               )}
+            </div>
+
+
 
             {user?.id === listing.user_id && (
               <div className="mt-2">
