@@ -98,7 +98,9 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const userId = context.userId;
-    const amount = data.type === "featured" ? FEATURED_USD : BUMP_USD;
+    const pricing = await loadPricing();
+    const amount = data.type === "featured" ? pricing.featuredPrice : pricing.bumpPrice;
+    const days = data.type === "featured" ? pricing.featuredDays : pricing.bumpDays;
 
     const { data: listing, error: lerr } = await supabaseAdmin
       .from("listings")
@@ -113,7 +115,7 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
       _user_id: userId,
       _amount: amount,
       _reference: data.listingId,
-      _description: data.type === "featured" ? "Featured promotion (7d)" : "Bump promotion",
+      _description: data.type === "featured" ? `Featured promotion (${days}d)` : "Bump promotion",
     });
     if (debitErr) {
       if (debitErr.message?.toLowerCase().includes("insufficient")) {
@@ -142,7 +144,7 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
       await supabaseAdmin.from("listings").update({ bumped_at: new Date().toISOString() }).eq("id", data.listingId);
     } else {
       const now = new Date();
-      const ends = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const ends = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
       await supabaseAdmin.from("listing_promotions").insert({
         listing_id: data.listingId,
         type: "featured",
@@ -154,3 +156,4 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
