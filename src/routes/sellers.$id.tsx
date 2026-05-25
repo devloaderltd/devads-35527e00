@@ -106,6 +106,10 @@ function SellerPage() {
               <span className="chip-glass">
                 <Package className="h-3.5 w-3.5" /> {listings?.length ?? 0} active listing{(listings?.length ?? 0) === 1 ? "" : "s"}
               </span>
+              <span className="chip-glass">
+                <SellerRatingBadge sellerId={id} />
+              </span>
+
             </div>
             {profile.bio && (
               <p className="mt-3 whitespace-pre-wrap text-[0.95rem] leading-relaxed">{profile.bio}</p>
