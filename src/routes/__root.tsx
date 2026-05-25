@@ -169,12 +169,20 @@ function MaintenanceGate({ children }: { children: React.ReactNode }) {
     staleTime: 60_000,
   });
 
+  const [hasSession, setHasSession] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setHasSession(!!data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setHasSession(!!s));
+    return () => subscription.unsubscribe();
+  }, []);
+
   const { data: rolesData } = useQuery({
     queryKey: ["my-roles"],
     queryFn: async () => {
       try { return await fetchRoles(); } catch { return { roles: [] as string[] }; }
     },
     staleTime: 60_000,
+    enabled: hasSession,
   });
 
   const s = settingsData?.settings;
