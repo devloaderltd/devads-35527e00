@@ -23,6 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ThemeProvider, themeBootScript } from "@/lib/theme-context";
 import { getSiteSettings, getMyRoles } from "@/lib/admin.functions";
 import { AlertTriangle } from "lucide-react";
+import { isAuthError } from "@/lib/auth-errors";
+import { AuthErrorFallback } from "@/components/AuthErrorFallback";
 
 import appCss from "../styles.css?url";
 
@@ -49,6 +51,9 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  if (isAuthError(error)) {
+    return <AuthErrorFallback error={error} reset={() => { router.invalidate(); reset(); }} />;
+  }
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -67,6 +72,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     </div>
   );
 }
+
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
