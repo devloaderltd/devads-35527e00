@@ -1,18 +1,16 @@
-## Fill the empty space under the image gallery
+## Changes
 
-On `/listings/$id`, the left column ends at the thumbnail strip while the right column keeps going, leaving a large empty gap (visible in the screenshot). I'll move/duplicate detail content into the left column so it fills naturally on all viewports.
+### 1. `src/routes/listings.$id.tsx` (listing detail)
+- **Details card**: add explicit "Age" row showing days since `created_at` (e.g. `12 days`). Keep existing "Posted" row (relative time). Rename "Views" → "Total ad views".
+- **Remove Condition**: delete the Condition row in the Details card and the standalone condition chip in the right column.
 
-### Changes (single file: `src/routes/listings.$id.tsx`)
-
-Below the thumbnails in the left column, add a stacked content block:
-
-1. **Description card** — move the listing description out of the right column into a card here ("Description" heading, `whitespace-pre-wrap`). Right column keeps title/price/chips/seller card only, so it stays compact and aligned with the gallery.
-2. **Details grid** — small 2-col key/value list: Category, Condition, Location (city, region, country), Posted (relative + exact date), Views, Listing ID (short).
-3. **Safety tips card** — short bullet list ("Meet in a public place", "Inspect before you pay", "Never wire money or share codes", "Report suspicious listings") with a link to the existing Report dialog trigger.
-4. **Share & save row** — keep the existing Save/Share buttons in the right column; no duplication.
-
-All cards reuse existing styles (`iridescent-border`, `rounded-2xl`, `bg-white/65 backdrop-blur-xl`, `shadow-[var(--shadow-float)]`) so the look matches the seller card. No new dependencies, no backend changes, no schema changes.
+### 2. `src/routes/_authenticated.post.tsx` (post ad form)
+- Remove the Condition select field, its label, its state, and its inclusion in the insert payload (let the column fall back to its DB default `not_applicable`).
 
 ### Out of scope
-- No new routes, no new components, no design system tokens added.
-- No changes to similar-listings section or lightbox.
+- No DB migration — the `condition` column stays so existing listings and other code paths keep working.
+- No change to search filters, cards, or anywhere else condition is read.
+
+## Technical notes
+- Age in days = `Math.floor((Date.now() - new Date(listing.created_at).getTime()) / 86_400_000)`, rendered as `${n} day${n===1?'':'s'}` (or `Today` when 0).
+- Total ad views = `listing.view_count ?? 0` (same data, new label).

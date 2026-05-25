@@ -268,12 +268,6 @@ function ListingDetail() {
                   <dd className="font-medium">{listing.categories.name}</dd>
                 </div>
               )}
-              {listing.condition && listing.condition !== "not_applicable" && (
-                <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
-                  <dt className="text-muted-foreground">Condition</dt>
-                  <dd className="font-medium capitalize">{String(listing.condition).replace("_", " ")}</dd>
-                </div>
-              )}
               {listing.cities && (
                 <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
                   <dt className="text-muted-foreground">Location</dt>
@@ -282,6 +276,15 @@ function ListingDetail() {
                   </dd>
                 </div>
               )}
+              {(() => {
+                const days = Math.floor((Date.now() - new Date(listing.created_at).getTime()) / 86_400_000);
+                return (
+                  <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                    <dt className="text-muted-foreground">Age</dt>
+                    <dd className="font-medium">{days === 0 ? "Today" : `${days} day${days === 1 ? "" : "s"}`}</dd>
+                  </div>
+                );
+              })()}
               <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
                 <dt className="text-muted-foreground">Posted</dt>
                 <dd className="font-medium">
@@ -289,7 +292,7 @@ function ListingDetail() {
                 </dd>
               </div>
               <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
-                <dt className="text-muted-foreground">Views</dt>
+                <dt className="text-muted-foreground">Total ad views</dt>
                 <dd className="font-medium">{listing.view_count ?? 0}</dd>
               </div>
               <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
@@ -336,11 +339,6 @@ function ListingDetail() {
             </span>
           </div>
 
-          {listing.condition && listing.condition !== "not_applicable" && (
-            <span className="mt-3 inline-block rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium capitalize">
-              {String(listing.condition).replace("_", " ")}
-            </span>
-          )}
 
           <div className="mt-4 flex flex-wrap gap-2">
             <FavoriteButton listingId={listing.id} variant="inline" showLabel />
