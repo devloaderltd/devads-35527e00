@@ -301,7 +301,7 @@ export const editListingAdmin = createServerFn({ method: "POST" })
     if (rest.status !== undefined) patch.status = rest.status;
     if (rest.category_id !== undefined) patch.category_id = rest.category_id;
     if (rest.city_id !== undefined) patch.city_id = rest.city_id;
-    const { error } = await supabaseAdmin.from("listings").update(patch).eq("id", id);
+    const { error } = await supabaseAdmin.from("listings").update(patch as never).eq("id", id);
     if (error) throw new Error(error.message);
     await audit(context.userId, "listing.edit", "listing", id, patch);
     return { ok: true };
@@ -356,7 +356,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     for (const k of ["featured_price_usd", "bump_price_usd", "featured_days", "bump_days", "maintenance_mode", "maintenance_message", "site_name", "support_email"] as const) {
       if (data[k] !== undefined) patch[k] = data[k];
     }
-    const { error } = await supabaseAdmin.from("site_settings").update(patch).eq("id", "global");
+    const { error } = await supabaseAdmin.from("site_settings").update(patch as never).eq("id", "global");
     if (error) throw new Error(error.message);
     await audit(context.userId, "settings.update", "site_settings", "global", patch);
     return { ok: true };
