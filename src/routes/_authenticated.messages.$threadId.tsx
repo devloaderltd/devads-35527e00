@@ -165,20 +165,18 @@ function ThreadView() {
         <div ref={endRef} />
       </div>
       <div className="border-t border-white/40 p-3">
-        {!messages?.length && (
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            {QUICK_REPLIES.map((q) => (
-              <button
-                key={q}
-                onClick={() => setBody(q)}
-                type="button"
-                className="rounded-full border border-white/50 bg-white/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur hover:bg-white hover:text-foreground"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {QUICK_REPLIES.map((q) => (
+            <button
+              key={q}
+              onClick={() => setBody(q)}
+              type="button"
+              className="rounded-full border border-white/50 bg-white/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur hover:bg-white hover:text-foreground"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
         <form onSubmit={onSubmit} className="flex gap-2">
           <Input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a message…" className="rounded-full bg-white/70 backdrop-blur" />
           <Button type="submit" disabled={send.isPending || !body.trim()} className="btn-gradient rounded-full border-0">

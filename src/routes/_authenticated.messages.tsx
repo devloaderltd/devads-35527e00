@@ -73,9 +73,21 @@ function MessagesLayout() {
       || (t.listing?.title ?? "").toLowerCase().includes(q);
   });
 
+  const unreadCount = (threads ?? []).reduce((n, t) => {
+    const lr = lastRead[t.id];
+    return n + (!lr || new Date(t.last_message_at) > new Date(lr) ? 1 : 0);
+  }, 0);
+
   return (
     <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
-      <h1 className="mb-4 font-display text-2xl font-bold"><span className="gradient-text">Messages</span></h1>
+      <h1 className="mb-4 flex items-center gap-2 font-display text-2xl font-bold">
+        <span className="gradient-text">Messages</span>
+        {unreadCount > 0 && (
+          <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+            {unreadCount} new
+          </span>
+        )}
+      </h1>
       <div className="grid gap-4 md:grid-cols-[340px_1fr]">
         <aside className={`overflow-hidden rounded-2xl glass ${hasActive ? "hidden md:block" : "block"}`}>
           <div className="border-b border-white/40 p-2">
