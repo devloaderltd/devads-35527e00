@@ -412,7 +412,7 @@ function ListingDetail() {
 
       {lightbox && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/85 p-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/90 p-4"
           onClick={() => setLightbox(false)}
         >
           <img
@@ -421,6 +421,27 @@ function ListingDetail() {
             className="max-h-[90vh] max-w-[95vw] rounded-xl object-contain shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); prev(); }}
+                aria-label="Previous image"
+                className="absolute left-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-lg hover:bg-white"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); next(); }}
+                aria-label="Next image"
+                className="absolute right-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-lg hover:bg-white"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-3 py-1 text-sm font-medium text-white">
+                {activeIdx + 1} / {images.length}
+              </div>
+            </>
+          )}
         </div>
       )}
 
