@@ -78,7 +78,7 @@ function PrivacyPage() {
       <p>
         Depending on where you live, you may have the right to access, correct, delete, restrict, or
         port your personal data, and to object to certain processing. To exercise these rights, contact us
-        at <a href="mailto:privacy@callescort24.example">privacy@callescort24.example</a>.
+        at <a href="mailto:support@callescort24.com">support@callescort24.com</a>.
       </p>
 
       <h2>7. Security</h2>
@@ -105,7 +105,7 @@ function PrivacyPage() {
 
       <h2>11. Contact</h2>
       <p>
-        Questions or requests? Email <a href="mailto:privacy@callescort24.example">privacy@callescort24.example</a>{" "}
+        Questions or requests? Email <a href="mailto:support@callescort24.com">support@callescort24.com</a>{" "}
         or use our <Link to="/contact">contact page</Link>.
       </p>
     </LegalLayout>

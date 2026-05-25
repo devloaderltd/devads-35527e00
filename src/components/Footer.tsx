@@ -53,7 +53,7 @@ export function Footer() {
             </p>
             <div className="mt-4 flex items-center gap-2">
               <a
-                href="mailto:hello@callescort24.example"
+                href="mailto:support@callescort24.com"
                 aria-label="Email"
                 className="grid h-9 w-9 place-items-center rounded-full border border-white/50 bg-white/70 text-muted-foreground transition hover:text-foreground"
               >

@@ -45,7 +45,7 @@ function DmcaPage() {
         Send DMCA notices to our Designated Copyright Agent:
       </p>
       <ul>
-        <li>Email: <a href="mailto:dmca@callescort24.example">dmca@callescort24.example</a></li>
+        <li>Email: <a href="mailto:support@callescort24.com">support@callescort24.com</a></li>
         <li>Subject line: <em>DMCA Takedown Notice</em></li>
       </ul>
       <p>
