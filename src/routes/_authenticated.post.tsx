@@ -146,6 +146,20 @@ function PostListing() {
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="item-age">Item age</Label>
+          <Input
+            id="item-age"
+            required
+            maxLength={60}
+            value={itemAge}
+            onChange={(e) => setItemAge(e.target.value)}
+            placeholder="e.g. 2 years, 6 months, brand new"
+            className="bg-white/70"
+          />
+        </div>
+
+
+        <div className="space-y-2">
           <Label>Category</Label>
           <Select value={categoryId} onValueChange={setCategoryId}>
             <SelectTrigger className="bg-white/70"><SelectValue placeholder="Pick a category" /></SelectTrigger>
