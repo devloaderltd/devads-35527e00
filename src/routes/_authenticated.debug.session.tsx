@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { getMyRoles } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +31,7 @@ function decodeJwt(token: string | undefined): Record<string, unknown> | null {
 
 function DebugSessionPage() {
   const { user, session: hookSession, loading } = useAuth();
+  const fetchMyRoles = useServerFn(getMyRoles);
   const [session, setSession] = useState<Session | null>(hookSession);
   const [copied, setCopied] = useState(false);
 
@@ -36,17 +39,14 @@ function DebugSessionPage() {
 
   const rolesQ = useQuery({
     queryKey: ["debug-roles", user?.id],
-    enabled: !!user,
+    enabled: !loading && !!user,
     staleTime: 0,
     refetchOnMount: "always",
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user!.id);
-      if (error) throw error;
-      return (data ?? []).map(r => r.role as string);
+      const result = await fetchMyRoles();
+      return result.roles;
     },
+    retry: 2,
   });
 
   const refresh = async () => {
