@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet, BookmarkCheck } from "lucide-react";
+import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet, BookmarkCheck, Star } from "lucide-react";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCity } from "@/lib/city-context";
