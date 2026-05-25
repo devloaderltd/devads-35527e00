@@ -17,12 +17,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const DEMO_USER = { email: "demo@marketly.test", password: "DemoUser123!", display_name: "Demo User" };
 const ADMIN_USER = { email: "admin@marketly.test", password: "AdminUser123!", display_name: "Admin User" };
 
-const SAMPLE_LISTINGS = [
-  { title: "Vintage road bike — Trek 520", description: "Lovingly maintained, ready to ride.", price: 480, condition: "used_good" },
-  { title: "MacBook Pro 14\" M2 — 2023", description: "Like new, includes original charger and box.", price: 1450, condition: "used_like_new" },
+const SAMPLE_LISTINGS: { title: string; description: string; price: number; condition: "good" | "like_new" | "not_applicable" | "new" | "fair" | "poor" }[] = [
+  { title: "Vintage road bike — Trek 520", description: "Lovingly maintained, ready to ride.", price: 480, condition: "good" },
+  { title: "MacBook Pro 14\" M2 — 2023", description: "Like new, includes original charger and box.", price: 1450, condition: "like_new" },
   { title: "Cozy 1-bed apartment downtown", description: "Available June 1. Utilities included.", price: 1800, condition: "not_applicable" },
-  { title: "IKEA sectional sofa — grey", description: "Comfortable and clean. Pickup only.", price: 220, condition: "used_good" },
-  { title: "Mountain skis 175cm + bindings", description: "Used two seasons. Great all-mountain pair.", price: 260, condition: "used_good" },
+  { title: "IKEA sectional sofa — grey", description: "Comfortable and clean. Pickup only.", price: 220, condition: "good" },
+  { title: "Mountain skis 175cm + bindings", description: "Used two seasons. Great all-mountain pair.", price: 260, condition: "good" },
 ];
 
 async function ensureUser(email: string, password: string, display_name: string) {
@@ -53,7 +53,7 @@ async function seedListingsFor(userId: string) {
     price: s.price,
     currency: "USD",
     condition: s.condition,
-    status: "active",
+    status: "active" as const,
     category_id: cats[i % cats.length].id,
     city_id: cities[i % cities.length].id,
     view_count: Math.floor(Math.random() * 240) + 10,
