@@ -26,19 +26,30 @@ const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8"
 
 function AdminPage() {
   const { user } = useAuth();
-  const { data: roles } = useQuery({
+  const { data: roles, isLoading: rolesLoading } = useQuery({
     queryKey: ["my-roles", user?.id],
     enabled: !!user,
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
-      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user!.id);
-      return data?.map((r) => r.role) ?? [];
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id);
+      if (error) {
+        console.error("[admin] role fetch error", error);
+        return [] as string[];
+      }
+      return (data ?? []).map((r) => r.role as string);
     },
   });
 
   const isAdmin = roles?.includes("admin");
   const isMod = isAdmin || roles?.includes("moderator");
 
-  if (roles === undefined) return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
+  if (!user || rolesLoading || roles === undefined) {
+    return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
+  }
   if (!isMod) {
     return (
       <div className="container mx-auto grid place-items-center px-4 py-20 text-center">
