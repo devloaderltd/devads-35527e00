@@ -308,8 +308,29 @@ function SearchPage() {
           ))}
         </div>
       ) : !listings.length ? (
-        <div className="rounded-xl border bg-card p-10 text-center text-muted-foreground">
-          No matching listings. Try a different search or <Link to="/post" className="text-primary hover:underline">post one</Link>.
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/40 bg-white/55 p-10 text-center backdrop-blur-xl">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl btn-gradient text-white">
+            <SlidersHorizontal className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="font-display text-xl font-semibold">No matching listings</h2>
+            <p className="mt-1 max-w-md text-sm text-muted-foreground">
+              Try removing filters{search.city ? <> or clear <button type="button" className="underline" onClick={() => update({ city: undefined })}>the city</button></> : ""}, or save this search to be alerted when something matches.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            {activeFilters.length > 0 && (
+              <Button variant="outline" className="rounded-full bg-white/70" onClick={clearAll}>Clear all filters</Button>
+            )}
+            {user && !alreadySaved && (
+              <Button onClick={openSaveDialog} className="btn-gradient rounded-full border-0 gap-2">
+                <Bookmark className="h-4 w-4" /> Save this search
+              </Button>
+            )}
+            <Button asChild variant="outline" className="rounded-full bg-white/70">
+              <Link to="/post">Post one yourself</Link>
+            </Button>
+          </div>
         </div>
       ) : (
         <>
