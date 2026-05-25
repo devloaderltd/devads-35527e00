@@ -146,7 +146,7 @@ function PostListing() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="item-age">Item age</Label>
+          <Label htmlFor="item-age">Age</Label>
           <Input
             id="item-age"
             required
