@@ -18,6 +18,7 @@ import { toast } from "sonner";
 
 export function Header() {
   const { user } = useAuth();
+  const { cityName, openPicker } = useCity();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
 
