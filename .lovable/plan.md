@@ -1,43 +1,40 @@
-## Goals
+## Goal
+On first visit to the homepage, prompt the visitor to pick a city. Persist the selection and only show listings (and category/featured/recent feeds) after a city is chosen. Selected city should filter all homepage listings and remain changeable from the header.
 
-1. Listings should support a real photo gallery, not just one image.
-2. Cap uploads at 5 photos per listing.
-3. Seed extra photos for the existing demo listings (which only have 1 each).
-4. Show the seller's avatar on the listing page (avatars are currently empty).
-5. Show the seller's contact info (phone + email) on the listing page.
+## UX flow
+1. First-time visitor lands on `/` → a centered, non-dismissable city picker modal appears over a dimmed hero. No listing grids render underneath (skeleton or empty state hidden behind the modal).
+2. User searches/selects a city → modal closes, city is saved to `localStorage` (`marketly.cityId`), homepage queries refetch scoped to that city.
+3. Returning visitor with a saved city → modal does NOT appear; homepage loads listings filtered by that city immediately.
+4. Header gets a city chip ("📍 Austin ▾") that opens the same picker so users can change city anytime. "Change city" also clears and reopens the modal.
 
-## What's already there
+## Technical details
 
-- The listing detail page (`src/routes/listings.$id.tsx`) already renders a carousel + thumbnails + lightbox — the gallery UI works, it just has no extra images to show.
-- The post form (`src/routes/_authenticated.post.tsx`) already accepts up to 8 photos with previews — needs to be reduced to 5.
-- The seller card on the listing page already shows an avatar slot — but `profiles.avatar_url` is `null` for every seeded user, so it always falls back to initials.
-- `profiles.phone` exists but is empty; email lives in `auth.users`, not in `profiles`.
+### New component: `src/components/CitySelectorDialog.tsx`
+- Shadcn `Dialog` (or `Command` inside Dialog) listing cities from `cities` table grouped by country/region.
+- Search input filtering by `name`/`region`.
+- On select: call `setCity(cityId, cityName)` from context.
+- `open` controlled by parent; `dismissable={false}` for first-visit case, dismissable when triggered from header.
 
-## Plan
+### New context: `src/lib/city-context.tsx`
+- Provides `{ cityId, cityName, setCity, clearCity }`.
+- Reads/writes `localStorage` keys `marketly.cityId` and `marketly.cityName`.
+- Hydrates on mount (SSR-safe: initial state null, sync from localStorage in `useEffect`).
+- Wrap app in `__root.tsx`.
 
-### 1. Post form — cap at 5 photos
-- Change the limit in `_authenticated.post.tsx` from 8 → 5 (slice, guard, and the "Photos (up to 8)" label).
+### Homepage changes (`src/routes/index.tsx`)
+- Read `cityId` from context.
+- Show `<CitySelectorDialog open={!cityId} dismissable={false} />` when no city.
+- Listings `useQuery` key becomes `["listings","home", cityId]`, `enabled: !!cityId`, query adds `.eq("city_id", cityId)`.
+- While no city: render hero/categories shell but skip listing sections (or show "Select a city to see ads").
 
-### 2. Seed photos for demo listings
-- Generate 4 extra marketplace-style stock images per existing listing using `imagegen` (themed roughly by category: electronics, furniture, vehicles, fashion, etc.) and upload them to the `listing-images` bucket, then insert rows in `listing_images` with `sort_order` 1–4 so the existing cover stays as `sort_order: 0`.
-- This makes the gallery + thumbnails + lightbox visible on every demo listing.
+### Header (likely `src/components/Header.tsx` or in `__root.tsx`)
+- Add city chip button showing current city name (or "Select city"). Clicking opens the picker dialog (dismissable=true).
 
-### 3. Avatars for demo sellers
-- Generate a clean avatar portrait for each of the 6 seeded profiles, upload to `listing-images/avatars/<user_id>.jpg`, and update `profiles.avatar_url`.
-- The listing detail seller card and the seller profile page already read `avatar_url`, so no UI change needed.
-
-### 4. Contact info on the listing
-- Add `phone` and a public-contact opt-in to the post form, and write phone to `profiles.phone` on first post (or via the profile edit page — already exists).
-- Seed `phone` for the 6 demo profiles so listings have something to show.
-- On the listing detail page, add a compact "Contact" block inside the seller card:
-  - **Phone:** click-to-call `tel:` link (only shown if `profile.phone` is set).
-  - **Email:** click-to-mail `mailto:` link.
-
-  Email source: read it via a small server function (`getSellerContact(listingId)`) that uses `supabaseAdmin` to look up `auth.users.email` for the listing's `user_id`, gated by `requireSupabaseAuth` so only signed-in users see it. This avoids exposing emails to anonymous scrapers while still letting real buyers contact the seller. Anonymous visitors see a "Sign in to see contact info" prompt instead.
-
-### 5. Profile edit polish
-- The existing `/profile` route already edits `display_name`, `bio`, `phone`, `city`, avatar — confirm phone is wired and add a small helper text explaining it shows on their listings.
+### No DB changes
+- `cities` table and `listings.city_id` already exist. No migration needed.
+- Logged-in users' `profiles.city_id` is unrelated; we keep this purely client-side for now (works for anonymous visitors too).
 
 ## Out of scope
-
-- Reordering photos after upload, image cropping, public seller email without sign-in, SMS verification of phone numbers.
+- Saving city to profile for logged-in users (can be added later).
+- Filtering `/search` route by the selected city (only homepage per request).
+- Geo-IP auto-detection.

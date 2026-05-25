@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, ChevronRight, Flame } from "lucide-react";
+import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin } from "lucide-react";
+import { useCity } from "@/lib/city-context";
 import catForSale from "@/assets/cat-for-sale.jpg";
 import catVehicles from "@/assets/cat-vehicles.jpg";
 import catHousing from "@/assets/cat-housing.jpg";
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const { cityId, cityName, hydrated, openPicker } = useCity();
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -56,7 +58,8 @@ function Home() {
   });
 
   const { data: listings, isLoading } = useQuery({
-    queryKey: ["listings", "home"],
+    queryKey: ["listings", "home", cityId],
+    enabled: !!cityId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
@@ -68,6 +71,7 @@ function Home() {
           listing_promotions(type, ends_at)
         `)
         .eq("status", "active")
+        .eq("city_id", cityId!)
         .order("bumped_at", { ascending: false })
         .limit(24);
       if (error) throw error;
@@ -240,6 +244,39 @@ function Home() {
         </div>
       </section>
 
+      {/* City context banner */}
+      {hydrated && cityId && (
+        <section className="container mx-auto px-4 pt-6">
+          <button
+            type="button"
+            onClick={openPicker}
+            className="inline-flex items-center gap-2 rounded-full glass px-4 py-2 text-sm font-medium hover:border-primary/50"
+          >
+            <MapPin className="h-4 w-4 text-primary" />
+            Showing listings in <span className="font-bold">{cityName}</span>
+            <span className="text-xs text-muted-foreground">· change</span>
+          </button>
+        </section>
+      )}
+
+      {hydrated && !cityId && (
+        <section className="container mx-auto px-4 pt-10 pb-16">
+          <div className="flex flex-col items-center gap-4 rounded-[2rem] glass p-10 text-center">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl btn-gradient text-white">
+              <MapPin className="h-6 w-6" />
+            </div>
+            <h2 className="font-display text-2xl font-semibold">Pick a city to see listings</h2>
+            <p className="max-w-md text-sm text-muted-foreground">
+              We'll only show ads from the city you choose so you can find what's near you faster.
+            </p>
+            <Button onClick={openPicker} className="btn-gradient rounded-full border-0 px-6">
+              Choose your city
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {cityId && (<>
       {/* Featured row */}
       {featured.length > 1 && (
         <section className="container mx-auto px-4 pt-10">
@@ -296,6 +333,7 @@ function Home() {
           </div>
         )}
       </section>
+      </>)}
     </div>
   );
 }

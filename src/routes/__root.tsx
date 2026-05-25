@@ -11,6 +11,8 @@ import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { CityProvider } from "@/lib/city-context";
+import { CitySelectorDialog } from "@/components/CitySelectorDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
@@ -118,21 +120,24 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthInvalidator />
-      <div className="relative flex min-h-screen flex-col">
-        <div className="aurora-mesh" aria-hidden />
-        <PaymentTestModeBanner />
-        <Header />
-        <main className="flex-1">
-          <Outlet />
-        </main>
-        <footer className="mt-16 border-t border-white/40 bg-white/40 backdrop-blur-md py-8 text-center text-sm text-muted-foreground">
-          <div className="container mx-auto px-4 flex flex-col items-center gap-3">
-            <div className="h-[2px] w-24 rounded-full" style={{ background: "var(--gradient-primary)" }} />
-            <div>© {new Date().getFullYear()} <span className="font-display font-bold gradient-text">Marketly</span> — Buy and sell across the US, UK & Canada.</div>
-          </div>
-        </footer>
-      </div>
+      <CityProvider>
+        <AuthInvalidator />
+        <div className="relative flex min-h-screen flex-col">
+          <div className="aurora-mesh" aria-hidden />
+          <PaymentTestModeBanner />
+          <Header />
+          <main className="flex-1">
+            <Outlet />
+          </main>
+          <footer className="mt-16 border-t border-white/40 bg-white/40 backdrop-blur-md py-8 text-center text-sm text-muted-foreground">
+            <div className="container mx-auto px-4 flex flex-col items-center gap-3">
+              <div className="h-[2px] w-24 rounded-full" style={{ background: "var(--gradient-primary)" }} />
+              <div>© {new Date().getFullYear()} <span className="font-display font-bold gradient-text">Marketly</span> — Buy and sell across the US, UK & Canada.</div>
+            </div>
+          </footer>
+        </div>
+        <CitySelectorDialog dismissable />
+      </CityProvider>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
