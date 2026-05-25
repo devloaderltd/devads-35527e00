@@ -5,6 +5,8 @@ import { ListingCard } from "@/components/ListingCard";
 import { MapPin, Calendar, Package, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { SellerReviews } from "@/components/SellerReviews";
+import { SellerRatingBadge } from "@/components/SellerRatingBadge";
+
 
 export const Route = createFileRoute("/sellers/$id")({
   head: ({ params }) => ({
