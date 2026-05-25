@@ -14,16 +14,17 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SellersIdRouteImport } from './routes/sellers.$id'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated.profile'
 import { Route as AuthenticatedPostRouteImport } from './routes/_authenticated.post'
 import { Route as AuthenticatedMyListingsRouteImport } from './routes/_authenticated.my-listings'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated.messages'
 import { Route as AuthenticatedFavoritesRouteImport } from './routes/_authenticated.favorites'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated.messages.index'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api/public/seed-demo'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
@@ -54,6 +55,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SellersIdRoute = SellersIdRouteImport.update({
   id: '/sellers/$id',
   path: '/sellers/$id',
@@ -67,6 +73,11 @@ const ListingsIdRoute = ListingsIdRouteImport.update({
 const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
   id: '/checkout/return',
   path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -97,11 +108,6 @@ const AuthenticatedFavoritesRoute = AuthenticatedFavoritesRouteImport.update({
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMessagesIndexRoute =
@@ -139,16 +145,17 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/favorites': typeof AuthenticatedFavoritesRoute
   '/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/my-listings': typeof AuthenticatedMyListingsRoute
   '/post': typeof AuthenticatedPostRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/admin/login': typeof AdminLoginRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
@@ -160,15 +167,16 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/favorites': typeof AuthenticatedFavoritesRoute
   '/my-listings': typeof AuthenticatedMyListingsRoute
   '/post': typeof AuthenticatedPostRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/admin/login': typeof AdminLoginRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
+  '/admin': typeof AdminIndexRoute
   '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
@@ -182,16 +190,17 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/favorites': typeof AuthenticatedFavoritesRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/_authenticated/my-listings': typeof AuthenticatedMyListingsRoute
   '/_authenticated/post': typeof AuthenticatedPostRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/admin/login': typeof AdminLoginRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/_authenticated/debug/session': typeof AuthenticatedDebugSessionRoute
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
@@ -205,16 +214,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/search'
     | '/signup'
-    | '/admin'
     | '/dashboard'
     | '/favorites'
     | '/messages'
     | '/my-listings'
     | '/post'
     | '/profile'
+    | '/admin/login'
     | '/checkout/return'
     | '/listings/$id'
     | '/sellers/$id'
+    | '/admin/'
     | '/debug/session'
     | '/messages/$threadId'
     | '/api/public/seed-demo'
@@ -226,15 +236,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/search'
     | '/signup'
-    | '/admin'
     | '/dashboard'
     | '/favorites'
     | '/my-listings'
     | '/post'
     | '/profile'
+    | '/admin/login'
     | '/checkout/return'
     | '/listings/$id'
     | '/sellers/$id'
+    | '/admin'
     | '/debug/session'
     | '/messages/$threadId'
     | '/api/public/seed-demo'
@@ -247,16 +258,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/search'
     | '/signup'
-    | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/favorites'
     | '/_authenticated/messages'
     | '/_authenticated/my-listings'
     | '/_authenticated/post'
     | '/_authenticated/profile'
+    | '/admin/login'
     | '/checkout/return'
     | '/listings/$id'
     | '/sellers/$id'
+    | '/admin/'
     | '/_authenticated/debug/session'
     | '/_authenticated/messages/$threadId'
     | '/api/public/seed-demo'
@@ -270,9 +282,11 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   ListingsIdRoute: typeof ListingsIdRoute
   SellersIdRoute: typeof SellersIdRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
@@ -314,6 +328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sellers/$id': {
       id: '/sellers/$id'
       path: '/sellers/$id'
@@ -333,6 +354,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout/return'
       fullPath: '/checkout/return'
       preLoaderRoute: typeof CheckoutReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/profile': {
@@ -375,13 +403,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/messages/': {
@@ -438,7 +459,6 @@ const AuthenticatedMessagesRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedFavoritesRoute: typeof AuthenticatedFavoritesRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRouteWithChildren
@@ -449,7 +469,6 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedFavoritesRoute: AuthenticatedFavoritesRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRouteWithChildren,
@@ -469,12 +488,24 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
+  AdminLoginRoute: AdminLoginRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   ListingsIdRoute: ListingsIdRoute,
   SellersIdRoute: SellersIdRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
