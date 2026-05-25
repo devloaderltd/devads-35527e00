@@ -14,9 +14,9 @@ export function AdminPageHeader({ title, subtitle, actions }: { title: string; s
   );
 }
 
-export function Panel({ title, children, actions }: { title?: string; children: React.ReactNode; actions?: React.ReactNode }) {
+export function Panel({ title, children, actions, className }: { title?: string; children: React.ReactNode; actions?: React.ReactNode; className?: string }) {
   return (
-    <Card className={panelCls + " border-0"}>
+    <Card className={`${panelCls} border-0 ${className ?? ""}`}>
       {title && (
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base text-slate-100">{title}</CardTitle>
