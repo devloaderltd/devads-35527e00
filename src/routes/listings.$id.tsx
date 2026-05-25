@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   MapPin, Calendar, Tag, ChevronLeft, ChevronRight, MessageSquare,
-  Share2, Eye, Package,
+  Share2, Eye, Package, Phone, Mail, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
@@ -13,6 +14,7 @@ import { ReportDialog } from "@/components/ReportDialog";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ListingCard } from "@/components/ListingCard";
+import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
@@ -76,6 +78,15 @@ function ListingDetail() {
         .limit(4);
       return data ?? [];
     },
+  });
+
+  // Seller contact (only visible to signed-in users)
+  const fetchContact = useServerFn(getSellerContact);
+  const { data: contact } = useQuery({
+    queryKey: ["seller-contact", id],
+    enabled: !!user && !!listing?.id,
+    queryFn: () => fetchContact({ data: { listingId: id } }),
+    staleTime: 60_000,
   });
 
   if (isLoading) return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
@@ -285,6 +296,55 @@ function ListingDetail() {
                 <MessageSquare className="h-4 w-4" /> Message
               </Button>
             </div>
+
+            {/* Contact */}
+            <div className="mt-4 border-t border-white/40 pt-3">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Contact seller
+              </div>
+              {!user ? (
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm text-muted-foreground hover:bg-white"
+                >
+                  <Lock className="h-4 w-4" />
+                  Sign in to see phone & email
+                </Link>
+              ) : (
+                <div className="space-y-1.5">
+                  {contact?.phone ? (
+                    <a
+                      href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
+                      className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
+                    >
+                      <Phone className="h-4 w-4 text-primary" />
+                      {contact.phone}
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-xl bg-white/40 px-3 py-2 text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4" />
+                      Phone not provided
+                    </div>
+                  )}
+                  {contact?.email ? (
+                    <a
+                      href={`mailto:${contact.email}?subject=${encodeURIComponent("Re: " + listing.title)}`}
+                      className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
+                    >
+                      <Mail className="h-4 w-4 text-primary" />
+                      <span className="truncate">{contact.email}</span>
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-xl bg-white/40 px-3 py-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      {contact ? "Email not available" : "Loading…"}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+
 
             {user?.id === listing.user_id && (
               <div className="mt-2">
