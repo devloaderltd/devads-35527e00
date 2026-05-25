@@ -139,20 +139,6 @@ function PostListing() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Condition</Label>
-            <Select value={condition} onValueChange={setCondition}>
-              <SelectTrigger className="bg-white/70"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="not_applicable">N/A</SelectItem>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="like_new">Like new</SelectItem>
-                <SelectItem value="good">Good</SelectItem>
-                <SelectItem value="fair">Fair</SelectItem>
-                <SelectItem value="for_parts">For parts</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         <div className="space-y-2">
