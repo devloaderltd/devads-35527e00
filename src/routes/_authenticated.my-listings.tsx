@@ -181,10 +181,32 @@ function MyListings() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">{counts.all} total · {counts.active} active</p>
         </div>
-        <Button asChild className="btn-gradient rounded-full border-0">
-          <Link to="/post"><Plus className="mr-1 h-4 w-4" /> New listing</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className={`rounded-full bg-white/60 ${selectMode ? "border-primary text-primary" : ""}`}
+            onClick={() => { setSelectMode(s => !s); clearSel(); }}
+          >
+            <CheckSquare className="mr-1 h-4 w-4" /> {selectMode ? "Done" : "Select"}
+          </Button>
+          <Button asChild className="btn-gradient rounded-full border-0">
+            <Link to="/post"><Plus className="mr-1 h-4 w-4" /> New listing</Link>
+          </Button>
+        </div>
       </div>
+
+      {expiringSoonList.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 backdrop-blur">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
+          <div className="text-sm text-amber-900">
+            <span className="font-semibold">{expiringSoonList.length}</span>{" "}
+            {expiringSoonList.length === 1 ? "listing is" : "listings are"} expiring in the next 3 days.
+          </div>
+          <Button size="sm" className="ml-auto rounded-full bg-amber-600 text-white hover:bg-amber-700" onClick={renewAllExpiring}>
+            <RefreshCw className="mr-1 h-3.5 w-3.5" /> Renew all
+          </Button>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {(["all", "active", "expired", "draft"] as Filter[]).map((f) => (
@@ -233,6 +255,16 @@ function MyListings() {
               <div key={l.id} className="flex flex-col gap-2">
                 <div className="relative">
                   <ListingCard listing={l} />
+                  {selectMode && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(l.id); }}
+                      className="absolute left-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/85 backdrop-blur shadow"
+                      aria-label="Select listing"
+                    >
+                      <Checkbox checked={selected.has(l.id)} className="pointer-events-none" />
+                    </button>
+                  )}
                   <div className="absolute right-2 top-2 z-10">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -295,6 +327,8 @@ function MyListings() {
                   </span>
                 </div>
 
+                <ListingSparkline listingId={l.id} />
+
                 {l.status === "active" && (
                   <div className="px-1">
                     <PromoteDialog listingId={l.id} />
@@ -305,6 +339,14 @@ function MyListings() {
           })}
         </div>
       )}
+
+      <BulkActionBar
+        count={selected.size}
+        onRenew={bulkRenew}
+        onSold={bulkSold}
+        onDelete={bulkDelete}
+        onClear={clearSel}
+      />
     </div>
   );
 }
