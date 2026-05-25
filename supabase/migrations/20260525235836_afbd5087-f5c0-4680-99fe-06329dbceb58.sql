@@ -1,0 +1,1 @@
+ALTER TABLE public.listings ALTER COLUMN slug SET DEFAULT '';

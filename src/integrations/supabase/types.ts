@@ -455,7 +455,7 @@ export type Database = {
           item_age?: string
           price?: number | null
           search_tsv?: unknown
-          slug: string
+          slug?: string
           status?: Database["public"]["Enums"]["listing_status"]
           title: string
           updated_at?: string
