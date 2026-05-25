@@ -38,29 +38,41 @@ export const runDemoSeed = createServerFn({ method: "POST" })
 
 export const listUsersAdmin = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((input: { q?: string; filter?: "all" | "admins" | "moderators" | "banned" }) => ({
-    q: (input.q ?? "").slice(0, 100),
+  .inputValidator((input: { q?: string; filter?: "all" | "admins" | "moderators" | "banned"; page?: number; perPage?: number }) => ({
+    q: (input.q ?? "").slice(0, 100).trim(),
     filter: input.filter ?? "all",
+    page: Math.max(1, Math.floor(input.page ?? 1)),
+    perPage: Math.min(100, Math.max(5, Math.floor(input.perPage ?? 25))),
   }))
   .handler(async ({ data }) => {
-    // Pull auth users (page 1, perPage=200). Good enough for now.
-    const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-    if (authErr) throw new Error(authErr.message);
-    const authUsers = authData.users;
-    const ids = authUsers.map((u) => u.id);
-    if (!ids.length) return { users: [] };
+    // Scan up to N pages of auth users to support search/filter without a DB view.
+    const MAX_SCAN = 5;
+    const SCAN_PER_PAGE = 200;
+    type AuthUser = Awaited<ReturnType<typeof supabaseAdmin.auth.admin.listUsers>>["data"]["users"][number];
+    const collected: AuthUser[] = [];
+    let scannedPages = 0;
+    let exhausted = false;
+    for (let p = 1; p <= MAX_SCAN; p++) {
+      const { data: au, error } = await supabaseAdmin.auth.admin.listUsers({ page: p, perPage: SCAN_PER_PAGE });
+      if (error) throw new Error(error.message);
+      collected.push(...au.users);
+      scannedPages = p;
+      if (au.users.length < SCAN_PER_PAGE) { exhausted = true; break; }
+    }
 
-    const [{ data: profiles }, { data: roles }, { data: wallets }] = await Promise.all([
-      supabaseAdmin.from("profiles").select("id, display_name, created_at, city_id").in("id", ids),
-      supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
-      supabaseAdmin.from("wallets").select("user_id, balance_usd").in("user_id", ids),
-    ]);
+    const ids = collected.map((u) => u.id);
+    const profilesRes = ids.length ? await supabaseAdmin.from("profiles").select("id, display_name, created_at, city_id").in("id", ids) : { data: [] };
+    const rolesRes = ids.length ? await supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids) : { data: [] };
+    const walletsRes = ids.length ? await supabaseAdmin.from("wallets").select("user_id, balance_usd").in("user_id", ids) : { data: [] };
+    const profiles = profilesRes.data ?? [];
+    const roles = rolesRes.data ?? [];
+    const wallets = walletsRes.data ?? [];
 
-    let out = authUsers.map((u) => {
-      const profile = profiles?.find((p) => p.id === u.id);
-      const userRoles = (roles ?? []).filter((r) => r.user_id === u.id).map((r) => r.role as string);
+    let out = collected.map((u) => {
+      const profile = profiles.find((p) => p.id === u.id);
+      const userRoles = roles.filter((r) => r.user_id === u.id).map((r) => r.role as string);
       const banned = !!u.banned_until && new Date(u.banned_until).getTime() > Date.now();
-      const balance = Number(wallets?.find((w) => w.user_id === u.id)?.balance_usd ?? 0);
+      const balance = Number(wallets.find((w) => w.user_id === u.id)?.balance_usd ?? 0);
       return {
         id: u.id,
         email: u.email ?? "",
@@ -82,7 +94,19 @@ export const listUsersAdmin = createServerFn({ method: "POST" })
     else if (data.filter === "banned") out = out.filter((u) => u.banned);
 
     out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    return { users: out };
+
+    const total = out.length;
+    const start = (data.page - 1) * data.perPage;
+    const slice = out.slice(start, start + data.perPage);
+    return {
+      users: slice,
+      total,
+      page: data.page,
+      perPage: data.perPage,
+      hasMore: start + slice.length < total,
+      scannedPages,
+      scanExhausted: exhausted,
+    };
   });
 
 export const setUserRole = createServerFn({ method: "POST" })
