@@ -30,7 +30,7 @@ export function CookieConsent() {
   const savePreferences = () => { setDismissed(true); save({ analytics, marketing }); };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center px-3 md:bottom-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-3 z-[60] flex justify-center px-3 md:bottom-6">
       <div className="pointer-events-auto w-full max-w-2xl rounded-2xl border border-white/40 bg-white/85 p-4 shadow-[var(--shadow-float-lg)] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/80">
         <div className="flex items-start gap-3">
           <div
