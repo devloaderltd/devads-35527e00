@@ -44,6 +44,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const { cityId, cityName, hydrated, openPicker } = useCity();
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
