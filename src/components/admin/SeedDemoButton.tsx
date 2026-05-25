@@ -8,7 +8,7 @@ import { runDemoSeed } from "@/lib/admin.functions";
 
 const ACCOUNTS = [
   { label: "Demo user", email: "demo@marketly.test", password: "DemoUser123!" },
-  { label: "Admin user", email: "admin@marketly.test", password: "AdminUser123!" },
+  { label: "Admin user", email: "admin@marketly.test", password: "Adm!n-Marketly-2026#Xq7" },
 ];
 
 function CopyField({ value }: { value: string }) {

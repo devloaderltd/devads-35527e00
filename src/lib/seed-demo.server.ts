@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const DEMO_USER = { email: "demo@marketly.test", password: "DemoUser123!", display_name: "Demo User" };
-export const ADMIN_USER = { email: "admin@marketly.test", password: "AdminUser123!", display_name: "Admin User" };
+export const ADMIN_USER = { email: "admin@marketly.test", password: "Adm!n-Marketly-2026#Xq7", display_name: "Admin User" };
 
 const SAMPLE_LISTINGS: { title: string; description: string; price: number; condition: "good" | "like_new" | "not_applicable" | "new" | "fair" | "poor" }[] = [
   { title: "Vintage road bike — Trek 520", description: "Lovingly maintained, ready to ride.", price: 480, condition: "good" },
