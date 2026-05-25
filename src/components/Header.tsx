@@ -52,6 +52,27 @@ export function Header() {
         </form>
 
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={openPicker}
+            className="hidden sm:inline-flex rounded-full bg-white/60 backdrop-blur gap-1 max-w-[12rem]"
+            title="Change city"
+          >
+            <MapPin className="h-4 w-4 text-primary" />
+            <span className="truncate">{cityName ?? "Select city"}</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={openPicker}
+            className="sm:hidden rounded-full bg-white/60 backdrop-blur"
+            title={cityName ?? "Select city"}
+          >
+            <MapPin className="h-4 w-4 text-primary" />
+          </Button>
           <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0">
             <Link to="/post">
               <Plus className="h-4 w-4" />
