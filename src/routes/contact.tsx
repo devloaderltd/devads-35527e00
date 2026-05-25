@@ -108,68 +108,102 @@ function ContactPage() {
       </section>
 
       <section className="mt-10 rounded-3xl border border-white/40 bg-white/65 p-6 backdrop-blur-xl shadow-[var(--shadow-float)] md:p-10 dark:border-white/10 dark:bg-white/5">
-        <h2 className="font-display text-2xl font-bold">Send us a message</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          We'll do our best to reply within one business day.
-        </p>
-        <form onSubmit={handleSubmit} className="mt-6 grid gap-4 md:grid-cols-2">
-          <div>
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              className="mt-1 bg-white/70"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              maxLength={100}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              className="mt-1 bg-white/70"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              maxLength={255}
-              required
-            />
-          </div>
-          <div className="md:col-span-2">
-            <Label htmlFor="subject">Subject</Label>
-            <Input
-              id="subject"
-              className="mt-1 bg-white/70"
-              value={form.subject}
-              onChange={(e) => setForm({ ...form, subject: e.target.value })}
-              maxLength={150}
-              required
-            />
-          </div>
-          <div className="md:col-span-2">
-            <Label htmlFor="message">Message</Label>
-            <Textarea
-              id="message"
-              className="mt-1 bg-white/70"
-              rows={6}
-              value={form.message}
-              onChange={(e) => setForm({ ...form, message: e.target.value })}
-              maxLength={2000}
-              required
-            />
-          </div>
-          <div className="md:col-span-2 flex justify-end">
+        {submitted ? (
+          <div className="grid place-items-center py-6 text-center">
+            <div className="mb-4 grid h-14 w-14 place-items-center rounded-full bg-green-500/15 text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-8 w-8" />
+            </div>
+            <h2 className="font-display text-2xl font-bold">Message ready to send</h2>
+            <p className="mt-2 max-w-md text-sm text-muted-foreground">
+              Thanks {submitted.name}! We've opened your email client with the message pre-filled. Please
+              confirm the send — we'll reply to <span className="font-medium">{submitted.email}</span> within
+              one business day.
+            </p>
             <Button
-              type="submit"
-              disabled={submitting}
-              className="btn-gradient rounded-full border-0 px-6"
+              onClick={resetForm}
+              variant="outline"
+              className="mt-6 rounded-full bg-white/70"
             >
-              {submitting ? "Opening…" : "Send message"}
+              Send another message
             </Button>
           </div>
-        </form>
+        ) : (
+          <>
+            <h2 className="font-display text-2xl font-bold">Send us a message</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              We'll do our best to reply within one business day.
+            </p>
+            <form onSubmit={handleSubmit} noValidate className="mt-6 grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  className="mt-1 bg-white/70"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  maxLength={100}
+                  aria-invalid={!!errors.name}
+                  required
+                />
+                {errors.name && <p role="alert" className="mt-1 text-xs text-destructive">{errors.name}</p>}
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  className="mt-1 bg-white/70"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  maxLength={255}
+                  aria-invalid={!!errors.email}
+                  required
+                />
+                {errors.email && <p role="alert" className="mt-1 text-xs text-destructive">{errors.email}</p>}
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="subject">Subject</Label>
+                <Input
+                  id="subject"
+                  className="mt-1 bg-white/70"
+                  value={form.subject}
+                  onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                  maxLength={150}
+                  aria-invalid={!!errors.subject}
+                  required
+                />
+                {errors.subject && <p role="alert" className="mt-1 text-xs text-destructive">{errors.subject}</p>}
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="message">Message</Label>
+                <Textarea
+                  id="message"
+                  className="mt-1 bg-white/70"
+                  rows={6}
+                  value={form.message}
+                  onChange={(e) => setForm({ ...form, message: e.target.value })}
+                  maxLength={2000}
+                  aria-invalid={!!errors.message}
+                  required
+                />
+                {errors.message && <p role="alert" className="mt-1 text-xs text-destructive">{errors.message}</p>}
+              </div>
+              <div className="md:col-span-2 flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-gradient rounded-full border-0 px-6"
+                >
+                  {submitting ? "Opening…" : "Send message"}
+                </Button>
+              </div>
+            </form>
+          </>
+        )}
       </section>
+    </div>
+  );
+}
     </div>
   );
 }
