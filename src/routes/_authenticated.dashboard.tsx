@@ -98,18 +98,18 @@ function DashboardPage() {
   }, [stats, categories]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-3 py-6 sm:px-4 sm:py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl font-bold">Your <span className="gradient-text">dashboard</span></h1>
-          <p className="text-sm text-muted-foreground">Welcome back{user?.email ? `, ${user.email}` : ""}.</p>
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-bold sm:text-3xl">Your <span className="gradient-text">dashboard</span></h1>
+          <p className="truncate text-xs text-muted-foreground sm:text-sm">Welcome back{user?.email ? `, ${user.email}` : ""}.</p>
         </div>
         <Button asChild className="btn-gradient rounded-full border-0">
           <Link to="/post"><Plus className="mr-1 h-4 w-4" /> New listing</Link>
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-5">
         <KpiCard icon={<Package className="h-5 w-5" />} label="Total listings" value={stats?.totalListings ?? "—"} />
         <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="Active" value={stats?.activeListings ?? "—"} />
         <KpiCard icon={<Eye className="h-5 w-5" />} label="Total views" value={stats?.totalViews ?? "—"} />
