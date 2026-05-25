@@ -1,26 +1,40 @@
-## Complete remaining admin wiring
+## Polish full website to chosen direction: Typographic Minimalist (dark + Sunset Blaze)
 
-Finish the three follow-ups so the admin controls actually drive the rest of the app.
+The user picked the **Typographic Minimalist** prototype: deep `#0a0a0c` / `#0f0f12` surfaces, glassmorphism layers (`bg-white/5 border-white/10`), Sunset Blaze accents (#ff6b35 / #f7931e / #e84393 / #6c5ce7), Space Grotesk display + DM Sans body, with subtle radial glows on primary buttons.
 
-### 1. Wire promotion prices from `site_settings`
-- Update `src/lib/wallet.functions.ts` so `purchasePromotion` (and any price-resolving helper) reads `featured_price_usd`, `bump_price_usd`, `featured_days`, `bump_days` from `site_settings` (`id = 'global'`) instead of the hardcoded $9.99 / $2.99 / 7d / 1d.
-- Update `src/components/PromoteDialog.tsx` to fetch the same row (via a small `getPromotionPricing` serverFn or a direct `supabase.from('site_settings').select(...)` read — public read policy already exists) so the UI shows live prices/durations.
-- Fallback to current defaults if the row is missing.
+Scope is the **homepage + global design system** so the new look propagates to every page (search, listings, dashboard, admin, auth) via semantic tokens.
 
-### 2. Maintenance banner in `__root.tsx`
-- Add a `getPublicSiteSettings` serverFn (or reuse the one above) returning `{ maintenance_mode, maintenance_message, site_name, support_email }`.
-- In `src/routes/__root.tsx`, fetch once via TanStack Query and render a dismissible top banner when `maintenance_mode = true`.
-- Admins (checked via `has_role`) see the banner but are NOT blocked. Non-admins on protected routes (`_authenticated/*`) see a full-page maintenance screen instead of the app.
+### 1. `src/styles.css` — swap the design system to dark Sunset Blaze
+- Rewrite `:root` tokens to dark mode by default:
+  - `--background: #0a0a0c`, `--card: #0f0f12`, `--foreground: white`, `--muted-foreground: white/70`
+  - `--primary` = indigo `#6c5ce7`, `--secondary` = magenta `#e84393`, `--accent` = amber `#f7931e`, `--coral` = `#ff6b35`
+  - `--border` / `--input` use `oklch(1 0 0 / 10%)` for glass strokes
+- New gradient family using Sunset Blaze stops:
+  - `--gradient-primary`: indigo → magenta
+  - `--gradient-warm`: amber → coral → magenta
+  - `--gradient-aurora`: full sunset sweep
+  - `--gradient-page`: radial glows at four corners over the near-black background
+- `--glass-bg: white/5`, `--glass-border: white/10`, deeper shadows + stronger primary glow.
+- Collapse `.dark { … }` to just `color-scheme: dark` since the design is dark-first.
 
-### 3. User-detail drawer on Users page
-- In `src/routes/admin.users.tsx`, add a row action "View" that opens a `Sheet` (shadcn) with:
-  - Profile: display_name, email, phone, country, city, created_at, avatar
-  - Roles: list + add/remove (admin/moderator/user) via existing role mutations
-  - Wallet: current balance + last 10 `wallet_transactions`
-  - Listings: count by status + last 5 listings (title, status, created_at)
-  - Activity: last 10 `audit_log` rows where `target_id = user.id`
-  - Quick actions: Ban/Unban, Send password reset, Adjust wallet (opens existing dialog), Delete user
-- New serverFn `getUserDetail(userId)` in `src/lib/admin.functions.ts` aggregating the above in one call (uses `supabaseAdmin`, admin-gated, logged).
+### 2. `src/components/Header.tsx` — dark glass nav
+- Replace `bg-white/60` style backdrops with the new `glass-strong` (dark) variant.
+- City pill: dark glass with amber pulse dot.
+- "Post" button keeps `btn-gradient` (now indigo → magenta with primary glow).
+- Sign-in button: white pill on dark, matching prototype.
+
+### 3. `src/routes/index.tsx` — match prototype composition
+- Hero section: dark glass card with two corner radial glows (magenta top-right, indigo bottom-left), pulsing amber chip, gradient-text headline that fades white → 60% white, sunset CTA + ghost glass "Browse all".
+- Bento categories: full-width Electronics card with layered indigo/magenta gradient + blur, two square cards (Furniture amber, Pets coral) with icon tiles.
+- Listing rails (Featured / Trending / Latest): keep current data flow, restyle section headings and skeletons to dark glass.
+- City banner and empty-city CTA: dark glass + sunset gradient button.
+
+### 4. Quick polish carried by tokens (no per-file edits)
+- All shadcn components (Button, Card, Dialog, Sheet, Input, Sidebar, etc.) inherit the new dark Sunset Blaze tokens automatically.
+- `glass`, `glass-strong`, `btn-gradient`, `gradient-text`, `hover-float` utilities keep their names so existing usage across `/search`, `/listings/$id`, `/post`, `/dashboard`, `/wallet`, `/admin/*` instantly adopts the new look.
 
 ### Out of scope
-No new tables, no schema changes, no new payment logic. Pure wiring + one drawer.
+- No business-logic / data-fetching changes.
+- No DB migrations.
+- No rewrite of individual sub-pages — they re-skin themselves through the token swap.
+- Light mode is removed (design direction is dark-first); the existing `ThemeToggle` stays but both states render dark for now.
