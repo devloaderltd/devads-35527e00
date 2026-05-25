@@ -1,96 +1,45 @@
-# Dark Mode + User & Admin Dashboards + Demo Accounts
+# Seed demo data + admin re-seed button
 
-## 1. Dark mode toggle
+## 1. Run the seed endpoint now (server-side, one-shot)
 
-- Add a `ThemeProvider` (`src/lib/theme-context.tsx`) that toggles `class="dark"` on `<html>`, persists to `localStorage`, respects system preference on first load.
-- Add a `ThemeToggle` button (sun/moon icon from lucide) in the existing `Header.tsx` (next to city selector / auth area).
-- Verify `src/styles.css` has `.dark` token overrides; if missing, add a complete dark palette mirroring the existing semantic tokens (background, foreground, card, primary, muted, border, etc.) in oklch.
-- Wire the provider once in `src/routes/__root.tsx`.
+I'll POST to `/api/public/seed-demo` with the `x-seed-token` header set to `SUPABASE_SERVICE_ROLE_KEY` using the server-invoke tool. This creates the two accounts (idempotent) and seeds ~5 listings each. After it returns `{ ok: true }`, you can immediately log in with:
 
-## 2. User dashboard (`/dashboard`)
+- **User:** `demo@marketly.test` / `DemoUser123!`
+- **Admin:** `admin@marketly.test` / `AdminUser123!`
 
-Route group: `src/routes/_authenticated/dashboard.*` (uses existing auth guard layout).
+If sign-in still fails after the seed, the most likely cause is **email confirmation being required**. The seed uses `email_confirm: true` when *creating* the user, but if the accounts already exist in a half-created state from a previous attempt, they may not be confirmed. I'll handle this by:
+- Upgrading `ensureUser` to also call `supabaseAdmin.auth.admin.updateUserById(id, { email_confirm: true, password })` when the user already exists, so re-running the seed always heals the account (confirms email + resets password to the known value).
 
-Pages/tabs:
-- **Overview**: KPI cards — Total listings, Active listings, Total views, Total favorites received, Unread messages.
-- **My Listings**: table with status, views, favorites, bumped_at, quick actions (edit/delete/mark sold).
-- **Analytics**: 
-  - Line chart: views over last 30 days (per-listing aggregated).
-  - Bar chart: views per listing (top 10).
-  - Pie chart: listings by category.
-- **Messages**: list of threads with last message preview, unread count.
-- **Favorites**: grid of saved listings.
-- **Profile**: edit display_name, bio, phone, avatar, city.
+## 2. Admin "Seed demo data" button
 
-Data via `createServerFn` with `requireSupabaseAuth`:
-- `getUserDashboardStats` — aggregates from `listings`, `favorites`, `messages`.
-- `getUserListings` — user's listings with image and category joins.
-- `getUserViewsTimeseries` — views grouped by day (uses listings.view_count snapshot + bumped_at as proxy; see "Data caveats" below).
+Add a button on the admin dashboard (`/admin`, Overview tab) that re-runs the seed from the UI — no curl, no token paste.
 
-Charts: **recharts** (already common in shadcn templates; install if absent).
+### How auth works (so no token is exposed to the browser)
 
-## 3. Admin dashboard (`/admin`)
+- New server function `runDemoSeed` in `src/lib/admin.functions.ts`, gated by a new `requireAdmin` middleware (checks `has_role(userId, 'admin')` via `supabaseAdmin`).
+- The server function calls the same seeding logic directly (refactored out of the route handler into `src/lib/seed-demo.server.ts` so both the public route and the server fn share one implementation).
+- No service-role token is ever sent from the browser — admin role is verified server-side via the user's session.
 
-Route group: `src/routes/_authenticated/admin.*` with an additional admin-role check in `beforeLoad` (calls a `requireAdmin` server fn that uses `has_role(auth.uid(), 'admin')`); non-admins redirect to `/dashboard`.
+### UI
 
-Pages/tabs:
-- **Overview KPIs**: Total users, Total listings (by status), Total payments revenue, Open reports, Active promotions, New signups (7d / 30d).
-- **Analytics charts**:
-  - Line: new users per day (30d) — from `profiles.created_at`.
-  - Line: new listings per day (30d).
-  - Bar: listings per category.
-  - Bar: listings per city (top 10).
-  - Stacked bar: payments revenue per day by promotion_type.
-  - Donut: listing status distribution (active/sold/expired/draft).
-- **Users**: paginated table of profiles + role, search by display_name/email, action to promote/demote admin/moderator.
-- **Listings**: moderation table (filter by status, search), actions: delete, change status.
-- **Reports**: open reports queue, mark resolved.
-- **Payments**: recent payments, filter by status/provider.
-- **Promotions**: active promotions list.
-
-Server fns (admin-gated middleware `requireAdmin` that wraps `requireSupabaseAuth` + has_role check):
-- `getAdminOverview`, `getAdminTimeseries`, `getAdminUsers`, `setUserRole`, `getAdminListings`, `moderateListing`, `getAdminReports`, `resolveReport`, `getAdminPayments`, `getAdminPromotions`.
-
-## 4. Demo accounts
-
-Seed via a one-off SQL migration that inserts into `auth.users` is NOT allowed; instead create a small **server route** `POST /api/public/seed-demo` (guarded by a `DEMO_SEED_TOKEN` secret) that:
-- Creates `demo@dev.ads` (password `DemoUser123!`) and `admin@dev.ads` (password `AdminUser123!`) via `supabaseAdmin.auth.admin.createUser` (email confirmed).
-- Inserts `user_roles` row with role `admin` for the admin account.
-- Inserts ~5 sample listings + images + a couple favorites/messages for realistic dashboard data.
-- Idempotent: skip if users already exist.
-
-Run once after deploy by `curl`-ing with the token. Credentials documented in chat after seeding.
-
-## 5. Navigation
-
-- Header: when signed in, show avatar dropdown with "Dashboard", "Admin" (only if admin role), "Sign out".
-- Dashboard pages use a left sidebar (shadcn `Sidebar`) with the tabs above.
-
-## Data caveats
-
-- Per-day view timeseries: the schema only has `listings.view_count` (cumulative). True daily timeseries would need a new `listing_view_events` table. For this plan we'll add that table (listing_id, viewed_at, optional viewer_id) and write to it from `increment_listing_view` so charts are real, not faked.
-- New migration adds `listing_view_events` + index on `(listing_id, viewed_at)` + RLS (admins read all; users read events for their own listings; insert via SECURITY DEFINER function only).
+- New `SeedDemoButton` component in the admin Overview tab:
+  - Button: "Seed / refresh demo accounts"
+  - On click → calls `runDemoSeed` → toast with result (`"Created demo + admin, seeded N listings"` or `"Demo accounts refreshed"`).
+  - Shows the two account credentials below the button (read-only, with copy buttons) so you always know what to log in with.
+- Disabled while running; shows a spinner.
 
 ## Files
 
-New:
-- `src/lib/theme-context.tsx`, `src/components/ThemeToggle.tsx`
-- `src/lib/dashboard.functions.ts`, `src/lib/admin.functions.ts`
-- `src/integrations/supabase/admin-middleware.ts` (`requireAdmin`)
-- `src/routes/_authenticated/dashboard.tsx` (layout) + `dashboard.index.tsx`, `dashboard.listings.tsx`, `dashboard.analytics.tsx`, `dashboard.messages.tsx`, `dashboard.favorites.tsx`, `dashboard.profile.tsx`
-- `src/routes/_authenticated/admin.tsx` (layout, role-gated) + `admin.index.tsx`, `admin.users.tsx`, `admin.listings.tsx`, `admin.reports.tsx`, `admin.payments.tsx`, `admin.promotions.tsx`
-- `src/components/dashboard/*` (KPI cards, charts, sidebars)
-- `src/routes/api/public/seed-demo.ts`
-- One migration: `listing_view_events` table + updated `increment_listing_view` to also insert an event row.
+**Edit**
+- `src/routes/api/public/seed-demo.ts` — extract seeding into a shared helper; harden `ensureUser` to confirm email + reset password on existing users.
+- `src/routes/_authenticated.admin.tsx` — add `SeedDemoButton` to Overview tab.
+- `src/lib/admin.functions.ts` — add `runDemoSeed` server fn.
 
-Edited:
-- `src/styles.css` (dark tokens if missing)
-- `src/routes/__root.tsx` (ThemeProvider)
-- `src/components/Header.tsx` (ThemeToggle + user menu)
+**Create**
+- `src/lib/seed-demo.server.ts` — shared seeding logic (ensure users, seed listings, ensure admin role).
+- `src/lib/admin-middleware.ts` — `requireAdmin` server middleware (composes `requireSupabaseAuth` + role check).
+- `src/components/admin/SeedDemoButton.tsx` — UI component.
 
 ## Out of scope
-
-- Realtime push updates on dashboards (polling/refetch only).
-- Email notifications.
-- Export to CSV.
-- Audit log of admin actions.
+- One-click "Log in as demo" shortcut on login page (we can add later if you want).
+- Resetting/wiping demo data — current behavior is idempotent (skips listings if user already has any).
