@@ -42,10 +42,26 @@ function ProfileEdit() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, bio, phone, avatar_url, country, city_id")
+        .select("display_name, bio, phone, avatar_url, country, city_id, created_at")
         .eq("id", user!.id)
         .maybeSingle();
       return data;
+    },
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["profile-stats", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const [listingsRes, reviewsRes] = await Promise.all([
+        supabase.from("listings").select("id, status", { count: "exact", head: false }).eq("user_id", user!.id),
+        supabase.from("seller_reviews").select("rating").eq("seller_id", user!.id),
+      ]);
+      const all = listingsRes.data ?? [];
+      const active = all.filter((l) => l.status === "active").length;
+      const ratings = reviewsRes.data ?? [];
+      const avg = ratings.length ? ratings.reduce((s, r) => s + r.rating, 0) / ratings.length : 0;
+      return { total: all.length, active, ratingAvg: avg, ratingCount: ratings.length };
     },
   });
 
