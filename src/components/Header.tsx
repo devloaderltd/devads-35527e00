@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, ShieldCheck, MapPin, LayoutDashboard, Bug } from "lucide-react";
+import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCity } from "@/lib/city-context";
 import { useState } from "react";
@@ -106,9 +106,6 @@ export function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/favorites"><Heart className="mr-2 h-4 w-4" /> Favorites</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/admin"><ShieldCheck className="mr-2 h-4 w-4" /> Moderation</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/debug/session"><Bug className="mr-2 h-4 w-4" /> Debug session</Link>

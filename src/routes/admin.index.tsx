@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -17,9 +17,10 @@ import {
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
 import { SeedDemoButton } from "@/components/admin/SeedDemoButton";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { getMyRoles } from "@/lib/admin.functions";
 
-export const Route = createFileRoute("/_authenticated/admin")({
+export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Admin — Marketly" }, { name: "robots", content: "noindex" }] }),
   component: AdminPage,
 });
@@ -28,16 +29,21 @@ const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8"
 
 function AdminPage() {
   const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const fetchMyRoles = useServerFn(getMyRoles);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/admin/login", search: { redirect: "/admin" }, replace: true });
+    }
+  }, [authLoading, user, navigate]);
+
   const rolesQ = useQuery({
     queryKey: ["my-roles", user?.id],
     enabled: !authLoading && !!user,
     staleTime: 0,
     refetchOnMount: "always",
-    queryFn: async () => {
-      const result = await fetchMyRoles();
-      return result.roles;
-    },
+    queryFn: async () => (await fetchMyRoles()).roles,
     retry: 2,
   });
   const roles = rolesQ.data;
@@ -45,48 +51,55 @@ function AdminPage() {
   const isMod = isAdmin || roles?.includes("moderator");
 
   if (authLoading || !user || rolesQ.isLoading || (rolesQ.isFetching && roles === undefined)) {
-    return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
-  }
-  if (rolesQ.error) {
     return (
-      <div className="container mx-auto grid place-items-center px-4 py-20 text-center">
-        <ShieldAlert className="mb-3 h-10 w-10 text-destructive" />
-        <h1 className="font-display text-xl font-bold">Couldn't verify your roles</h1>
-        <p className="mt-1 max-w-md text-sm text-muted-foreground">{String(rolesQ.error)}</p>
-        <div className="mt-4 flex gap-2">
-          <Button variant="outline" className="rounded-full" onClick={() => rolesQ.refetch()}>Retry</Button>
-          <Button asChild variant="outline" className="rounded-full">
-            <Link to="/debug/session">Open session debug</Link>
-          </Button>
-        </div>
-      </div>
+      <div className="grid min-h-screen place-items-center bg-slate-950 text-slate-400">Loading admin…</div>
     );
   }
-  if (!isMod) {
+
+  if (rolesQ.error) {
     return (
-      <div className="container mx-auto grid place-items-center px-4 py-20 text-center">
-        <ShieldAlert className="mb-3 h-10 w-10 text-muted-foreground" />
-        <h1 className="font-display text-xl font-bold">Admins only</h1>
-        <p className="mt-1 text-sm text-muted-foreground">You don't have permission to view this page.</p>
-        <Link to="/debug/session" className="mt-3 text-sm text-primary hover:underline">See session debug →</Link>
-      </div>
+      <AdminShell email={user.email}>
+        <div className="grid place-items-center py-20 text-center">
+          <ShieldAlert className="mb-3 h-10 w-10 text-red-400" />
+          <h1 className="font-display text-xl font-bold">Couldn't verify your roles</h1>
+          <p className="mt-1 max-w-md text-sm text-slate-400">{String(rolesQ.error)}</p>
+          <Button variant="outline" className="mt-4 rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => rolesQ.refetch()}>Retry</Button>
+        </div>
+      </AdminShell>
+    );
+  }
+
+  if (!isMod) {
+    const signOut = async () => {
+      await supabase.auth.signOut();
+      navigate({ to: "/admin/login", replace: true });
+    };
+    return (
+      <AdminShell email={user.email}>
+        <div className="grid place-items-center py-20 text-center">
+          <ShieldAlert className="mb-3 h-10 w-10 text-slate-400" />
+          <h1 className="font-display text-xl font-bold">Not authorized</h1>
+          <p className="mt-1 max-w-md text-sm text-slate-400">This account doesn't have admin access.</p>
+          <Button onClick={signOut} className="mt-4 rounded-full border-0 bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white">Sign in as admin</Button>
+        </div>
+      </AdminShell>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AdminShell email={user.email}>
       <div className="mb-6">
-        <h1 className="font-display text-3xl font-bold">Admin <span className="gradient-text">control</span></h1>
-        <p className="text-sm text-muted-foreground">Manage users, listings, payments and reports.</p>
+        <h1 className="font-display text-3xl font-bold">Admin <span className="bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent">control</span></h1>
+        <p className="text-sm text-slate-400">Manage users, listings, payments and reports.</p>
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList className="rounded-full bg-white/60 backdrop-blur dark:bg-white/10">
-          <TabsTrigger value="overview" className="rounded-full">Overview</TabsTrigger>
-          {isAdmin && <TabsTrigger value="users" className="rounded-full">Users</TabsTrigger>}
-          <TabsTrigger value="listings" className="rounded-full">Listings</TabsTrigger>
-          {isAdmin && <TabsTrigger value="payments" className="rounded-full">Payments</TabsTrigger>}
-          <TabsTrigger value="reports" className="rounded-full">Reports</TabsTrigger>
+        <TabsList className="rounded-full bg-white/5">
+          <TabsTrigger value="overview" className="rounded-full data-[state=active]:bg-white/10">Overview</TabsTrigger>
+          {isAdmin && <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-white/10">Users</TabsTrigger>}
+          <TabsTrigger value="listings" className="rounded-full data-[state=active]:bg-white/10">Listings</TabsTrigger>
+          {isAdmin && <TabsTrigger value="payments" className="rounded-full data-[state=active]:bg-white/10">Payments</TabsTrigger>}
+          <TabsTrigger value="reports" className="rounded-full data-[state=active]:bg-white/10">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4"><OverviewTab isAdmin={!!isAdmin} /></TabsContent>
@@ -95,9 +108,11 @@ function AdminPage() {
         {isAdmin && <TabsContent value="payments" className="mt-4"><PaymentsTab /></TabsContent>}
         <TabsContent value="reports" className="mt-4"><ReportsTab /></TabsContent>
       </Tabs>
-    </div>
+    </AdminShell>
   );
 }
+
+const panelCls = "rounded-2xl border border-white/10 bg-white/5 backdrop-blur";
 
 /* -------------------- Overview -------------------- */
 function OverviewTab({ isAdmin }: { isAdmin: boolean }) {
@@ -178,10 +193,10 @@ function OverviewTab({ isAdmin }: { isAdmin: boolean }) {
         <ChartCard title="New signups & listings (30 days)">
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={charts?.days ?? []}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} interval={4} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
               <Legend />
               <Line type="monotone" dataKey="users" stroke="#7c5cff" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="listings" stroke="#22c1c3" strokeWidth={2} dot={false} />
@@ -193,10 +208,10 @@ function OverviewTab({ isAdmin }: { isAdmin: boolean }) {
           <ChartCard title="Revenue per day (30 days)">
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={charts?.days ?? []}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} interval={4} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
+                <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
                 <Bar dataKey="revenue" fill="#ff7a59" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -206,10 +221,10 @@ function OverviewTab({ isAdmin }: { isAdmin: boolean }) {
         <ChartCard title="Listings by category">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={charts?.byCategory ?? []}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={60} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} interval={0} angle={-20} textAnchor="end" height={60} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
               <Bar dataKey="value" fill="#36c172" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -218,10 +233,10 @@ function OverviewTab({ isAdmin }: { isAdmin: boolean }) {
         <ChartCard title="Top 10 cities">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={charts?.byCity ?? []} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-              <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+              <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
               <Bar dataKey="value" fill="#5aa9ff" radius={[0, 8, 8, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -233,7 +248,7 @@ function OverviewTab({ isAdmin }: { isAdmin: boolean }) {
               <Pie data={charts?.byStatus ?? []} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} label>
                 {(charts?.byStatus ?? []).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
@@ -276,15 +291,15 @@ function UsersTab() {
   const filtered = (users ?? []).filter(u => !q || u.display_name?.toLowerCase().includes(q.toLowerCase()));
 
   return (
-    <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
+    <Card className={panelCls + " border-0"}>
       <CardHeader className="flex flex-row items-center justify-between gap-3">
-        <CardTitle className="text-base">Users ({users?.length ?? 0})</CardTitle>
-        <Input placeholder="Search name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs rounded-full" />
+        <CardTitle className="text-base text-slate-100">Users ({users?.length ?? 0})</CardTitle>
+        <Input placeholder="Search name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+            <thead className="bg-white/5 text-left text-xs uppercase text-slate-400">
               <tr>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Roles</th>
@@ -294,21 +309,21 @@ function UsersTab() {
             </thead>
             <tbody>
               {filtered.map((u) => (
-                <tr key={u.id} className="border-t border-border/40">
-                  <td className="px-4 py-3 font-medium">{u.display_name}</td>
+                <tr key={u.id} className="border-t border-white/10">
+                  <td className="px-4 py-3 font-medium text-slate-100">{u.display_name}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {u.roles.map(r => <Badge key={r} variant={r === "admin" ? "default" : "secondary"} className="capitalize">{r}</Badge>)}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{format(new Date(u.created_at), "MMM d, yyyy")}</td>
+                  <td className="px-4 py-3 text-slate-400">{format(new Date(u.created_at), "MMM d, yyyy")}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex gap-2">
-                      <Button size="sm" variant="outline" className="rounded-full"
+                      <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"
                         onClick={() => setRole.mutate({ userId: u.id, role: "moderator", add: !u.roles.includes("moderator") })}>
                         {u.roles.includes("moderator") ? "Demote mod" : "Make mod"}
                       </Button>
-                      <Button size="sm" variant="outline" className="rounded-full"
+                      <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"
                         onClick={() => setRole.mutate({ userId: u.id, role: "admin", add: !u.roles.includes("admin") })}>
                         {u.roles.includes("admin") ? "Demote admin" : "Make admin"}
                       </Button>
@@ -350,15 +365,15 @@ function ListingsTab() {
   const filtered = (data ?? []).filter(l => !q || l.title.toLowerCase().includes(q.toLowerCase()));
 
   return (
-    <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
+    <Card className={panelCls + " border-0"}>
       <CardHeader className="flex flex-row items-center justify-between gap-3">
-        <CardTitle className="text-base">Listings ({data?.length ?? 0})</CardTitle>
-        <Input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs rounded-full" />
+        <CardTitle className="text-base text-slate-100">Listings ({data?.length ?? 0})</CardTitle>
+        <Input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+            <thead className="bg-white/5 text-left text-xs uppercase text-slate-400">
               <tr>
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Status</th>
@@ -370,16 +385,16 @@ function ListingsTab() {
             </thead>
             <tbody>
               {filtered.map((l) => (
-                <tr key={l.id} className="border-t border-border/40">
-                  <td className="px-4 py-3 font-medium">{l.title}</td>
+                <tr key={l.id} className="border-t border-white/10">
+                  <td className="px-4 py-3 font-medium text-slate-100">{l.title}</td>
                   <td className="px-4 py-3"><Badge variant={l.status === "active" ? "default" : "secondary"} className="capitalize">{l.status}</Badge></td>
-                  <td className="px-4 py-3">{l.price ? `${l.currency} ${Number(l.price).toFixed(2)}` : "—"}</td>
-                  <td className="px-4 py-3">{l.view_count ?? 0}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{format(new Date(l.created_at), "MMM d")}</td>
+                  <td className="px-4 py-3 text-slate-300">{l.price ? `${l.currency} ${Number(l.price).toFixed(2)}` : "—"}</td>
+                  <td className="px-4 py-3 text-slate-300">{l.view_count ?? 0}</td>
+                  <td className="px-4 py-3 text-slate-400">{format(new Date(l.created_at), "MMM d")}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex gap-2">
-                      <Button asChild size="sm" variant="outline" className="rounded-full">
-                        <Link to="/listings/$id" params={{ id: l.id }}><Eye className="h-3.5 w-3.5" /></Link>
+                      <Button asChild size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10">
+                        <a href={`/listings/${l.id}`} target="_blank" rel="noopener noreferrer"><Eye className="h-3.5 w-3.5" /></a>
                       </Button>
                       {l.status !== "removed" && (
                         <Button size="sm" variant="destructive" className="rounded-full" onClick={() => remove.mutate(l.id)}>
@@ -411,12 +426,12 @@ function PaymentsTab() {
   });
 
   return (
-    <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
-      <CardHeader><CardTitle className="text-base">Payments ({data?.length ?? 0})</CardTitle></CardHeader>
+    <Card className={panelCls + " border-0"}>
+      <CardHeader><CardTitle className="text-base text-slate-100">Payments ({data?.length ?? 0})</CardTitle></CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+            <thead className="bg-white/5 text-left text-xs uppercase text-slate-400">
               <tr>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Amount</th>
@@ -427,15 +442,15 @@ function PaymentsTab() {
             </thead>
             <tbody>
               {(data ?? []).map(p => (
-                <tr key={p.id} className="border-t border-border/40">
-                  <td className="px-4 py-3 text-muted-foreground">{format(new Date(p.created_at), "MMM d, HH:mm")}</td>
-                  <td className="px-4 py-3 font-medium">{p.currency} {Number(p.amount).toFixed(2)}</td>
-                  <td className="px-4 py-3 capitalize">{p.promotion_type ?? "—"}</td>
-                  <td className="px-4 py-3">{p.provider}</td>
+                <tr key={p.id} className="border-t border-white/10">
+                  <td className="px-4 py-3 text-slate-400">{format(new Date(p.created_at), "MMM d, HH:mm")}</td>
+                  <td className="px-4 py-3 font-medium text-slate-100">{p.currency} {Number(p.amount).toFixed(2)}</td>
+                  <td className="px-4 py-3 capitalize text-slate-300">{p.promotion_type ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-300">{p.provider}</td>
                   <td className="px-4 py-3"><Badge variant={p.status === "completed" ? "default" : "secondary"} className="capitalize">{p.status}</Badge></td>
                 </tr>
               ))}
-              {!data?.length && <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">No payments yet.</td></tr>}
+              {!data?.length && <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-400">No payments yet.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -481,20 +496,20 @@ function ReportsTab() {
 
   return (
     <div className="space-y-3">
-      {reports?.length === 0 && <div className="rounded-2xl glass p-10 text-center text-sm text-muted-foreground">No reports.</div>}
+      {reports?.length === 0 && <div className={panelCls + " p-10 text-center text-sm text-slate-400"}>No reports.</div>}
       {reports?.map((r) => (
-        <div key={r.id} className="rounded-2xl glass p-4">
+        <div key={r.id} className={panelCls + " p-4"}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
                 <Badge variant={r.status === "open" ? "default" : "secondary"} className="capitalize">{r.status}</Badge>
-                <span className="text-sm font-medium">{r.reason}</span>
+                <span className="text-sm font-medium text-slate-100">{r.reason}</span>
               </div>
               {r.listing ? (
-                <Link to="/listings/$id" params={{ id: r.listing.id }} className="mt-1 block text-sm text-primary hover:underline">{r.listing.title}</Link>
-              ) : <span className="text-sm text-muted-foreground">Listing deleted</span>}
-              {r.details && <p className="mt-2 max-w-xl whitespace-pre-wrap text-sm text-muted-foreground">{r.details}</p>}
-              <div className="mt-1 text-xs text-muted-foreground">{formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</div>
+                <a href={`/listings/${r.listing.id}`} target="_blank" rel="noopener noreferrer" className="mt-1 block text-sm text-indigo-300 hover:underline">{r.listing.title}</a>
+              ) : <span className="text-sm text-slate-400">Listing deleted</span>}
+              {r.details && <p className="mt-2 max-w-xl whitespace-pre-wrap text-sm text-slate-400">{r.details}</p>}
+              <div className="mt-1 text-xs text-slate-500">{formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</div>
             </div>
             <div className="flex flex-wrap gap-2">
               {r.listing && r.listing.status !== "removed" && (
@@ -502,8 +517,8 @@ function ReportsTab() {
               )}
               {r.status === "open" && (
                 <>
-                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => resolveReport.mutate({ id: r.id, status: "dismissed" })}>Dismiss</Button>
-                  <Button size="sm" className="btn-gradient rounded-full border-0" onClick={() => resolveReport.mutate({ id: r.id, status: "resolved" })}>Resolve</Button>
+                  <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => resolveReport.mutate({ id: r.id, status: "dismissed" })}>Dismiss</Button>
+                  <Button size="sm" className="rounded-full border-0 bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white" onClick={() => resolveReport.mutate({ id: r.id, status: "resolved" })}>Resolve</Button>
                 </>
               )}
             </div>
@@ -517,13 +532,13 @@ function ReportsTab() {
 /* -------------------- shared -------------------- */
 function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
-    <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
+    <Card className={panelCls + " border-0"}>
       <CardContent className="p-4">
-        <div className="flex items-center justify-between text-muted-foreground">
+        <div className="flex items-center justify-between text-slate-400">
           <span className="text-xs uppercase tracking-wide">{label}</span>
-          <span className="text-primary">{icon}</span>
+          <span className="text-indigo-300">{icon}</span>
         </div>
-        <div className="mt-2 font-display text-2xl font-bold">{value}</div>
+        <div className="mt-2 font-display text-2xl font-bold text-slate-100">{value}</div>
       </CardContent>
     </Card>
   );
@@ -531,8 +546,8 @@ function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string;
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
-      <CardHeader className="pb-2"><CardTitle className="text-base">{title}</CardTitle></CardHeader>
+    <Card className={panelCls + " border-0"}>
+      <CardHeader className="pb-2"><CardTitle className="text-base text-slate-100">{title}</CardTitle></CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
   );

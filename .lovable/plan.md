@@ -1,46 +1,58 @@
-## Goal
+## Premium-bump cities report
 
-Make it easy to diagnose admin-access issues by exposing live session info, and make sure that after signing in from an admin-protected URL the user lands back on `/admin` (not `/`).
+Query against `listings` + `listing_promotions` (type = `bump`, active, not expired):
 
-## 1. New debug page — `/debug/session`
+**No city currently has 5+ listings with a premium bump.** Top cities have only **1 bumped listing each** (San Francisco, Gary, Rutland, Pasadena, Bristol, Auburn, Waterbury, Nanaimo, Raleigh, Llanelli). To populate this, run the demo seeder or bump more listings.
 
-Create `src/routes/_authenticated.debug.session.tsx`:
-- Protected by the existing `_authenticated` layout (already waits for `loading` before redirecting).
-- Shows, in a readable card layout:
-  - `loading` flag from `useAuth`
-  - `user.id`, `user.email`, `created_at`, `last_sign_in_at`
-  - `session.expires_at` (formatted) and `access_token` length
-  - Roles fetched live from `user_roles` for the current user
-  - `isAdmin` / `isModerator` derived flags
-  - Raw JWT claims (decoded payload from access token)
-- "Copy as JSON" button + "Refresh" button that re-runs the role query and `supabase.auth.getSession()`.
-- `noindex` meta.
+---
 
-## 2. Post-login redirect always honors original URL
+## Separate admin & user login pages
 
-`src/routes/_authenticated.tsx` currently captures `location.href` once and passes it as `redirect` search param — good. Two small fixes:
-- Capture redirect target on every render where `!session` becomes true (not via `useRef` initial value) so deep links like `/admin?tab=users` round-trip correctly even after client-side nav.
-- `src/routes/login.tsx` `validateSearch`: keep `/`-prefixed safety check, but also accept paths with query strings/hash (currently fine — confirm). After successful sign-in, replace `window.location.assign(redirect)` with `navigate({ to: redirect, replace: true })` so TanStack Router rehydrates context without a full reload (avoids losing the just-set session in some browsers). Fallback: if `redirect` equals current URL, go to `/`.
+Goal: admin and user areas have their own login URL, branding, redirect rules, and guards. They never bleed into each other.
 
-## 3. Harden `/admin` guard
+### Routes
 
-`src/routes/_authenticated.admin.tsx` already gates on `rolesLoading` + `roles === undefined`. Additional hardening:
-- Also gate on `useAuth().loading` (currently only `user` is read) so first paint never flashes "Admins only" before the session resolves.
-- If the role query errors (network/RLS), show a retry card instead of falling through to "Admins only" (which is misleading).
-- Add a small link "See session debug →" pointing to `/debug/session` on the access-denied screen so future debugging is one click away.
+```text
+/login              → user login (existing, cleaned up)
+/signup             → user signup (unchanged)
+/admin/login        → NEW admin-only login page
+/admin              → admin dashboard (existing, re-guarded)
+/_authenticated/*   → user-only protected area (favorites, messages, post, profile, my-listings, debug)
+```
 
-## 4. Header link (optional, admin-only)
+### Behavior
 
-Add a "Debug session" entry in the user dropdown in `src/components/Header.tsx` — visible to all signed-in users, points to `/debug/session`. Keeps it discoverable without polluting nav for signed-out visitors.
+**User flow**
+- Unauthed visit to `/_authenticated/*` → redirect to `/login?redirect=…`
+- `/login` rejects users who already have an admin role: after sign-in, if the account is admin-only it shows "Use the admin sign-in" with a link to `/admin/login`; regular users continue to their redirect target or `/`.
+- `/login` never sends anyone to `/admin*`. If the captured redirect starts with `/admin`, it's discarded and replaced with `/`.
 
-## Files
+**Admin flow**
+- Unauthed visit to `/admin` (or any `/admin/*` child) → redirect to `/admin/login?redirect=…` (NOT `/login`).
+- `/admin/login` is a distinct page with admin styling (darker, "Marketly Admin" header, no signup link, no "create account" CTA).
+- On submit: sign in, call the existing `getMyRoles` server fn, and only navigate to the redirect target (or `/admin`) if the user has the `admin` role. Otherwise sign them back out and show "This account is not an admin."
+- `/admin` guard waits for `authLoading` + `rolesLoading`; on no session → `/admin/login`; on session but no admin role → render a "Not authorized" card with a "Sign in as admin" button (signs out + routes to `/admin/login`). No more silent redirect loop.
 
-- new: `src/routes/_authenticated.debug.session.tsx`
-- edit: `src/routes/_authenticated.tsx` (redirect capture)
-- edit: `src/routes/login.tsx` (use router navigate instead of full reload)
-- edit: `src/routes/_authenticated.admin.tsx` (loading gate + retry + debug link)
-- edit: `src/components/Header.tsx` (dropdown entry)
+**Header / navigation**
+- The main `Header` (user shell) hides any "Admin" entry for non-admins and links admins to `/admin` (not to the admin login).
+- Admin pages get a minimal admin top bar (no marketplace nav, no "Post listing", no city selector) so the two surfaces feel separate. A "Sign out" button in the admin bar returns to `/admin/login`.
 
-## Out of scope
+### Files
 
-No DB changes, no new server functions — all reads use the existing browser Supabase client under RLS.
+New:
+- `src/routes/admin.login.tsx` — standalone admin login (distinct layout, no shared user header).
+- `src/components/admin/AdminShell.tsx` — admin-only header + container used by `/admin` (and future admin children).
+
+Edited:
+- `src/routes/_authenticated.tsx` — redirect target sanitised; never allow `/admin*` in user redirect.
+- `src/routes/_authenticated.admin.tsx` — switch unauth/forbidden redirect target from `/login` to `/admin/login`; wrap content in `AdminShell`; add "Not authorized" state with sign-out CTA.
+- `src/routes/login.tsx` — strip any `/admin*` from `redirect`; after login, if user has only admin role, show inline notice linking to `/admin/login`.
+- `src/components/Header.tsx` — only show admin link when role check passes; do not render on `/admin*` routes.
+
+No DB migration. No changes to `user_roles`, RLS, or server fns beyond reusing `getMyRoles`.
+
+### Notes (technical)
+
+- Admin login uses the same Supabase `signInWithPassword`, then awaits `getSession()` and calls `getMyRoles` before navigating — same hardening pattern already used on `/login`.
+- Both login routes share `validateSearch` that whitelists redirect prefixes (`/login` allows `/` and any non-`/admin` path; `/admin/login` allows only `/admin` paths).
+- Admin sign-out clears session then routes to `/admin/login`, so the admin surface never lands on the user marketplace.
