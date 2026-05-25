@@ -18,6 +18,7 @@ import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 
 import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
+import { pushRecentlyViewed } from "@/lib/recently-viewed";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 export const Route = createFileRoute("/listings/$id")({
@@ -56,10 +57,11 @@ function ListingDetail() {
     },
   });
 
-  // Fire-and-forget view increment
+  // Fire-and-forget view increment + recently viewed tracking
   useEffect(() => {
     if (!listing?.id) return;
     supabase.rpc("increment_listing_view", { _listing_id: listing.id });
+    pushRecentlyViewed(listing.id);
   }, [listing?.id]);
 
   // Keyboard nav for gallery + lightbox
@@ -162,7 +164,7 @@ function ListingDetail() {
     .split(/\s+/).map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 pb-24 md:pb-6">
       {/* Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Home</Link>
@@ -496,6 +498,35 @@ function ListingDetail() {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Sticky mobile action bar */}
+      {listing.user_id !== user?.id && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/40 bg-white/85 p-2 backdrop-blur-xl shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.15)] md:hidden">
+          <div className="container mx-auto flex items-center gap-2 px-2">
+            <FavoriteButton listingId={listing.id} variant="inline" />
+            <button
+              type="button"
+              onClick={share}
+              aria-label="Share"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/60 bg-white/70 hover:bg-white"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+            {contact?.phone && (
+              <a
+                href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
+                aria-label="Call seller"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/60 bg-white/70 hover:bg-white"
+              >
+                <Phone className="h-4 w-4 text-primary" />
+              </a>
+            )}
+            <Button onClick={startThread} disabled={contacting} className="btn-gradient h-10 flex-1 gap-2 rounded-full border-0">
+              <MessageSquare className="h-4 w-4" /> Message seller
+            </Button>
+          </div>
         </div>
       )}
 
