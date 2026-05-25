@@ -613,12 +613,12 @@ function ReportsTab() {
 function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
     <Card className={panelCls + " border-0"}>
-      <CardContent className="p-4">
+      <CardContent className="p-3 sm:p-4">
         <div className="flex items-center justify-between text-slate-400">
-          <span className="text-xs uppercase tracking-wide">{label}</span>
+          <span className="text-[10px] uppercase tracking-wide sm:text-xs">{label}</span>
           <span className="text-indigo-300">{icon}</span>
         </div>
-        <div className="mt-2 font-display text-2xl font-bold text-slate-100">{value}</div>
+        <div className="mt-1.5 font-display text-lg font-bold text-slate-100 sm:mt-2 sm:text-2xl">{value}</div>
       </CardContent>
     </Card>
   );
