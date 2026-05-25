@@ -67,12 +67,19 @@ export const Route = createFileRoute("/search")({
 function SearchPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+  const nav = useNav();
   const { user } = useAuth();
+  const qc = useQueryClient();
   const saveFn = useServerFn(createSavedSearch);
+  const listFn = useServerFn(listSavedSearches);
   const page = search.page ?? 1;
   const sort = search.sort ?? "recent";
 
   const [qInput, setQInput] = useState(search.q ?? "");
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saveNotify, setSaveNotify] = useState(true);
+
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
