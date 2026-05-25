@@ -62,6 +62,9 @@ function PostListing() {
     e.preventDefault();
     if (!user) return toast.error("Sign in first");
     if (!categoryId || !cityId) return toast.error("Pick a category and city");
+    const ageTrimmed = itemAge.trim();
+    if (!ageTrimmed) return toast.error("Item age is required");
+    if (ageTrimmed.length > 60) return toast.error("Item age must be 60 characters or less");
     setSubmitting(true);
     try {
       const { data: listing, error } = await supabase
@@ -72,7 +75,7 @@ function PostListing() {
           description: description.trim(),
           price: price ? Number(price) : null,
           currency,
-          
+          item_age: ageTrimmed,
           category_id: categoryId,
           city_id: cityId,
         })
