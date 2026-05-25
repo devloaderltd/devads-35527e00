@@ -137,12 +137,46 @@ function ProfileEdit() {
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-6">
-      <h1 className="font-display text-3xl font-bold">
-        Your <span className="gradient-text">profile</span>
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        How buyers see you across the marketplace.
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-bold">
+            Your <span className="gradient-text">profile</span>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            How buyers see you across the marketplace.
+          </p>
+        </div>
+        {user && (
+          <Link
+            to="/sellers/$id"
+            params={{ id: user.id }}
+            className="inline-flex items-center gap-1 rounded-full bg-white/60 px-3 py-1.5 text-xs font-medium text-primary backdrop-blur hover:bg-white"
+          >
+            <ExternalLink className="h-3.5 w-3.5" /> View public page
+          </Link>
+        )}
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <StatTile
+          icon={<Package className="h-4 w-4" />}
+          label="Active listings"
+          value={stats ? `${stats.active}` : "—"}
+          hint={stats ? `${stats.total} total` : ""}
+        />
+        <StatTile
+          icon={<Star className="h-4 w-4" />}
+          label="Seller rating"
+          value={stats?.ratingCount ? stats.ratingAvg.toFixed(1) : "—"}
+          hint={stats?.ratingCount ? `${stats.ratingCount} review${stats.ratingCount === 1 ? "" : "s"}` : "No reviews yet"}
+        />
+        <StatTile
+          icon={<Calendar className="h-4 w-4" />}
+          label="Member since"
+          value={profile?.created_at ? formatDistanceToNow(new Date(profile.created_at), { addSuffix: false }) : "—"}
+          hint={profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : ""}
+        />
+      </div>
 
       <div className="iridescent-border mt-6 rounded-3xl border border-white/40 bg-white/65 p-6 shadow-[var(--shadow-float-lg)] backdrop-blur-2xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
