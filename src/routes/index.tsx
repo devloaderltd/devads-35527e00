@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { SiteBanner } from "@/components/SiteBanner";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Zap, Users } from "lucide-react";
+import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Users } from "lucide-react";
 import { useCity } from "@/lib/city-context";
 import catForSale from "@/assets/cat-for-sale.jpg";
 import catVehicles from "@/assets/cat-vehicles.jpg";
