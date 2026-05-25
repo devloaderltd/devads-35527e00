@@ -164,7 +164,7 @@ function ListingDetail() {
     .split(/\s+/).map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 pb-24 md:pb-6">
       {/* Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Home</Link>
