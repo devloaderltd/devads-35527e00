@@ -184,6 +184,92 @@ export const sendPasswordReset = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const getUserSummary = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { userId: string }) => {
+    if (!uuid.safeParse(input.userId).success) throw new Error("Invalid userId");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const [statusRows, listingsCount, txCount, paymentsCount, threads] = await Promise.all([
+      supabaseAdmin.from("listings").select("status").eq("user_id", data.userId),
+      supabaseAdmin.from("listings").select("id", { count: "exact", head: true }).eq("user_id", data.userId),
+      supabaseAdmin.from("wallet_transactions").select("id", { count: "exact", head: true }).eq("user_id", data.userId),
+      supabaseAdmin.from("payments").select("id", { count: "exact", head: true }).eq("user_id", data.userId),
+      supabaseAdmin.from("message_threads").select("id", { count: "exact", head: true }).or(`buyer_id.eq.${data.userId},seller_id.eq.${data.userId}`),
+    ]);
+    const statusCounts: Record<string, number> = {};
+    for (const r of (statusRows.data ?? []) as { status: string }[]) {
+      statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1;
+    }
+    return {
+      statusCounts,
+      listingsTotal: listingsCount.count ?? 0,
+      walletTxsTotal: txCount.count ?? 0,
+      paymentsTotal: paymentsCount.count ?? 0,
+      threadsCount: threads.count ?? 0,
+    };
+  });
+
+const pageInput = (input: { userId: string; offset?: number; limit?: number }) => {
+  if (!uuid.safeParse(input.userId).success) throw new Error("Invalid userId");
+  return {
+    userId: input.userId,
+    offset: Math.max(0, Math.floor(input.offset ?? 0)),
+    limit: Math.min(100, Math.max(1, Math.floor(input.limit ?? 20))),
+  };
+};
+
+export const getUserListingsPage = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator(pageInput)
+  .handler(async ({ data }) => {
+    const from = data.offset;
+    const to = data.offset + data.limit - 1;
+    const { data: rows, error, count } = await supabaseAdmin
+      .from("listings")
+      .select("id, title, status, price, currency, created_at, view_count", { count: "exact" })
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw new Error(error.message);
+    return { items: rows ?? [], total: count ?? 0, offset: data.offset, limit: data.limit };
+  });
+
+export const getUserWalletTxsPage = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator(pageInput)
+  .handler(async ({ data }) => {
+    const from = data.offset;
+    const to = data.offset + data.limit - 1;
+    const { data: rows, error, count } = await supabaseAdmin
+      .from("wallet_transactions")
+      .select("*", { count: "exact" })
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw new Error(error.message);
+    return { items: rows ?? [], total: count ?? 0, offset: data.offset, limit: data.limit };
+  });
+
+export const getUserPaymentsPage = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator(pageInput)
+  .handler(async ({ data }) => {
+    const from = data.offset;
+    const to = data.offset + data.limit - 1;
+    const { data: rows, error, count } = await supabaseAdmin
+      .from("payments")
+      .select("*", { count: "exact" })
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw new Error(error.message);
+    return { items: rows ?? [], total: count ?? 0, offset: data.offset, limit: data.limit };
+  });
+
+// Backward-compat: keep getUserDetails as a thin wrapper around the new paginated fns
+// (some callers still import it). Returns the first page of each list.
 export const getUserDetails = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: { userId: string }) => {
