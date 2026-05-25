@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3 } from "lucide-react";
+import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3, Wallet, BookmarkCheck, Search } from "lucide-react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend, AreaChart, Area,
