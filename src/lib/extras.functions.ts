@@ -252,6 +252,58 @@ export const deleteMyReview = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const listMyReceivedReviews = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: rows } = await context.supabase
+      .from("seller_reviews").select("*").eq("seller_id", context.userId).order("created_at", { ascending: false });
+    const ids = [...new Set((rows ?? []).map((r) => r.reviewer_id))];
+    const { data: profiles } = ids.length
+      ? await supabaseAdmin.from("profiles").select("id, display_name, avatar_url").in("id", ids)
+      : { data: [] as { id: string; display_name: string; avatar_url: string | null }[] };
+    const items = (rows ?? []).map((r) => ({
+      ...r,
+      reviewer: profiles?.find((p) => p.id === r.reviewer_id) ?? null,
+    }));
+    const avg = items.length ? items.reduce((s, r) => s + r.rating, 0) / items.length : 0;
+    const breakdown: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    items.forEach((r) => { breakdown[r.rating] = (breakdown[r.rating] ?? 0) + 1; });
+    return { items, avg, count: items.length, breakdown };
+  });
+
+export const listMyAuthoredReviews = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: rows } = await context.supabase
+      .from("seller_reviews").select("*").eq("reviewer_id", context.userId).order("created_at", { ascending: false });
+    const ids = [...new Set((rows ?? []).map((r) => r.seller_id))];
+    const { data: profiles } = ids.length
+      ? await supabaseAdmin.from("profiles").select("id, display_name, avatar_url").in("id", ids)
+      : { data: [] as { id: string; display_name: string; avatar_url: string | null }[] };
+    const items = (rows ?? []).map((r) => ({
+      ...r,
+      seller: profiles?.find((p) => p.id === r.seller_id) ?? null,
+    }));
+    return { items, count: items.length };
+  });
+
+export const respondToReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { reviewId: string; response: string }) => {
+    if (!uuid.safeParse(input.reviewId).success) throw new Error("Invalid reviewId");
+    const response = String(input.response ?? "").trim().slice(0, 1000);
+    return { reviewId: input.reviewId, response };
+  })
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("seller_reviews")
+      .update({ response: data.response || null, response_at: data.response ? new Date().toISOString() : null })
+      .eq("id", data.reviewId)
+      .eq("seller_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 /* ============== Homepage slots & banners (admin) ============== */
 
