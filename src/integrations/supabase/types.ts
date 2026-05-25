@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_broadcasts: {
+        Row: {
+          actor_id: string
+          audience: string
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          recipient_count: number
+          title: string
+        }
+        Insert: {
+          actor_id: string
+          audience: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          recipient_count?: number
+          title: string
+        }
+        Update: {
+          actor_id?: string
+          audience?: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          recipient_count?: number
+          title?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -109,6 +142,42 @@ export type Database = {
           region?: string
           slug?: string
           sort_order?: number
+        }
+        Relationships: []
+      }
+      client_error_logs: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          resolved: boolean
+          route: string | null
+          severity: string
+          stack: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          resolved?: boolean
+          route?: string | null
+          severity?: string
+          stack?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          resolved?: boolean
+          route?: string | null
+          severity?: string
+          stack?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -690,6 +759,36 @@ export type Database = {
           reviewer_id?: string
           seller_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      server_fn_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          error: string | null
+          fn_name: string
+          id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number
+          error?: string | null
+          fn_name: string
+          id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          error?: string | null
+          fn_name?: string
+          id?: string
+          status?: string
+          user_id?: string | null
         }
         Relationships: []
       }
