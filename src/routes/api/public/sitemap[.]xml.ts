@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const BASE = "https://devads.lovable.app";
+const BASE = "https://callescort24.org";
 
 export const Route = createFileRoute("/api/public/sitemap.xml")({
   server: {
