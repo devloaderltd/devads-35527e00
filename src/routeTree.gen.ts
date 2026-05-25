@@ -28,16 +28,22 @@ import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTopupsRouteImport } from './routes/admin.topups'
+import { Route as AdminThreadsRouteImport } from './routes/admin.threads'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminReviewsRouteImport } from './routes/admin.reviews'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
+import { Route as AdminMaintenanceRouteImport } from './routes/admin.maintenance'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminListingsRouteImport } from './routes/admin.listings'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
 import { Route as AdminHomepageRouteImport } from './routes/admin.homepage'
+import { Route as AdminDebugRouteImport } from './routes/admin.debug'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminBroadcastsRouteImport } from './routes/admin.broadcasts'
+import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated.wallet'
 import { Route as AuthenticatedSavedSearchesRouteImport } from './routes/_authenticated.saved-searches'
@@ -51,6 +57,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated.messages.index'
 import { Route as ApiPublicSitemapDotxmlRouteImport } from './routes/api/public/sitemap[.]xml'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api/public/seed-demo'
+import { Route as ApiPublicClientErrorsRouteImport } from './routes/api/public/client-errors'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
 import { Route as AuthenticatedDebugSessionRouteImport } from './routes/_authenticated.debug.session'
 import { Route as ApiPublicPaymentsNowpaymentsIpnRouteImport } from './routes/api/public/payments/nowpayments-ipn'
@@ -150,9 +157,19 @@ const AdminTopupsRoute = AdminTopupsRouteImport.update({
   path: '/topups',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminThreadsRoute = AdminThreadsRouteImport.update({
+  id: '/threads',
+  path: '/threads',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReviewsRoute = AdminReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
@@ -168,6 +185,11 @@ const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
 const AdminModerationRoute = AdminModerationRouteImport.update({
   id: '/moderation',
   path: '/moderation',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMaintenanceRoute = AdminMaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
@@ -190,6 +212,11 @@ const AdminHomepageRoute = AdminHomepageRouteImport.update({
   path: '/homepage',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDebugRoute = AdminDebugRouteImport.update({
+  id: '/debug',
+  path: '/debug',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCitiesRoute = AdminCitiesRouteImport.update({
   id: '/cities',
   path: '/cities',
@@ -198,6 +225,16 @@ const AdminCitiesRoute = AdminCitiesRouteImport.update({
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBroadcastsRoute = AdminBroadcastsRouteImport.update({
+  id: '/broadcasts',
+  path: '/broadcasts',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBannersRoute = AdminBannersRouteImport.update({
+  id: '/banners',
+  path: '/banners',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
@@ -268,6 +305,11 @@ const ApiPublicSeedDemoRoute = ApiPublicSeedDemoRouteImport.update({
   path: '/api/public/seed-demo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicClientErrorsRoute = ApiPublicClientErrorsRouteImport.update({
+  id: '/api/public/client-errors',
+  path: '/api/public/client-errors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedMessagesThreadIdRoute =
   AuthenticatedMessagesThreadIdRouteImport.update({
     id: '/$threadId',
@@ -316,16 +358,22 @@ export interface FileRoutesByFullPath {
   '/saved-searches': typeof AuthenticatedSavedSearchesRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/banners': typeof AdminBannersRoute
+  '/admin/broadcasts': typeof AdminBroadcastsRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
+  '/admin/debug': typeof AdminDebugRoute
   '/admin/homepage': typeof AdminHomepageRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/listings': typeof AdminListingsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/maintenance': typeof AdminMaintenanceRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/reviews': typeof AdminReviewsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/threads': typeof AdminThreadsRoute
   '/admin/topups': typeof AdminTopupsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
@@ -334,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
+  '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
@@ -361,16 +410,22 @@ export interface FileRoutesByTo {
   '/saved-searches': typeof AuthenticatedSavedSearchesRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/banners': typeof AdminBannersRoute
+  '/admin/broadcasts': typeof AdminBroadcastsRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
+  '/admin/debug': typeof AdminDebugRoute
   '/admin/homepage': typeof AdminHomepageRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/listings': typeof AdminListingsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/maintenance': typeof AdminMaintenanceRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/reviews': typeof AdminReviewsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/threads': typeof AdminThreadsRoute
   '/admin/topups': typeof AdminTopupsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
@@ -379,6 +434,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
+  '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
@@ -410,16 +466,22 @@ export interface FileRoutesById {
   '/_authenticated/saved-searches': typeof AuthenticatedSavedSearchesRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/banners': typeof AdminBannersRoute
+  '/admin/broadcasts': typeof AdminBroadcastsRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
+  '/admin/debug': typeof AdminDebugRoute
   '/admin/homepage': typeof AdminHomepageRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/listings': typeof AdminListingsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/maintenance': typeof AdminMaintenanceRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/reviews': typeof AdminReviewsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/threads': typeof AdminThreadsRoute
   '/admin/topups': typeof AdminTopupsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
@@ -428,6 +490,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/debug/session': typeof AuthenticatedDebugSessionRoute
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
+  '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
@@ -459,16 +522,22 @@ export interface FileRouteTypes {
     | '/saved-searches'
     | '/wallet'
     | '/admin/audit'
+    | '/admin/banners'
+    | '/admin/broadcasts'
     | '/admin/categories'
     | '/admin/cities'
+    | '/admin/debug'
     | '/admin/homepage'
     | '/admin/insights'
     | '/admin/listings'
     | '/admin/login'
+    | '/admin/maintenance'
     | '/admin/moderation'
     | '/admin/payments'
     | '/admin/reports'
+    | '/admin/reviews'
     | '/admin/settings'
+    | '/admin/threads'
     | '/admin/topups'
     | '/admin/users'
     | '/admin/wallets'
@@ -477,6 +546,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/debug/session'
     | '/messages/$threadId'
+    | '/api/public/client-errors'
     | '/api/public/seed-demo'
     | '/api/public/sitemap.xml'
     | '/messages/'
@@ -504,16 +574,22 @@ export interface FileRouteTypes {
     | '/saved-searches'
     | '/wallet'
     | '/admin/audit'
+    | '/admin/banners'
+    | '/admin/broadcasts'
     | '/admin/categories'
     | '/admin/cities'
+    | '/admin/debug'
     | '/admin/homepage'
     | '/admin/insights'
     | '/admin/listings'
     | '/admin/login'
+    | '/admin/maintenance'
     | '/admin/moderation'
     | '/admin/payments'
     | '/admin/reports'
+    | '/admin/reviews'
     | '/admin/settings'
+    | '/admin/threads'
     | '/admin/topups'
     | '/admin/users'
     | '/admin/wallets'
@@ -522,6 +598,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/debug/session'
     | '/messages/$threadId'
+    | '/api/public/client-errors'
     | '/api/public/seed-demo'
     | '/api/public/sitemap.xml'
     | '/messages'
@@ -552,16 +629,22 @@ export interface FileRouteTypes {
     | '/_authenticated/saved-searches'
     | '/_authenticated/wallet'
     | '/admin/audit'
+    | '/admin/banners'
+    | '/admin/broadcasts'
     | '/admin/categories'
     | '/admin/cities'
+    | '/admin/debug'
     | '/admin/homepage'
     | '/admin/insights'
     | '/admin/listings'
     | '/admin/login'
+    | '/admin/maintenance'
     | '/admin/moderation'
     | '/admin/payments'
     | '/admin/reports'
+    | '/admin/reviews'
     | '/admin/settings'
+    | '/admin/threads'
     | '/admin/topups'
     | '/admin/users'
     | '/admin/wallets'
@@ -570,6 +653,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/_authenticated/debug/session'
     | '/_authenticated/messages/$threadId'
+    | '/api/public/client-errors'
     | '/api/public/seed-demo'
     | '/api/public/sitemap.xml'
     | '/_authenticated/messages/'
@@ -593,6 +677,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ListingsIdRoute: typeof ListingsIdRoute
   SellersIdRoute: typeof SellersIdRoute
+  ApiPublicClientErrorsRoute: typeof ApiPublicClientErrorsRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
   ApiPublicCronMatchSavedSearchesRoute: typeof ApiPublicCronMatchSavedSearchesRoute
@@ -734,11 +819,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTopupsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/threads': {
+      id: '/admin/threads'
+      path: '/threads'
+      fullPath: '/admin/threads'
+      preLoaderRoute: typeof AdminThreadsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reviews': {
+      id: '/admin/reviews'
+      path: '/reviews'
+      fullPath: '/admin/reviews'
+      preLoaderRoute: typeof AdminReviewsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/reports': {
@@ -760,6 +859,13 @@ declare module '@tanstack/react-router' {
       path: '/moderation'
       fullPath: '/admin/moderation'
       preLoaderRoute: typeof AdminModerationRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/maintenance': {
+      id: '/admin/maintenance'
+      path: '/maintenance'
+      fullPath: '/admin/maintenance'
+      preLoaderRoute: typeof AdminMaintenanceRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/login': {
@@ -790,6 +896,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHomepageRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/debug': {
+      id: '/admin/debug'
+      path: '/debug'
+      fullPath: '/admin/debug'
+      preLoaderRoute: typeof AdminDebugRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/cities': {
       id: '/admin/cities'
       path: '/cities'
@@ -802,6 +915,20 @@ declare module '@tanstack/react-router' {
       path: '/categories'
       fullPath: '/admin/categories'
       preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/broadcasts': {
+      id: '/admin/broadcasts'
+      path: '/broadcasts'
+      fullPath: '/admin/broadcasts'
+      preLoaderRoute: typeof AdminBroadcastsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/banners': {
+      id: '/admin/banners'
+      path: '/banners'
+      fullPath: '/admin/banners'
+      preLoaderRoute: typeof AdminBannersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/audit': {
@@ -895,6 +1022,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSeedDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/client-errors': {
+      id: '/api/public/client-errors'
+      path: '/api/public/client-errors'
+      fullPath: '/api/public/client-errors'
+      preLoaderRoute: typeof ApiPublicClientErrorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/messages/$threadId': {
       id: '/_authenticated/messages/$threadId'
       path: '/$threadId'
@@ -973,16 +1107,22 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
+  AdminBannersRoute: typeof AdminBannersRoute
+  AdminBroadcastsRoute: typeof AdminBroadcastsRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCitiesRoute: typeof AdminCitiesRoute
+  AdminDebugRoute: typeof AdminDebugRoute
   AdminHomepageRoute: typeof AdminHomepageRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
   AdminListingsRoute: typeof AdminListingsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminMaintenanceRoute: typeof AdminMaintenanceRoute
   AdminModerationRoute: typeof AdminModerationRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminReviewsRoute: typeof AdminReviewsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminThreadsRoute: typeof AdminThreadsRoute
   AdminTopupsRoute: typeof AdminTopupsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWalletsRoute: typeof AdminWalletsRoute
@@ -991,16 +1131,22 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
+  AdminBannersRoute: AdminBannersRoute,
+  AdminBroadcastsRoute: AdminBroadcastsRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCitiesRoute: AdminCitiesRoute,
+  AdminDebugRoute: AdminDebugRoute,
   AdminHomepageRoute: AdminHomepageRoute,
   AdminInsightsRoute: AdminInsightsRoute,
   AdminListingsRoute: AdminListingsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminMaintenanceRoute: AdminMaintenanceRoute,
   AdminModerationRoute: AdminModerationRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminReviewsRoute: AdminReviewsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminThreadsRoute: AdminThreadsRoute,
   AdminTopupsRoute: AdminTopupsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminWalletsRoute: AdminWalletsRoute,
@@ -1025,6 +1171,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ListingsIdRoute: ListingsIdRoute,
   SellersIdRoute: SellersIdRoute,
+  ApiPublicClientErrorsRoute: ApiPublicClientErrorsRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
   ApiPublicCronMatchSavedSearchesRoute: ApiPublicCronMatchSavedSearchesRoute,
