@@ -14,6 +14,7 @@ import { ImagePlus, Save, Star, Package, Calendar, ExternalLink } from "lucide-r
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { AccountSettingsCard } from "@/components/AccountSettingsCard";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -291,6 +292,8 @@ function ProfileEdit() {
           </Button>
         </div>
       </div>
+
+      <AccountSettingsCard />
     </div>
   );
 }
