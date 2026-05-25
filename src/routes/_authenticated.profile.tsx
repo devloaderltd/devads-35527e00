@@ -294,3 +294,16 @@ function ProfileEdit() {
     </div>
   );
 }
+
+function StatTile({ icon, label, value, hint }: { icon: React.ReactNode; label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-2xl border border-white/40 bg-white/65 p-4 shadow-[var(--shadow-float)] backdrop-blur">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span className="grid h-6 w-6 place-items-center rounded-lg bg-primary/10 text-primary">{icon}</span>
+        {label}
+      </div>
+      <div className="mt-1 font-display text-xl font-bold">{value}</div>
+      {hint && <div className="text-[11px] text-muted-foreground">{hint}</div>}
+    </div>
+  );
+}
