@@ -133,7 +133,7 @@ function RootComponent() {
           ) : (
             <div className="relative flex min-h-screen flex-col">
               <div className="aurora-mesh" aria-hidden />
-              <PaymentTestModeBanner />
+
               <Header />
               <main className="flex-1">
                 <Outlet />
