@@ -76,10 +76,10 @@ function ListingDetail() {
   }, [listing]);
 
 
-  // Similar listings (same category, prefer same city)
+  // Similar listings (same category + same city)
   const { data: similar } = useQuery({
     queryKey: ["similar-listings", listing?.id, listing?.category_id, listing?.city_id],
-    enabled: !!listing?.category_id,
+    enabled: !!listing?.category_id && !!listing?.city_id,
     queryFn: async () => {
       const { data } = await supabase
         .from("listings")
@@ -88,17 +88,15 @@ function ListingDetail() {
           listing_images(url, sort_order),
           listing_promotions(type, ends_at)`)
         .eq("category_id", listing!.category_id)
+        .eq("city_id", listing!.city_id)
         .eq("status", "active")
         .neq("id", listing!.id)
         .order("bumped_at", { ascending: false })
-        .limit(12);
-      const rows = data ?? [];
-      const cityId = listing!.city_id;
-      const sameCity = rows.filter((l: any) => l.city_id === cityId);
-      const otherCity = rows.filter((l: any) => l.city_id !== cityId);
-      return [...sameCity, ...otherCity].slice(0, 4);
+        .limit(4);
+      return data ?? [];
     },
   });
+
 
   // Seller contact (only visible to signed-in users)
   const fetchContact = useServerFn(getSellerContact);
