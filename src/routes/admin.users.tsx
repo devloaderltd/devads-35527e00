@@ -51,6 +51,7 @@ function UsersPage() {
   const unbanFn = useServerFn(unbanUser);
   const delFn = useServerFn(deleteUserAdmin);
   const resetFn = useServerFn(sendPasswordReset);
+  const bulkFn = useServerFn(bulkUsersAction);
 
   const usersQ = useQuery({
     queryKey: ["admin-users-list", q, filter, page],
