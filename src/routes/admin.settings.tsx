@@ -1,68 +1,185 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { getSiteSettings, updateSiteSettings } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/settings")({ component: SettingsPage });
 
+type FormState = {
+  featured_price_usd: number;
+  bump_price_usd: number;
+  featured_days: number;
+  bump_days: number;
+  maintenance_mode: boolean;
+  maintenance_message: string;
+  site_name: string;
+  support_email: string;
+};
+
+function validate(f: FormState) {
+  const e: Partial<Record<keyof FormState, string>> = {};
+  if (!(f.featured_price_usd >= 0 && f.featured_price_usd <= 9999)) e.featured_price_usd = "0 – 9999";
+  if (!(f.bump_price_usd >= 0 && f.bump_price_usd <= 9999)) e.bump_price_usd = "0 – 9999";
+  if (!Number.isInteger(f.featured_days) || f.featured_days < 1 || f.featured_days > 365) e.featured_days = "1 – 365 days";
+  if (!Number.isInteger(f.bump_days) || f.bump_days < 1 || f.bump_days > 365) e.bump_days = "1 – 365 days";
+  if (!f.site_name.trim() || f.site_name.length > 80) e.site_name = "1 – 80 chars";
+  if (f.support_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.support_email)) e.support_email = "Invalid email";
+  if (f.support_email.length > 120) e.support_email = "≤ 120 chars";
+  if (f.maintenance_message.length > 500) e.maintenance_message = "≤ 500 chars";
+  return e;
+}
+
 function SettingsPage() {
   const qc = useQueryClient();
   const getFn = useServerFn(getSiteSettings);
   const updateFn = useServerFn(updateSiteSettings);
-  const { data } = useQuery({ queryKey: ["site-settings"], queryFn: () => getFn() });
+  const { data, isLoading } = useQuery({ queryKey: ["site-settings"], queryFn: () => getFn() });
   const s = data?.settings;
 
-  const [form, setForm] = useState<Record<string, string | number | boolean>>({});
-  useEffect(() => {
-    if (s) setForm({
-      featured_price_usd: Number(s.featured_price_usd),
-      bump_price_usd: Number(s.bump_price_usd),
-      featured_days: s.featured_days, bump_days: s.bump_days,
-      maintenance_mode: s.maintenance_mode, maintenance_message: s.maintenance_message,
-      site_name: s.site_name, support_email: s.support_email,
-    });
-  }, [s]);
+  const initial: FormState | null = useMemo(() => s ? {
+    featured_price_usd: Number(s.featured_price_usd),
+    bump_price_usd: Number(s.bump_price_usd),
+    featured_days: s.featured_days,
+    bump_days: s.bump_days,
+    maintenance_mode: s.maintenance_mode,
+    maintenance_message: s.maintenance_message,
+    site_name: s.site_name,
+    support_email: s.support_email,
+  } : null, [s]);
+
+  const [form, setForm] = useState<FormState | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  useEffect(() => { if (initial) { setForm(initial); setConfirmText(""); } }, [initial]);
+
+  const errors = form ? validate(form) : {};
+  const hasErrors = Object.keys(errors).length > 0;
+  const dirty = !!(form && initial && JSON.stringify(form) !== JSON.stringify(initial));
+  const enablingMaintenance = !!(form && initial && form.maintenance_mode && !initial.maintenance_mode);
+  const maintenanceBlocked = enablingMaintenance && confirmText !== "ENABLE";
 
   const save = useMutation({
-    mutationFn: () => updateFn({ data: form as Parameters<typeof updateFn>[0]["data"] }),
-    onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["site-settings"] }); },
+    mutationFn: () => updateFn({ data: form as FormState }),
+    onSuccess: () => {
+      toast.success("Settings published");
+      qc.invalidateQueries({ queryKey: ["site-settings"] });
+      qc.invalidateQueries({ queryKey: ["site-settings-public"] });
+      qc.invalidateQueries({ queryKey: ["promotion-pricing"] });
+      setConfirmText("");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const set = (k: string, v: string | number | boolean) => setForm(f => ({ ...f, [k]: v }));
+  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
+    setForm((f) => f ? { ...f, [k]: v } : f);
+
+  const onSave = () => {
+    if (!form) return;
+    if (hasErrors) { toast.error("Fix validation errors first"); return; }
+    if (maintenanceBlocked) { toast.error('Type "ENABLE" to confirm maintenance mode'); return; }
+    save.mutate();
+  };
+
+  if (isLoading || !form) {
+    return <div className="py-10 text-center text-sm text-slate-400">Loading settings…</div>;
+  }
 
   return (
     <div>
-      <AdminPageHeader title="Site settings" actions={<Button onClick={() => save.mutate()} className="rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white">Save changes</Button>} />
+      <AdminPageHeader
+        title="Site settings"
+        subtitle={dirty ? "Unsaved changes" : "All changes published"}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={!dirty || save.isPending} onClick={() => { setForm(initial); setConfirmText(""); }} className="rounded-full">Discard</Button>
+            <Button
+              onClick={onSave}
+              disabled={!dirty || hasErrors || maintenanceBlocked || save.isPending}
+              className="rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white"
+            >
+              {save.isPending ? "Publishing…" : "Publish changes"}
+            </Button>
+          </div>
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title="Branding">
           <div className="space-y-3">
-            <div><Label className="text-slate-300">Site name</Label><Input value={String(form.site_name ?? "")} onChange={(e) => set("site_name", e.target.value)} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" /></div>
-            <div><Label className="text-slate-300">Support email</Label><Input type="email" value={String(form.support_email ?? "")} onChange={(e) => set("support_email", e.target.value)} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" /></div>
+            <Field label="Site name" error={errors.site_name}>
+              <Input value={form.site_name} onChange={(e) => set("site_name", e.target.value)} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" maxLength={80} />
+            </Field>
+            <Field label="Support email" error={errors.support_email}>
+              <Input type="email" value={form.support_email} onChange={(e) => set("support_email", e.target.value)} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" maxLength={120} />
+            </Field>
           </div>
         </Panel>
+
         <Panel title="Promotion pricing">
           <div className="grid grid-cols-2 gap-3">
-            <div><Label className="text-slate-300">Featured price (USD)</Label><Input type="number" step="0.01" value={Number(form.featured_price_usd ?? 0)} onChange={(e) => set("featured_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" /></div>
-            <div><Label className="text-slate-300">Featured days</Label><Input type="number" value={Number(form.featured_days ?? 7)} onChange={(e) => set("featured_days", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" /></div>
-            <div><Label className="text-slate-300">Bump price (USD)</Label><Input type="number" step="0.01" value={Number(form.bump_price_usd ?? 0)} onChange={(e) => set("bump_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" /></div>
-            <div><Label className="text-slate-300">Bump cooldown days</Label><Input type="number" value={Number(form.bump_days ?? 1)} onChange={(e) => set("bump_days", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" /></div>
+            <Field label="Featured price (USD)" error={errors.featured_price_usd}>
+              <Input type="number" step="0.01" min={0} max={9999} value={form.featured_price_usd} onChange={(e) => set("featured_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            </Field>
+            <Field label="Featured days" error={errors.featured_days}>
+              <Input type="number" min={1} max={365} value={form.featured_days} onChange={(e) => set("featured_days", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            </Field>
+            <Field label="Bump price (USD)" error={errors.bump_price_usd}>
+              <Input type="number" step="0.01" min={0} max={9999} value={form.bump_price_usd} onChange={(e) => set("bump_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            </Field>
+            <Field label="Bump cooldown days" error={errors.bump_days}>
+              <Input type="number" min={1} max={365} value={form.bump_days} onChange={(e) => set("bump_days", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            </Field>
           </div>
         </Panel>
-        <Panel title="Maintenance mode">
-          <div className="flex items-center gap-3"><Switch checked={!!form.maintenance_mode} onCheckedChange={(v) => set("maintenance_mode", v)} /><Label className="text-slate-300">Show maintenance banner</Label></div>
-          <Textarea value={String(form.maintenance_message ?? "")} onChange={(e) => set("maintenance_message", e.target.value)} className="mt-3 rounded-lg border-white/10 bg-white/5 text-slate-100" rows={3} />
+
+        <Panel title="Maintenance mode" className="lg:col-span-2">
+          <div className="flex items-center gap-3">
+            <Switch checked={form.maintenance_mode} onCheckedChange={(v) => set("maintenance_mode", v)} />
+            <Label className="text-slate-300">Take the site offline for non-admins</Label>
+          </div>
+          <Field label="Message shown to users" error={errors.maintenance_message} className="mt-3">
+            <Textarea value={form.maintenance_message} onChange={(e) => set("maintenance_message", e.target.value)} className="rounded-lg border-white/10 bg-white/5 text-slate-100" rows={3} maxLength={500} />
+          </Field>
+
+          {form.maintenance_mode && (
+            <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-200">
+                <AlertTriangle className="h-3.5 w-3.5" /> Preview
+              </div>
+              <div className="rounded-xl bg-slate-950/50 p-4 text-center">
+                <div className="font-display text-lg font-bold text-slate-100">{form.site_name || "Site"}</div>
+                <p className="mt-1 text-sm text-slate-400">{form.maintenance_message || "We are performing maintenance."}</p>
+                {form.support_email && <p className="mt-2 text-xs text-slate-500">{form.support_email}</p>}
+              </div>
+            </div>
+          )}
+
+          {enablingMaintenance && (
+            <div className="mt-4 rounded-2xl border border-red-400/40 bg-red-500/10 p-4">
+              <p className="text-sm text-red-100">You're about to take the site offline for all non-admins. Type <span className="font-mono font-bold">ENABLE</span> below to confirm.</p>
+              <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="ENABLE" className="mt-2 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            </div>
+          )}
         </Panel>
       </div>
+    </div>
+  );
+}
+
+function Field({ label, error, className, children }: { label: string; error?: string; className?: string; children: React.ReactNode }) {
+  return (
+    <div className={className}>
+      <Label className="text-slate-300">{label}</Label>
+      {children}
+      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>
   );
 }
