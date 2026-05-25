@@ -27,6 +27,8 @@ const sections: Array<{
       { label: "Privacy Policy", to: "/privacy" },
       { label: "Terms of Service", to: "/terms" },
       { label: "Cookies Policy", to: "/cookies" },
+      { label: "DMCA", to: "/dmca" },
+      { label: "Sitemap", href: "/sitemap.xml" },
     ],
   },
 ];
@@ -114,6 +116,8 @@ export function Footer() {
             <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
             <Link to="/terms" className="hover:text-foreground">Terms</Link>
             <Link to="/cookies" className="hover:text-foreground">Cookies</Link>
+            <Link to="/dmca" className="hover:text-foreground">DMCA</Link>
+            <a href="/sitemap.xml" className="hover:text-foreground">Sitemap</a>
           </div>
         </div>
       </div>
