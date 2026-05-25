@@ -225,10 +225,17 @@ function SearchPage() {
             </SelectContent>
           </Select>
           {user && (
-            <Button variant="outline" className="gap-2 rounded-full bg-white/70" onClick={() => saveSearch.mutate()} disabled={saveSearch.isPending}>
-              <Bookmark className="h-4 w-4" /> Save search
-            </Button>
+            alreadySaved ? (
+              <Button asChild variant="outline" className="gap-2 rounded-full bg-white/70">
+                <Link to="/saved-searches"><BookmarkCheck className="h-4 w-4 text-primary" /> Saved</Link>
+              </Button>
+            ) : (
+              <Button variant="outline" className="gap-2 rounded-full bg-white/70" onClick={openSaveDialog}>
+                <Bookmark className="h-4 w-4" /> Save search
+              </Button>
+            )
           )}
+
         </div>
       </div>
 
