@@ -1061,12 +1061,13 @@ export const adminPeekTable = createServerFn({ method: "POST" })
     }).parse(input))
   .handler(async ({ data }) => {
     const cols = SAFE_TABLES[data.table as SafeTable];
-    // Supabase's generated types don't accept dynamic select strings; cast to bypass.
+    type Cell = string | number | boolean | null;
+    type Row = Record<string, Cell>;
     const client = supabaseAdmin as unknown as {
       from: (t: string) => {
         select: (s: string) => {
           order: (c: string, o: { ascending: boolean }) => {
-            limit: (n: number) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>;
+            limit: (n: number) => Promise<{ data: Row[] | null; error: { message: string } | null }>;
           };
         };
       };
@@ -1077,7 +1078,16 @@ export const adminPeekTable = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (error) throw new Error(error.message);
-    return { table: data.table, columns: cols.split(",").map((c) => c.trim()), rows: rows ?? [] };
+    // Stringify any non-primitive values to keep payload serializable.
+    const normalized: Row[] = (rows ?? []).map((r) => {
+      const out: Row = {};
+      for (const k of Object.keys(r)) {
+        const v = r[k];
+        out[k] = (v === null || typeof v === "string" || typeof v === "number" || typeof v === "boolean") ? v : JSON.stringify(v);
+      }
+      return out;
+    });
+    return { table: data.table, columns: cols.split(",").map((c) => c.trim()), rows: normalized };
   });
 
 export const safeTablesList = Object.keys(SAFE_TABLES);
