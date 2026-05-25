@@ -468,27 +468,33 @@ export type Database = {
       }
       message_threads: {
         Row: {
+          archived_by: string[]
           buyer_id: string
           created_at: string
           id: string
           last_message_at: string
           listing_id: string
+          muted_by: string[]
           seller_id: string
         }
         Insert: {
+          archived_by?: string[]
           buyer_id: string
           created_at?: string
           id?: string
           last_message_at?: string
           listing_id: string
+          muted_by?: string[]
           seller_id: string
         }
         Update: {
+          archived_by?: string[]
           buyer_id?: string
           created_at?: string
           id?: string
           last_message_at?: string
           listing_id?: string
+          muted_by?: string[]
           seller_id?: string
         }
         Relationships: [
@@ -532,6 +538,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_preferences: {
+        Row: {
+          email_on_expiring: boolean
+          email_on_message: boolean
+          email_on_offer: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          email_on_expiring?: boolean
+          email_on_message?: boolean
+          email_on_offer?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          email_on_expiring?: boolean
+          email_on_message?: boolean
+          email_on_offer?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -864,6 +894,24 @@ export type Database = {
           site_name?: string
           support_email?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      thread_reads: {
+        Row: {
+          last_read_at: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          last_read_at?: string
+          thread_id?: string
+          user_id?: string
         }
         Relationships: []
       }
