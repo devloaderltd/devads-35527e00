@@ -317,7 +317,11 @@ function ListingDetail() {
                     ? `Member ${formatDistanceToNow(new Date(seller.created_at), { addSuffix: true })}`
                     : "Marketly seller"}
                 </div>
+                <div className="mt-1">
+                  <SellerRatingBadge sellerId={listing.user_id} />
+                </div>
               </div>
+
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
