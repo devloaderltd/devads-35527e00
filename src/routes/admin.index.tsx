@@ -88,19 +88,21 @@ function AdminPage() {
 
   return (
     <AdminShell email={user.email}>
-      <div className="mb-6">
-        <h1 className="font-display text-3xl font-bold">Admin <span className="bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent">control</span></h1>
-        <p className="text-sm text-slate-400">Manage users, listings, payments and reports.</p>
+      <div className="mb-5 sm:mb-6">
+        <h1 className="font-display text-2xl font-bold sm:text-3xl">Admin <span className="bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent">control</span></h1>
+        <p className="text-xs text-slate-400 sm:text-sm">Manage users, listings, payments and reports.</p>
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList className="rounded-full bg-white/5">
-          <TabsTrigger value="overview" className="rounded-full data-[state=active]:bg-white/10">Overview</TabsTrigger>
-          {isAdmin && <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-white/10">Users</TabsTrigger>}
-          <TabsTrigger value="listings" className="rounded-full data-[state=active]:bg-white/10">Listings</TabsTrigger>
-          {isAdmin && <TabsTrigger value="payments" className="rounded-full data-[state=active]:bg-white/10">Payments</TabsTrigger>}
-          <TabsTrigger value="reports" className="rounded-full data-[state=active]:bg-white/10">Reports</TabsTrigger>
-        </TabsList>
+        <div className="-mx-3 overflow-x-auto px-3 no-scrollbar sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-max rounded-full bg-white/5">
+            <TabsTrigger value="overview" className="rounded-full data-[state=active]:bg-white/10">Overview</TabsTrigger>
+            {isAdmin && <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-white/10">Users</TabsTrigger>}
+            <TabsTrigger value="listings" className="rounded-full data-[state=active]:bg-white/10">Listings</TabsTrigger>
+            {isAdmin && <TabsTrigger value="payments" className="rounded-full data-[state=active]:bg-white/10">Payments</TabsTrigger>}
+            <TabsTrigger value="reports" className="rounded-full data-[state=active]:bg-white/10">Reports</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview" className="mt-4"><OverviewTab isAdmin={!!isAdmin} /></TabsContent>
         {isAdmin && <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>}
@@ -292,12 +294,40 @@ function UsersTab() {
 
   return (
     <Card className={panelCls + " border-0"}>
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base text-slate-100">Users ({users?.length ?? 0})</CardTitle>
-        <Input placeholder="Search name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
+        <Input placeholder="Search name…" value={q} onChange={(e) => setQ(e.target.value)} className="w-full rounded-full border-white/10 bg-white/5 text-slate-100 sm:max-w-xs" />
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile: stacked cards */}
+        <div className="space-y-2 p-3 md:hidden">
+          {filtered.map((u) => (
+            <div key={u.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-medium text-slate-100">{u.display_name}</div>
+                  <div className="mt-0.5 text-xs text-slate-400">Joined {format(new Date(u.created_at), "MMM d, yyyy")}</div>
+                </div>
+                <div className="flex flex-wrap justify-end gap-1">
+                  {u.roles.map(r => <Badge key={r} variant={r === "admin" ? "default" : "secondary"} className="capitalize">{r}</Badge>)}
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="flex-1 rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"
+                  onClick={() => setRole.mutate({ userId: u.id, role: "moderator", add: !u.roles.includes("moderator") })}>
+                  {u.roles.includes("moderator") ? "Demote mod" : "Make mod"}
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1 rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"
+                  onClick={() => setRole.mutate({ userId: u.id, role: "admin", add: !u.roles.includes("admin") })}>
+                  {u.roles.includes("admin") ? "Demote admin" : "Make admin"}
+                </Button>
+              </div>
+            </div>
+          ))}
+          {!filtered.length && <div className="px-2 py-8 text-center text-sm text-slate-400">No users.</div>}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-white/5 text-left text-xs uppercase text-slate-400">
               <tr>
@@ -366,12 +396,42 @@ function ListingsTab() {
 
   return (
     <Card className={panelCls + " border-0"}>
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base text-slate-100">Listings ({data?.length ?? 0})</CardTitle>
-        <Input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
+        <Input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} className="w-full rounded-full border-white/10 bg-white/5 text-slate-100 sm:max-w-xs" />
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile cards */}
+        <div className="space-y-2 p-3 md:hidden">
+          {filtered.map((l) => (
+            <div key={l.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="line-clamp-2 text-sm font-medium text-slate-100">{l.title}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                    <Badge variant={l.status === "active" ? "default" : "secondary"} className="capitalize">{l.status}</Badge>
+                    <span>{l.price ? `${l.currency} ${Number(l.price).toFixed(2)}` : "—"}</span>
+                    <span>· {l.view_count ?? 0} views</span>
+                    <span>· {format(new Date(l.created_at), "MMM d")}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button asChild size="sm" variant="outline" className="flex-1 rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10">
+                  <a href={`/listings/${l.id}`} target="_blank" rel="noopener noreferrer"><Eye className="mr-1.5 h-3.5 w-3.5" /> View</a>
+                </Button>
+                {l.status !== "removed" && (
+                  <Button size="sm" variant="destructive" className="flex-1 rounded-full" onClick={() => remove.mutate(l.id)}>
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+          {!filtered.length && <div className="px-2 py-8 text-center text-sm text-slate-400">No listings.</div>}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-white/5 text-left text-xs uppercase text-slate-400">
               <tr>
@@ -429,7 +489,27 @@ function PaymentsTab() {
     <Card className={panelCls + " border-0"}>
       <CardHeader><CardTitle className="text-base text-slate-100">Payments ({data?.length ?? 0})</CardTitle></CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile cards */}
+        <div className="space-y-2 p-3 md:hidden">
+          {(data ?? []).map(p => (
+            <div key={p.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-medium text-slate-100">{p.currency} {Number(p.amount).toFixed(2)}</div>
+                  <div className="mt-0.5 text-xs text-slate-400">{format(new Date(p.created_at), "MMM d, HH:mm")}</div>
+                </div>
+                <Badge variant={p.status === "completed" ? "default" : "secondary"} className="capitalize">{p.status}</Badge>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
+                <span className="capitalize">Type: {p.promotion_type ?? "—"}</span>
+                <span>· {p.provider}</span>
+              </div>
+            </div>
+          ))}
+          {!data?.length && <div className="px-2 py-8 text-center text-sm text-slate-400">No payments yet.</div>}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-white/5 text-left text-xs uppercase text-slate-400">
               <tr>
@@ -533,12 +613,12 @@ function ReportsTab() {
 function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
     <Card className={panelCls + " border-0"}>
-      <CardContent className="p-4">
+      <CardContent className="p-3 sm:p-4">
         <div className="flex items-center justify-between text-slate-400">
-          <span className="text-xs uppercase tracking-wide">{label}</span>
+          <span className="text-[10px] uppercase tracking-wide sm:text-xs">{label}</span>
           <span className="text-indigo-300">{icon}</span>
         </div>
-        <div className="mt-2 font-display text-2xl font-bold text-slate-100">{value}</div>
+        <div className="mt-1.5 font-display text-lg font-bold text-slate-100 sm:mt-2 sm:text-2xl">{value}</div>
       </CardContent>
     </Card>
   );

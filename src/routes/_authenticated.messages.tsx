@@ -48,12 +48,13 @@ function MessagesLayout() {
   }, [user, refetch]);
 
   const activeId = location.pathname.split("/messages/")[1];
+  const hasActive = !!activeId;
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
       <h1 className="mb-4 font-display text-2xl font-bold"><span className="gradient-text">Messages</span></h1>
       <div className="grid gap-4 md:grid-cols-[320px_1fr]">
-        <aside className="rounded-2xl glass overflow-hidden">
+        <aside className={`overflow-hidden rounded-2xl glass ${hasActive ? "hidden md:block" : "block"}`}>
           {threads && threads.length === 0 && (
             <div className="p-6 text-center text-sm text-muted-foreground">
               <MessageSquare className="mx-auto mb-2 h-6 w-6" />
@@ -78,7 +79,7 @@ function MessagesLayout() {
             ))}
           </ul>
         </aside>
-        <section className="rounded-2xl glass min-h-[60vh]">
+        <section className={`min-h-[60vh] rounded-2xl glass ${hasActive ? "block" : "hidden md:block"}`}>
           <Outlet />
         </section>
       </div>
