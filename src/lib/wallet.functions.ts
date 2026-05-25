@@ -3,8 +3,27 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createInvoice } from "./nowpayments.server";
 
-const FEATURED_USD = 9.99;
-const BUMP_USD = 2.99;
+const FEATURED_USD_DEFAULT = 9.99;
+const BUMP_USD_DEFAULT = 2.99;
+const FEATURED_DAYS_DEFAULT = 7;
+const BUMP_DAYS_DEFAULT = 1;
+
+async function loadPricing() {
+  const { data } = await supabaseAdmin
+    .from("site_settings")
+    .select("featured_price_usd, bump_price_usd, featured_days, bump_days")
+    .eq("id", "global")
+    .maybeSingle();
+  return {
+    featuredPrice: Number(data?.featured_price_usd ?? FEATURED_USD_DEFAULT),
+    bumpPrice: Number(data?.bump_price_usd ?? BUMP_USD_DEFAULT),
+    featuredDays: Number(data?.featured_days ?? FEATURED_DAYS_DEFAULT),
+    bumpDays: Number(data?.bump_days ?? BUMP_DAYS_DEFAULT),
+  };
+}
+
+export const getPromotionPricing = createServerFn({ method: "GET" })
+  .handler(async () => loadPricing());
 
 export const getWallet = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
