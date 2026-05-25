@@ -40,7 +40,7 @@ export function Header() {
       <div className="mx-auto flex max-w-6xl items-center gap-3 rounded-2xl glass-strong px-3 py-2.5">
         <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
           <span className="grid h-9 w-9 place-items-center rounded-xl btn-gradient text-white shadow-inner">M</span>
-          <span className="hidden sm:inline">Marketly</span>
+          <span className="hidden sm:inline">CallEscort24</span>
         </Link>
 
         <form onSubmit={onSearch} className="relative ml-2 hidden flex-1 max-w-md md:block">

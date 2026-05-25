@@ -4,10 +4,10 @@ import { LegalLayout } from "@/components/LegalLayout";
 export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
-      { title: "Terms of Service — Marketly" },
-      { name: "description", content: "The rules and conditions governing the use of Marketly's online marketplace." },
-      { property: "og:title", content: "Terms of Service — Marketly" },
-      { property: "og:description", content: "The rules of the road for buying, selling and posting on Marketly." },
+      { title: "Terms of Service — CallEscort24" },
+      { name: "description", content: "The rules and conditions governing the use of CallEscort24's online marketplace." },
+      { property: "og:title", content: "Terms of Service — CallEscort24" },
+      { property: "og:description", content: "The rules of the road for buying, selling and posting on CallEscort24." },
       { property: "og:url", content: "https://devads.lovable.app/terms" },
     ],
     links: [{ rel: "canonical", href: "https://devads.lovable.app/terms" }],
@@ -19,8 +19,8 @@ function TermsPage() {
   return (
     <LegalLayout title="Terms of Service" updated="May 25, 2026">
       <p>
-        Welcome to Marketly. These Terms of Service ("Terms") form a binding agreement between you and
-        Marketly governing your use of our marketplace, accessible at{" "}
+        Welcome to CallEscort24. These Terms of Service ("Terms") form a binding agreement between you and
+        CallEscort24 governing your use of our marketplace, accessible at{" "}
         <a href="https://devads.lovable.app">devads.lovable.app</a>. By creating an account, posting a listing,
         or otherwise using the service you accept these Terms in full.
       </p>
@@ -41,7 +41,7 @@ function TermsPage() {
 
       <h2>3. Marketplace role</h2>
       <p>
-        Marketly is a venue that connects buyers and sellers. We are <strong>not</strong> a party to any
+        CallEscort24 is a venue that connects buyers and sellers. We are <strong>not</strong> a party to any
         transaction between users. We do not pre-screen listings, do not take possession of items, do not
         handle payments between buyer and seller (except where explicitly offered), and provide no warranty
         on items listed.
@@ -74,18 +74,18 @@ function TermsPage() {
       <h2>6. Wallet and payments</h2>
       <p>
         Wallet balances are denominated in USD and can be topped up via supported payment methods
-        (including cryptocurrency). Once credited, wallet funds may be spent on Marketly features. Refunds
+        (including cryptocurrency). Once credited, wallet funds may be spent on CallEscort24 features. Refunds
         and chargebacks may result in deduction of the corresponding wallet credit.
       </p>
 
       <h2>7. Content licence and DMCA</h2>
       <p>
-        You retain ownership of content you upload. You grant Marketly a worldwide, non-exclusive,
+        You retain ownership of content you upload. You grant CallEscort24 a worldwide, non-exclusive,
         royalty-free licence to host, display, reproduce, and distribute that content as needed to operate
         and promote the service.
       </p>
       <p>
-        Marketly respects intellectual property rights. If you believe content on the service infringes
+        CallEscort24 respects intellectual property rights. If you believe content on the service infringes
         your copyright, please follow the procedure in our{" "}
         <Link to="/dmca">DMCA Copyright Policy</Link> to submit a takedown notice or counter-notification.
       </p>
@@ -115,28 +115,28 @@ function TermsPage() {
 
       <h2>11. Limitation of liability</h2>
       <p>
-        To the maximum extent permitted by law, Marketly shall not be liable for any indirect,
+        To the maximum extent permitted by law, CallEscort24 shall not be liable for any indirect,
         incidental, special, consequential, or punitive damages, or any loss of profits, revenue, data, or
         goodwill arising from your use of the service. Our aggregate liability shall not exceed the
-        greater of (a) the amounts you paid to Marketly in the twelve months preceding the claim, or
+        greater of (a) the amounts you paid to CallEscort24 in the twelve months preceding the claim, or
         (b) USD 100.
       </p>
 
       <h2>12. Indemnity</h2>
       <p>
-        You agree to indemnify and hold Marketly, its officers, employees, and affiliates harmless from
+        You agree to indemnify and hold CallEscort24, its officers, employees, and affiliates harmless from
         any claims, damages, or expenses (including reasonable legal fees) arising from your listings,
         your use of the service, or your violation of these Terms.
       </p>
 
       <h2>13. Governing law, disputes, and arbitration</h2>
       <p>
-        These Terms are governed by the laws of the jurisdiction in which Marketly is established,
+        These Terms are governed by the laws of the jurisdiction in which CallEscort24 is established,
         excluding conflict-of-law principles. Before filing a claim, you agree to first try to resolve
         the dispute informally by contacting us through our <Link to="/contact">contact page</Link>; we
-        will likewise contact you. If a dispute is not resolved within 60 days, you and Marketly agree
+        will likewise contact you. If a dispute is not resolved within 60 days, you and CallEscort24 agree
         to resolve any remaining dispute through final and binding individual arbitration, and not in a
-        class, collective, or representative action. You and Marketly waive any right to a jury trial
+        class, collective, or representative action. You and CallEscort24 waive any right to a jury trial
         and any right to participate in a class action. Nothing in this section prevents either party
         from seeking injunctive or equitable relief in a court of competent jurisdiction, or, where
         mandatory consumer law grants you the right to bring proceedings elsewhere, from doing so.
@@ -145,7 +145,7 @@ function TermsPage() {
 
       <h2>14. Changes</h2>
       <p>
-        We may update these Terms from time to time. Continued use of Marketly after changes are posted
+        We may update these Terms from time to time. Continued use of CallEscort24 after changes are posted
         constitutes acceptance of the updated Terms.
       </p>
 

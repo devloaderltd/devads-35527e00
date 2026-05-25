@@ -12,8 +12,8 @@ type CityCtx = {
 };
 
 const Ctx = createContext<CityCtx | null>(null);
-const KEY_ID = "marketly.cityId";
-const KEY_NAME = "marketly.cityName";
+const KEY_ID = "callescort24.cityId";
+const KEY_NAME = "callescort24.cityName";
 
 export function CityProvider({ children }: { children: ReactNode }) {
   const [cityId, setCityId] = useState<string | null>(null);

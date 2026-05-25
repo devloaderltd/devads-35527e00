@@ -17,7 +17,7 @@ export const Route = createFileRoute("/login")({
       !r.startsWith("/admin");
     return { redirect: ok ? (r as string) : "/" };
   },
-  head: () => ({ meta: [{ title: "Sign in — Marketly" }] }),
+  head: () => ({ meta: [{ title: "Sign in — CallEscort24" }] }),
   component: LoginPage,
 });
 
@@ -46,7 +46,7 @@ function LoginPage() {
         <h1 className="font-display text-3xl font-bold">
           Welcome <span className="gradient-text">back</span>
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Sign in to continue to Marketly.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Sign in to continue to CallEscort24.</p>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>

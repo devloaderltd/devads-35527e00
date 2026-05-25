@@ -31,7 +31,7 @@ export function CookieConsent() {
           <div className="flex-1 text-sm">
             <div className="font-semibold">We use cookies</div>
             <p className="mt-0.5 text-muted-foreground">
-              Essential cookies keep Marketly running. Optional ones help us improve the experience and
+              Essential cookies keep CallEscort24 running. Optional ones help us improve the experience and
               show relevant promotions. Read our{" "}
               <Link to="/cookies" className="text-primary hover:underline">Cookies Policy</Link>.
             </p>

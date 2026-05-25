@@ -11,10 +11,10 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Marketly" },
-      { name: "description", content: "Get in touch with the Marketly team for support, trust & safety, partnerships or press inquiries." },
-      { property: "og:title", content: "Contact — Marketly" },
-      { property: "og:description", content: "Reach the Marketly team." },
+      { title: "Contact — CallEscort24" },
+      { name: "description", content: "Get in touch with the CallEscort24 team for support, trust & safety, partnerships or press inquiries." },
+      { property: "og:title", content: "Contact — CallEscort24" },
+      { property: "og:description", content: "Reach the CallEscort24 team." },
       { property: "og:url", content: "https://devads.lovable.app/contact" },
     ],
     links: [{ rel: "canonical", href: "https://devads.lovable.app/contact" }],
@@ -30,9 +30,9 @@ const contactSchema = z.object({
 });
 
 const channels = [
-  { icon: Mail, title: "General", body: "Product questions, feedback, or anything else.", email: "hello@marketly.example" },
-  { icon: ShieldAlert, title: "Trust & Safety", body: "Report scams, abuse or policy violations.", email: "safety@marketly.example" },
-  { icon: MessageSquare, title: "Press & Partnerships", body: "Media, business development and partnerships.", email: "press@marketly.example" },
+  { icon: Mail, title: "General", body: "Product questions, feedback, or anything else.", email: "hello@callescort24.example" },
+  { icon: ShieldAlert, title: "Trust & Safety", body: "Report scams, abuse or policy violations.", email: "safety@callescort24.example" },
+  { icon: MessageSquare, title: "Press & Partnerships", body: "Media, business development and partnerships.", email: "press@callescort24.example" },
 ];
 
 function ContactPage() {
@@ -61,7 +61,7 @@ function ContactPage() {
       `${parsed.data.message}\n\n— ${parsed.data.name} <${parsed.data.email}>`
     );
     const subject = encodeURIComponent(parsed.data.subject);
-    window.location.href = `mailto:hello@marketly.example?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:hello@callescort24.example?subject=${subject}&body=${body}`;
     setTimeout(() => {
       setSubmitting(false);
       setSubmitted({ name: parsed.data.name, email: parsed.data.email });

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "Your profile — Marketly" },
+      { title: "Your profile — CallEscort24" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

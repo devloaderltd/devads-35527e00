@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { ImagePlus, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/post")({
-  head: () => ({ meta: [{ title: "Post a listing — Marketly" }] }),
+  head: () => ({ meta: [{ title: "Post a listing — CallEscort24" }] }),
   component: PostListing,
 });
 

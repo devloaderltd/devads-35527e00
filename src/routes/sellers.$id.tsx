@@ -11,10 +11,10 @@ import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 export const Route = createFileRoute("/sellers/$id")({
   head: ({ params }) => ({
     meta: [
-      { title: "Seller profile — Marketly" },
-      { name: "description", content: "View this seller's active listings, location and member history on Marketly." },
-      { property: "og:title", content: "Seller profile — Marketly" },
-      { property: "og:description", content: "Browse a seller's active listings on Marketly." },
+      { title: "Seller profile — CallEscort24" },
+      { name: "description", content: "View this seller's active listings, location and member history on CallEscort24." },
+      { property: "og:title", content: "Seller profile — CallEscort24" },
+      { property: "og:description", content: "Browse a seller's active listings on CallEscort24." },
       { property: "og:url", content: `https://devads.lovable.app/sellers/${params.id}` },
       { property: "og:type", content: "profile" },
       { name: "robots", content: "index,follow" },

@@ -79,12 +79,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Marketly — Buy & sell locally across the US, UK, and Canada" },
-      { name: "description", content: "Marketly is a country-wide classifieds marketplace. Browse vehicles, housing, jobs, electronics, and more — or post a free listing." },
-      { property: "og:title", content: "Marketly — Buy & sell locally across the US, UK, and Canada" },
-      { name: "twitter:title", content: "Marketly — Buy & sell locally across the US, UK, and Canada" },
-      { property: "og:description", content: "Marketly is a country-wide classifieds marketplace. Browse vehicles, housing, jobs, electronics, and more — or post a free listing." },
-      { name: "twitter:description", content: "Marketly is a country-wide classifieds marketplace. Browse vehicles, housing, jobs, electronics, and more — or post a free listing." },
+      { title: "CallEscort24 — Buy & sell locally across the US, UK, and Canada" },
+      { name: "description", content: "CallEscort24 is a country-wide classifieds marketplace. Browse vehicles, housing, jobs, electronics, and more — or post a free listing." },
+      { property: "og:title", content: "CallEscort24 — Buy & sell locally across the US, UK, and Canada" },
+      { name: "twitter:title", content: "CallEscort24 — Buy & sell locally across the US, UK, and Canada" },
+      { property: "og:description", content: "CallEscort24 is a country-wide classifieds marketplace. Browse vehicles, housing, jobs, electronics, and more — or post a free listing." },
+      { name: "twitter:description", content: "CallEscort24 is a country-wide classifieds marketplace. Browse vehicles, housing, jobs, electronics, and more — or post a free listing." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a8fc5217-2efb-4750-9251-3c0ee79077ad" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a8fc5217-2efb-4750-9251-3c0ee79077ad" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -103,7 +103,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "Marketly",
+          name: "CallEscort24",
           url: "https://devads.lovable.app",
           potentialAction: {
             "@type": "SearchAction",
@@ -202,7 +202,7 @@ function MaintenanceGate({ children }: { children: React.ReactNode }) {
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full" style={{ background: "var(--gradient-warm)" }}>
             <AlertTriangle className="h-6 w-6 text-white" />
           </div>
-          <h1 className="font-display text-2xl font-bold">{s?.site_name || "Marketly"}</h1>
+          <h1 className="font-display text-2xl font-bold">{s?.site_name || "CallEscort24"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{s?.maintenance_message || "We are performing maintenance. Please check back soon."}</p>
           {s?.support_email && (
             <p className="mt-4 text-xs text-muted-foreground">

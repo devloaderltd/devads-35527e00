@@ -46,9 +46,9 @@ export const Route = createFileRoute("/search")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Browse listings — Marketly" },
-      { name: "description", content: "Search vehicles, housing, jobs, electronics, furniture and more across the Marketly marketplace." },
-      { property: "og:title", content: "Browse listings — Marketly" },
+      { title: "Browse listings — CallEscort24" },
+      { name: "description", content: "Search vehicles, housing, jobs, electronics, furniture and more across the CallEscort24 marketplace." },
+      { property: "og:title", content: "Browse listings — CallEscort24" },
       { property: "og:description", content: "Filter by category, city and condition to find what you need." },
       { property: "og:url", content: "https://devads.lovable.app/search" },
       { property: "og:type", content: "website" },

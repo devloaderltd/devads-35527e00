@@ -4,10 +4,10 @@ import { LegalLayout } from "@/components/LegalLayout";
 export const Route = createFileRoute("/dmca")({
   head: () => ({
     meta: [
-      { title: "DMCA Copyright Policy — Marketly" },
-      { name: "description", content: "How to submit a DMCA takedown notice or counter-notification for content on Marketly." },
-      { property: "og:title", content: "DMCA Copyright Policy — Marketly" },
-      { property: "og:description", content: "Report copyright infringement on Marketly under the DMCA." },
+      { title: "DMCA Copyright Policy — CallEscort24" },
+      { name: "description", content: "How to submit a DMCA takedown notice or counter-notification for content on CallEscort24." },
+      { property: "og:title", content: "DMCA Copyright Policy — CallEscort24" },
+      { property: "og:description", content: "Report copyright infringement on CallEscort24 under the DMCA." },
       { property: "og:url", content: "https://devads.lovable.app/dmca" },
     ],
     links: [{ rel: "canonical", href: "https://devads.lovable.app/dmca" }],
@@ -19,16 +19,16 @@ function DmcaPage() {
   return (
     <LegalLayout title="DMCA Policy" updated="May 25, 2026">
       <p>
-        Marketly respects the intellectual property rights of others and expects users of the service to
+        CallEscort24 respects the intellectual property rights of others and expects users of the service to
         do the same. In accordance with the Digital Millennium Copyright Act of 1998 (the "DMCA"), 17
         U.S.C. § 512, we will respond expeditiously to claims of copyright infringement committed using
-        the Marketly service that are reported to our Designated Copyright Agent at the contact below.
+        the CallEscort24 service that are reported to our Designated Copyright Agent at the contact below.
       </p>
 
       <h2>1. Filing a takedown notice</h2>
       <p>
         If you are a copyright owner (or authorized to act on behalf of one) and believe that material on
-        Marketly infringes your copyright, please send a written notification to our Designated Agent
+        CallEscort24 infringes your copyright, please send a written notification to our Designated Agent
         that includes substantially the following (per 17 U.S.C. § 512(c)(3)):
       </p>
       <ul>
@@ -45,7 +45,7 @@ function DmcaPage() {
         Send DMCA notices to our Designated Copyright Agent:
       </p>
       <ul>
-        <li>Email: <a href="mailto:dmca@marketly.example">dmca@marketly.example</a></li>
+        <li>Email: <a href="mailto:dmca@callescort24.example">dmca@callescort24.example</a></li>
         <li>Subject line: <em>DMCA Takedown Notice</em></li>
       </ul>
       <p>
@@ -62,12 +62,12 @@ function DmcaPage() {
         <li>Your physical or electronic signature.</li>
         <li>Identification of the material removed and its location before removal.</li>
         <li>A statement under penalty of perjury that you have a good faith belief that the material was removed or disabled as a result of mistake or misidentification.</li>
-        <li>Your name, address, and telephone number, and a statement that you consent to the jurisdiction of the federal court in the district where you are located (or, if outside the United States, in any judicial district in which Marketly may be found) and that you will accept service of process from the person who provided the original notice or an agent of such person.</li>
+        <li>Your name, address, and telephone number, and a statement that you consent to the jurisdiction of the federal court in the district where you are located (or, if outside the United States, in any judicial district in which CallEscort24 may be found) and that you will accept service of process from the person who provided the original notice or an agent of such person.</li>
       </ul>
 
       <h2>4. Repeat infringer policy</h2>
       <p>
-        It is Marketly's policy, in appropriate circumstances and at our sole discretion, to disable
+        It is CallEscort24's policy, in appropriate circumstances and at our sole discretion, to disable
         and/or terminate the accounts of users who are repeat infringers.
       </p>
 

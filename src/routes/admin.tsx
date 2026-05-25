@@ -12,7 +12,7 @@ import { isUnauthorizedError } from "@/lib/auth-errors";
 import { AuthErrorFallback } from "@/components/AuthErrorFallback";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin — Marketly" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Admin — CallEscort24" }, { name: "robots", content: "noindex" }] }),
   component: AdminLayout,
 });
 
