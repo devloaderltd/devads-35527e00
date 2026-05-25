@@ -165,9 +165,33 @@ function ListingDetail() {
 
   return (
     <div className="container mx-auto px-4 py-6">
+      {/* Breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+        <Link to="/" className="hover:text-foreground">Home</Link>
+        <span>›</span>
+        {listing.categories && (
+          <>
+            <Link to="/search" search={{ category: listing.categories.slug } as any} className="hover:text-foreground">
+              {listing.categories.name}
+            </Link>
+            <span>›</span>
+          </>
+        )}
+        {listing.cities && (
+          <>
+            <Link to="/search" search={{ city: listing.cities.slug, country: listing.cities.country } as any} className="hover:text-foreground">
+              {listing.cities.name}
+            </Link>
+            <span>›</span>
+          </>
+        )}
+        <span className="truncate text-foreground">{listing.title}</span>
+      </nav>
+
       <Link to="/search" className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-4 w-4" /> Back to results
       </Link>
+
 
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
         <div>
