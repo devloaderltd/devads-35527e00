@@ -231,6 +231,7 @@ function AuthInvalidator() {
   const router = useRouter();
   const qc = useQueryClient();
   useEffect(() => {
+    import("@/lib/error-reporter").then((m) => m.installErrorReporter()).catch(() => {});
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "INITIAL_SESSION") return;
       window.setTimeout(() => {
