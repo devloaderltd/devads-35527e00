@@ -29,19 +29,21 @@ function DashboardPage() {
     enabled: !!user,
     queryFn: async () => {
       const uid = user!.id;
-      const [listingsRes, favsRes, threadsRes] = await Promise.all([
-        supabase.from("listings")
-          .select("id, title, status, view_count, created_at, bumped_at, category_id, city_id")
-          .eq("user_id", uid),
-        supabase.from("favorites").select("listing_id", { count: "exact", head: false })
-          .in("listing_id",
-            (await supabase.from("listings").select("id").eq("user_id", uid)).data?.map(l => l.id) ?? ["00000000-0000-0000-0000-000000000000"]
-          ),
+      const listingsRes = await supabase.from("listings")
+        .select("id, title, status, view_count, created_at, bumped_at, category_id, city_id")
+        .eq("user_id", uid);
+      const listings = listingsRes.data ?? [];
+      const ids = listings.map(l => l.id);
+
+      const [favsRes, threadsRes] = await Promise.all([
+        ids.length
+          ? supabase.from("favorites").select("listing_id", { count: "exact", head: true }).in("listing_id", ids)
+          : Promise.resolve({ count: 0 } as { count: number }),
         supabase.from("message_threads")
           .select("id, last_message_at, listing_id, buyer_id, seller_id")
           .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`),
       ]);
-      const listings = listingsRes.data ?? [];
+
       const totalViews = listings.reduce((s, l) => s + (l.view_count ?? 0), 0);
       const active = listings.filter(l => l.status === "active").length;
       return {
@@ -49,7 +51,7 @@ function DashboardPage() {
         totalListings: listings.length,
         activeListings: active,
         totalViews,
-        totalFavorites: favsRes.data?.length ?? 0,
+        totalFavorites: (favsRes as { count: number | null }).count ?? 0,
         threadCount: threadsRes.data?.length ?? 0,
       };
     },
