@@ -339,11 +339,6 @@ function ListingDetail() {
             </span>
           </div>
 
-          {listing.condition && listing.condition !== "not_applicable" && (
-            <span className="mt-3 inline-block rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium capitalize">
-              {String(listing.condition).replace("_", " ")}
-            </span>
-          )}
 
           <div className="mt-4 flex flex-wrap gap-2">
             <FavoriteButton listingId={listing.id} variant="inline" showLabel />
