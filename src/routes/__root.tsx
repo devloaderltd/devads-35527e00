@@ -11,6 +11,8 @@ import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { CityProvider } from "@/lib/city-context";
+import { CitySelectorDialog } from "@/components/CitySelectorDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
