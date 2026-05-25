@@ -37,8 +37,8 @@ export function Header() {
   return (
     <header className="sticky top-3 z-40 mx-3 mt-3 md:mx-6">
       <div className="mx-auto flex max-w-6xl items-center gap-3 rounded-2xl glass-strong px-3 py-2.5">
-        <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
-          <span className="grid h-9 w-9 place-items-center rounded-xl btn-gradient text-white shadow-inner">M</span>
+        <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight text-foreground">
+          <span className="grid h-9 w-9 place-items-center rounded-full btn-gradient text-white shadow-[var(--shadow-glow-primary)]">M</span>
           <span className="hidden sm:inline">Marketly</span>
         </Link>
 
@@ -48,7 +48,7 @@ export function Header() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search listings…"
-            className="rounded-full border-white/60 bg-white/60 pl-9 focus-visible:bg-white"
+            className="rounded-full border-white/10 bg-white/5 pl-9 text-foreground placeholder:text-muted-foreground focus-visible:bg-white/10"
           />
         </form>
 
@@ -58,10 +58,10 @@ export function Header() {
             variant="outline"
             size="sm"
             onClick={openPicker}
-            className="hidden sm:inline-flex rounded-full bg-white/60 backdrop-blur gap-1 max-w-[12rem]"
+            className="hidden sm:inline-flex rounded-full border-white/10 bg-white/5 text-foreground backdrop-blur gap-1 max-w-[12rem] hover:bg-white/10"
             title="Change city"
           >
-            <MapPin className="h-4 w-4 text-primary" />
+            <MapPin className="h-4 w-4 text-accent" />
             <span className="truncate">{cityName ?? "Select city"}</span>
           </Button>
           <Button
@@ -69,13 +69,13 @@ export function Header() {
             variant="outline"
             size="icon"
             onClick={openPicker}
-            className="sm:hidden rounded-full bg-white/60 backdrop-blur"
+            className="sm:hidden rounded-full border-white/10 bg-white/5 text-foreground backdrop-blur hover:bg-white/10"
             title={cityName ?? "Select city"}
           >
-            <MapPin className="h-4 w-4 text-primary" />
+            <MapPin className="h-4 w-4 text-accent" />
           </Button>
           <ThemeToggle />
-          <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0">
+          <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0 shadow-[var(--shadow-glow-primary)]">
             <Link to="/post">
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Post</span>
@@ -85,7 +85,7 @@ export function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-full bg-white/60 backdrop-blur">
+                <Button variant="outline" size="icon" className="rounded-full border-white/10 bg-white/5 text-foreground backdrop-blur hover:bg-white/10">
                   <UserIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -120,7 +120,7 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild variant="outline" size="sm" className="rounded-full bg-white/60 backdrop-blur">
+            <Button asChild size="sm" className="rounded-full bg-white text-black font-bold hover:bg-white/90">
               <Link to="/login">Sign in</Link>
             </Button>
           )}
@@ -135,7 +135,7 @@ export function Header() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search listings…"
-              className="rounded-full border-white/60 bg-white/70 pl-9"
+              className="rounded-full border-white/10 bg-white/5 pl-9 text-foreground placeholder:text-muted-foreground"
             />
           </div>
         </div>
