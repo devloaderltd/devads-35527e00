@@ -168,6 +168,10 @@ export function AccountSettingsCard() {
         </div>
       </section>
 
+      <TwoFactorSection />
+      <ConnectedAccountsSection />
+      <NotificationPreferencesSection />
+
       {/* Danger zone */}
       <section className="mt-5 rounded-2xl border border-red-200/70 bg-red-50/60 p-4">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-red-700">
