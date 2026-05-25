@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet } from "lucide-react";
+import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet, BookmarkCheck } from "lucide-react";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCity } from "@/lib/city-context";
 import { useState } from "react";
@@ -75,6 +76,7 @@ export function Header() {
             <MapPin className="h-4 w-4 text-primary" />
           </Button>
           <ThemeToggle />
+          {user && <NotificationsBell />}
           <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0">
             <Link to="/post">
               <Plus className="h-4 w-4" />
@@ -109,6 +111,9 @@ export function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/favorites"><Heart className="mr-2 h-4 w-4" /> Favorites</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/saved-searches"><BookmarkCheck className="mr-2 h-4 w-4" /> Saved searches</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/debug/session"><Bug className="mr-2 h-4 w-4" /> Debug session</Link>
