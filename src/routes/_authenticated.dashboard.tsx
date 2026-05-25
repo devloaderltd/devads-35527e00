@@ -166,12 +166,13 @@ function DashboardPage() {
         <KpiCard icon={<MessageSquare className="h-5 w-5" />} label="Conversations" value={stats?.threadCount ?? "—"} />
       </div>
 
-      <Tabs defaultValue="analytics" className="mt-8">
+      <Tabs defaultValue={initialTab} className="mt-8">
         <div className="-mx-3 overflow-x-auto px-3 no-scrollbar sm:mx-0 sm:px-0">
           <TabsList className="inline-flex w-max rounded-full bg-white/60 backdrop-blur dark:bg-white/10">
             <TabsTrigger value="analytics" className="rounded-full">Overview</TabsTrigger>
             <TabsTrigger value="performance" className="rounded-full">Performance</TabsTrigger>
             <TabsTrigger value="listings" className="rounded-full">My Listings</TabsTrigger>
+            <TabsTrigger value="reviews" className="rounded-full">Reviews</TabsTrigger>
           </TabsList>
         </div>
 
