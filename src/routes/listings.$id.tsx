@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   MapPin, Calendar, Tag, ChevronLeft, ChevronRight, MessageSquare,
-  Share2, Eye, Package,
+  Share2, Eye, Package, Phone, Mail, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
@@ -13,6 +14,7 @@ import { ReportDialog } from "@/components/ReportDialog";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ListingCard } from "@/components/ListingCard";
+import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
