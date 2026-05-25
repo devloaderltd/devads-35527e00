@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search) => {
-    const redirect = typeof search.redirect === "string" && search.redirect.startsWith("/") && !search.redirect.startsWith("//")
-      ? search.redirect
+  validateSearch: (search: Record<string, unknown>) => {
+    const r = search.redirect;
+    const redirect = typeof r === "string" && r.startsWith("/") && !r.startsWith("//")
+      ? r
       : "/";
     return { redirect };
   },
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { redirect } = Route.useSearch();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,7 +32,8 @@ function LoginPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back!");
-    window.location.assign(redirect);
+    const target = redirect && redirect !== "/login" ? redirect : "/";
+    navigate({ to: target, replace: true });
   };
 
   return (

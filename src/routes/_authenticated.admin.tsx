@@ -25,8 +25,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
 const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8", "#5aa9ff", "#9a8cff"];
 
 function AdminPage() {
-  const { user } = useAuth();
-  const { data: roles, isLoading: rolesLoading } = useQuery({
+  const { user, loading: authLoading } = useAuth();
+  const rolesQ = useQuery({
     queryKey: ["my-roles", user?.id],
     enabled: !!user,
     staleTime: 0,
@@ -38,17 +38,32 @@ function AdminPage() {
         .eq("user_id", user!.id);
       if (error) {
         console.error("[admin] role fetch error", error);
-        return [] as string[];
+        throw error;
       }
       return (data ?? []).map((r) => r.role as string);
     },
   });
-
+  const roles = rolesQ.data;
   const isAdmin = roles?.includes("admin");
   const isMod = isAdmin || roles?.includes("moderator");
 
-  if (!user || rolesLoading || roles === undefined) {
+  if (authLoading || !user || rolesQ.isLoading || (rolesQ.isFetching && roles === undefined)) {
     return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
+  }
+  if (rolesQ.error) {
+    return (
+      <div className="container mx-auto grid place-items-center px-4 py-20 text-center">
+        <ShieldAlert className="mb-3 h-10 w-10 text-destructive" />
+        <h1 className="font-display text-xl font-bold">Couldn't verify your roles</h1>
+        <p className="mt-1 max-w-md text-sm text-muted-foreground">{String(rolesQ.error)}</p>
+        <div className="mt-4 flex gap-2">
+          <Button variant="outline" className="rounded-full" onClick={() => rolesQ.refetch()}>Retry</Button>
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to="/debug/session">Open session debug</Link>
+          </Button>
+        </div>
+      </div>
+    );
   }
   if (!isMod) {
     return (
@@ -56,6 +71,7 @@ function AdminPage() {
         <ShieldAlert className="mb-3 h-10 w-10 text-muted-foreground" />
         <h1 className="font-display text-xl font-bold">Admins only</h1>
         <p className="mt-1 text-sm text-muted-foreground">You don't have permission to view this page.</p>
+        <Link to="/debug/session" className="mt-3 text-sm text-primary hover:underline">See session debug →</Link>
       </div>
     );
   }
