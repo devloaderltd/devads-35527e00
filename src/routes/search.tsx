@@ -332,6 +332,41 @@ function SearchPage() {
           )}
         </>
       )}
+
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save this search</DialogTitle>
+            <DialogDescription>Give it a name and choose whether to be alerted of new matches.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="saved-search-name" className="text-xs uppercase tracking-wide text-muted-foreground">Name</Label>
+              <Input id="saved-search-name" value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder="e.g. iPhones in Birmingham" className="mt-1.5 bg-white/70" autoFocus />
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-white/40 bg-white/55 p-3">
+              <div>
+                <div className="text-sm font-medium">Notify me of new matches</div>
+                <div className="text-xs text-muted-foreground">We'll send a notification when a new listing matches.</div>
+              </div>
+              <Switch checked={saveNotify} onCheckedChange={setSaveNotify} />
+            </div>
+            {activeFilters.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {activeFilters.map(f => (
+                  <Badge key={f.key} variant="secondary" className="rounded-full bg-white/70">{f.label}</Badge>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaveOpen(false)}>Cancel</Button>
+            <Button onClick={() => saveSearch.mutate()} disabled={saveSearch.isPending || !saveName.trim()} className="btn-gradient border-0">
+              {saveSearch.isPending ? "Saving…" : "Save search"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
