@@ -78,11 +78,16 @@ function TermsPage() {
         and chargebacks may result in deduction of the corresponding wallet credit.
       </p>
 
-      <h2>7. Content licence</h2>
+      <h2>7. Content licence and DMCA</h2>
       <p>
         You retain ownership of content you upload. You grant Marketly a worldwide, non-exclusive,
         royalty-free licence to host, display, reproduce, and distribute that content as needed to operate
         and promote the service.
+      </p>
+      <p>
+        Marketly respects intellectual property rights. If you believe content on the service infringes
+        your copyright, please follow the procedure in our{" "}
+        <Link to="/dmca">DMCA Copyright Policy</Link> to submit a takedown notice or counter-notification.
       </p>
 
       <h2>8. Reviews and reports</h2>
@@ -91,6 +96,7 @@ function TermsPage() {
         Terms. Users may report listings or other users they believe violate our rules; we will review
         reports in good faith but cannot guarantee any specific outcome.
       </p>
+
 
       <h2>9. Suspension and termination</h2>
       <p>
@@ -123,13 +129,19 @@ function TermsPage() {
         your use of the service, or your violation of these Terms.
       </p>
 
-      <h2>13. Governing law and disputes</h2>
+      <h2>13. Governing law, disputes, and arbitration</h2>
       <p>
         These Terms are governed by the laws of the jurisdiction in which Marketly is established,
-        excluding conflict-of-law principles. Disputes shall be resolved in the competent courts of that
-        jurisdiction, except where mandatory consumer law grants you the right to bring proceedings
-        elsewhere.
+        excluding conflict-of-law principles. Before filing a claim, you agree to first try to resolve
+        the dispute informally by contacting us through our <Link to="/contact">contact page</Link>; we
+        will likewise contact you. If a dispute is not resolved within 60 days, you and Marketly agree
+        to resolve any remaining dispute through final and binding individual arbitration, and not in a
+        class, collective, or representative action. You and Marketly waive any right to a jury trial
+        and any right to participate in a class action. Nothing in this section prevents either party
+        from seeking injunctive or equitable relief in a court of competent jurisdiction, or, where
+        mandatory consumer law grants you the right to bring proceedings elsewhere, from doing so.
       </p>
+
 
       <h2>14. Changes</h2>
       <p>

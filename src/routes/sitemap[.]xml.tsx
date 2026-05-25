@@ -23,6 +23,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           `${BASE}/privacy`,
           `${BASE}/terms`,
           `${BASE}/cookies`,
+          `${BASE}/dmca`,
         ];
 
         (categories ?? []).forEach((c) => urls.push(`${BASE}/search?category=${encodeURIComponent(c.slug)}`));
