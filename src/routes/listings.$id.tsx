@@ -268,12 +268,33 @@ function ListingDetail() {
                   <dd className="font-medium">{listing.categories.name}</dd>
                 </div>
               )}
-              {listing.condition && listing.condition !== "not_applicable" && (
+              {listing.cities && (
                 <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
-                  <dt className="text-muted-foreground">Condition</dt>
-                  <dd className="font-medium capitalize">{String(listing.condition).replace("_", " ")}</dd>
+                  <dt className="text-muted-foreground">Location</dt>
+                  <dd className="truncate text-right font-medium">
+                    {listing.cities.name}, {listing.cities.region}
+                  </dd>
                 </div>
               )}
+              {(() => {
+                const days = Math.floor((Date.now() - new Date(listing.created_at).getTime()) / 86_400_000);
+                return (
+                  <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                    <dt className="text-muted-foreground">Age</dt>
+                    <dd className="font-medium">{days === 0 ? "Today" : `${days} day${days === 1 ? "" : "s"}`}</dd>
+                  </div>
+                );
+              })()}
+              <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                <dt className="text-muted-foreground">Posted</dt>
+                <dd className="font-medium">
+                  {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                <dt className="text-muted-foreground">Total ad views</dt>
+                <dd className="font-medium">{listing.view_count ?? 0}</dd>
+              </div>
               {listing.cities && (
                 <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
                   <dt className="text-muted-foreground">Location</dt>
