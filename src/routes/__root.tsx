@@ -9,13 +9,17 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+
 import { CityProvider } from "@/lib/city-context";
 import { CitySelectorDialog } from "@/components/CitySelectorDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeProvider, themeBootScript } from "@/lib/theme-context";
+import { getSiteSettings, getMyRoles } from "@/lib/admin.functions";
+import { AlertTriangle } from "lucide-react";
 
 import appCss from "../styles.css?url";
 
@@ -133,17 +137,18 @@ function RootComponent() {
           ) : (
             <div className="relative flex min-h-screen flex-col">
               <div className="aurora-mesh" aria-hidden />
-              <PaymentTestModeBanner />
-              <Header />
-              <main className="flex-1">
-                <Outlet />
-              </main>
-              <footer className="mt-16 border-t border-white/40 bg-white/40 backdrop-blur-md py-8 text-center text-sm text-muted-foreground dark:border-white/10 dark:bg-white/5">
-                <div className="container mx-auto px-4 flex flex-col items-center gap-3">
-                  <div className="h-[2px] w-24 rounded-full" style={{ background: "var(--gradient-primary)" }} />
-                  <div>© {new Date().getFullYear()} <span className="font-display font-bold gradient-text">Marketly</span> — Buy and sell across the US, UK & Canada.</div>
-                </div>
-              </footer>
+              <MaintenanceGate>
+                <Header />
+                <main className="flex-1">
+                  <Outlet />
+                </main>
+                <footer className="mt-16 border-t border-white/40 bg-white/40 backdrop-blur-md py-8 text-center text-sm text-muted-foreground dark:border-white/10 dark:bg-white/5">
+                  <div className="container mx-auto px-4 flex flex-col items-center gap-3">
+                    <div className="h-[2px] w-24 rounded-full" style={{ background: "var(--gradient-primary)" }} />
+                    <div>© {new Date().getFullYear()} <span className="font-display font-bold gradient-text">Marketly</span> — Buy and sell across the US, UK & Canada.</div>
+                  </div>
+                </footer>
+              </MaintenanceGate>
             </div>
           )}
           {!isAdminArea && <CitySelectorDialog dismissable />}
@@ -151,6 +156,60 @@ function RootComponent() {
       </ThemeProvider>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
+  );
+}
+
+function MaintenanceGate({ children }: { children: React.ReactNode }) {
+  const fetchSettings = useServerFn(getSiteSettings);
+  const fetchRoles = useServerFn(getMyRoles);
+
+  const { data: settingsData } = useQuery({
+    queryKey: ["site-settings-public"],
+    queryFn: () => fetchSettings(),
+    staleTime: 60_000,
+  });
+
+  const { data: rolesData } = useQuery({
+    queryKey: ["my-roles"],
+    queryFn: async () => {
+      try { return await fetchRoles(); } catch { return { roles: [] as string[] }; }
+    },
+    staleTime: 60_000,
+  });
+
+  const s = settingsData?.settings;
+  const isAdmin = (rolesData?.roles ?? []).includes("admin");
+  const maintenance = !!s?.maintenance_mode;
+
+  if (maintenance && !isAdmin) {
+    return (
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
+        <div className="max-w-md rounded-3xl border border-white/50 bg-white/70 p-8 text-center backdrop-blur-xl shadow-[var(--shadow-float)]">
+          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full" style={{ background: "var(--gradient-warm)" }}>
+            <AlertTriangle className="h-6 w-6 text-white" />
+          </div>
+          <h1 className="font-display text-2xl font-bold">{s?.site_name || "Marketly"}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{s?.maintenance_message || "We are performing maintenance. Please check back soon."}</p>
+          {s?.support_email && (
+            <p className="mt-4 text-xs text-muted-foreground">
+              Need help? <a className="underline" href={`mailto:${s.support_email}`}>{s.support_email}</a>
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {maintenance && isAdmin && (
+        <div className="relative z-20 flex items-center justify-center gap-2 bg-amber-500/90 px-4 py-2 text-center text-xs font-medium text-white">
+          <AlertTriangle className="h-3.5 w-3.5" />
+          Maintenance mode is ON. Only admins can see the site. {s?.maintenance_message ? `— ${s.maintenance_message}` : null}
+        </div>
+      )}
+      {children}
+    </>
   );
 }
 
