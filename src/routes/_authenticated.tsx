@@ -13,10 +13,10 @@ function AuthenticatedLayout() {
   const redirectTarget = location.pathname.startsWith("/login") ? "/" : location.href;
 
   useEffect(() => {
-    if (!loading && !session) {
+    if (!loading && !session && !location.pathname.startsWith("/login")) {
       navigate({ to: "/login", search: { redirect: redirectTarget }, replace: true });
     }
-  }, [loading, session, navigate, redirectTarget]);
+  }, [loading, session, navigate, redirectTarget, location.pathname]);
 
   if (loading) {
     return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
