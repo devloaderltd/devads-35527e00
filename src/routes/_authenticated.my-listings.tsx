@@ -46,6 +46,10 @@ function MyListings() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const toggle = (id: string) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const clearSel = () => setSelected(new Set());
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-listings", user?.id],
+    enabled: !!user,
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("listings")
