@@ -30,8 +30,6 @@ const CONDITIONS = [
 const SORTS = [
   { value: "recent", label: "Most recent" },
   { value: "oldest", label: "Oldest" },
-  { value: "price_asc", label: "Price: low → high" },
-  { value: "price_desc", label: "Price: high → low" },
 ] as const;
 
 const searchSchema = z.object({
@@ -40,9 +38,7 @@ const searchSchema = z.object({
   country: z.string().optional(),
   city: z.string().optional(),
   condition: z.string().optional(),
-  priceMin: z.coerce.number().optional(),
-  priceMax: z.coerce.number().optional(),
-  sort: z.enum(["recent", "oldest", "price_asc", "price_desc"]).optional(),
+  sort: z.enum(["recent", "oldest"]).optional(),
   page: z.coerce.number().min(1).optional(),
 });
 
@@ -53,7 +49,7 @@ export const Route = createFileRoute("/search")({
       { title: "Browse listings — Marketly" },
       { name: "description", content: "Search vehicles, housing, jobs, electronics, furniture and more across the Marketly marketplace." },
       { property: "og:title", content: "Browse listings — Marketly" },
-      { property: "og:description", content: "Filter by category, city, price and condition to find what you need." },
+      { property: "og:description", content: "Filter by category, city and condition to find what you need." },
       { property: "og:url", content: "https://devads.lovable.app/search" },
       { property: "og:type", content: "website" },
     ],
@@ -71,8 +67,6 @@ function SearchPage() {
   const sort = search.sort ?? "recent";
 
   const [qInput, setQInput] = useState(search.q ?? "");
-  const [minInput, setMinInput] = useState(search.priceMin?.toString() ?? "");
-  const [maxInput, setMaxInput] = useState(search.priceMax?.toString() ?? "");
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -104,7 +98,7 @@ function SearchPage() {
       let q = supabase
         .from("listings")
         .select(`
-          id, title, price, currency, created_at, bumped_at, condition,
+          id, title, created_at, bumped_at, condition,
           categories!inner(name, slug),
           cities!inner(name, region, country, slug),
           listing_images(url, sort_order),
@@ -117,13 +111,9 @@ function SearchPage() {
       if (search.country) q = q.eq("cities.country", search.country);
       if (search.city) q = q.eq("cities.slug", search.city);
       if (search.condition) q = q.eq("condition", search.condition);
-      if (search.priceMin != null && !Number.isNaN(search.priceMin)) q = q.gte("price", search.priceMin);
-      if (search.priceMax != null && !Number.isNaN(search.priceMax)) q = q.lte("price", search.priceMax);
 
       switch (sort) {
         case "oldest": q = q.order("created_at", { ascending: true }); break;
-        case "price_asc": q = q.order("price", { ascending: true, nullsFirst: false }); break;
-        case "price_desc": q = q.order("price", { ascending: false, nullsFirst: false }); break;
         default: q = q.order("bumped_at", { ascending: false });
       }
 
@@ -137,13 +127,9 @@ function SearchPage() {
     navigate({ search: { ...search, ...patch, ...(resetPage ? { page: undefined } : {}) } as any });
 
   const applyQ = () => update({ q: qInput.trim() || undefined });
-  const applyPrice = () => update({
-    priceMin: minInput ? Number(minInput) : undefined,
-    priceMax: maxInput ? Number(maxInput) : undefined,
-  });
 
   const clearAll = () => {
-    setQInput(""); setMinInput(""); setMaxInput("");
+    setQInput("");
     navigate({ search: {} as any });
   };
 
@@ -170,15 +156,10 @@ function SearchPage() {
     search.country && { key: "country", label: search.country },
     search.city && { key: "city", label: search.city },
     search.condition && { key: "condition", label: CONDITIONS.find(c => c.value === search.condition)?.label ?? search.condition },
-    (search.priceMin != null || search.priceMax != null) && {
-      key: "price",
-      label: `$${search.priceMin ?? 0}–${search.priceMax ?? "∞"}`,
-    },
   ].filter(Boolean) as { key: string; label: string }[];
 
   const clearKey = (k: string) => {
-    if (k === "price") { setMinInput(""); setMaxInput(""); update({ priceMin: undefined, priceMax: undefined }); }
-    else if (k === "q") { setQInput(""); update({ q: undefined }); }
+    if (k === "q") { setQInput(""); update({ q: undefined }); }
     else update({ [k]: undefined } as any);
   };
 
@@ -253,36 +234,22 @@ function SearchPage() {
         </Select>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-white/40 bg-white/55 p-3 backdrop-blur-xl">
-        <SlidersHorizontal className="ml-1 h-4 w-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Price</span>
-        <Input
-          type="number" inputMode="decimal" min={0} placeholder="Min"
-          value={minInput} onChange={(e) => setMinInput(e.target.value)}
-          onBlur={applyPrice} onKeyDown={(e) => { if (e.key === "Enter") applyPrice(); }}
-          className="h-9 w-24 bg-white/70"
-        />
-        <span className="text-muted-foreground">–</span>
-        <Input
-          type="number" inputMode="decimal" min={0} placeholder="Max"
-          value={maxInput} onChange={(e) => setMaxInput(e.target.value)}
-          onBlur={applyPrice} onKeyDown={(e) => { if (e.key === "Enter") applyPrice(); }}
-          className="h-9 w-24 bg-white/70"
-        />
-        <div className="ml-2 flex flex-wrap items-center gap-1.5">
-          {activeFilters.map(f => (
-            <Badge key={f.key} variant="secondary" className="gap-1 rounded-full bg-white/70 pl-2.5 pr-1">
-              {f.label}
-              <button onClick={() => clearKey(f.key)} className="ml-0.5 grid h-5 w-5 place-items-center rounded-full hover:bg-black/10" aria-label={`Remove ${f.label}`}>
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-        </div>
-        {activeFilters.length > 0 && (
+      {activeFilters.length > 0 && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-white/40 bg-white/55 p-3 backdrop-blur-xl">
+          <SlidersHorizontal className="ml-1 h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-wrap items-center gap-1.5">
+            {activeFilters.map(f => (
+              <Badge key={f.key} variant="secondary" className="gap-1 rounded-full bg-white/70 pl-2.5 pr-1">
+                {f.label}
+                <button onClick={() => clearKey(f.key)} className="ml-0.5 grid h-5 w-5 place-items-center rounded-full hover:bg-black/10" aria-label={`Remove ${f.label}`}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
           <Button variant="ghost" size="sm" className="ml-auto rounded-full text-xs" onClick={clearAll}>Clear all</Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">

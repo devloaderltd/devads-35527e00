@@ -172,11 +172,6 @@ function Home() {
                       {heroFeatured.cities.name}, {heroFeatured.cities.region}
                     </p>
                   )}
-                  {heroPrice && (
-                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-base font-bold text-foreground backdrop-blur-md">
-                      {heroPrice}
-                    </div>
-                  )}
                 </div>
               </div>
             </Link>

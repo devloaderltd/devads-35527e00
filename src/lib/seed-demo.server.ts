@@ -3,12 +3,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 export const DEMO_USER = { email: "demo@marketly.test", password: "DemoUser123!", display_name: "Demo User" };
 export const ADMIN_USER = { email: "admin@marketly.test", password: "Adm!n-Marketly-2026#Xq7", display_name: "Admin User" };
 
-const SAMPLE_LISTINGS: { title: string; description: string; price: number; condition: "good" | "like_new" | "not_applicable" | "new" | "fair" | "poor" }[] = [
-  { title: "Vintage road bike — Trek 520", description: "Lovingly maintained, ready to ride.", price: 480, condition: "good" },
-  { title: "MacBook Pro 14\" M2 — 2023", description: "Like new, includes original charger and box.", price: 1450, condition: "like_new" },
-  { title: "Cozy 1-bed apartment downtown", description: "Available June 1. Utilities included.", price: 1800, condition: "not_applicable" },
-  { title: "IKEA sectional sofa — grey", description: "Comfortable and clean. Pickup only.", price: 220, condition: "good" },
-  { title: "Mountain skis 175cm + bindings", description: "Used two seasons. Great all-mountain pair.", price: 260, condition: "good" },
+const SAMPLE_LISTINGS: { title: string; description: string; condition: "good" | "like_new" | "not_applicable" | "new" | "fair" | "poor" }[] = [
+  { title: "Vintage road bike — Trek 520", description: "Lovingly maintained, ready to ride.", condition: "good" },
+  { title: "MacBook Pro 14\" M2 — 2023", description: "Like new, includes original charger and box.", condition: "like_new" },
+  { title: "Cozy 1-bed apartment downtown", description: "Available June 1. Utilities included.", condition: "not_applicable" },
+  { title: "IKEA sectional sofa — grey", description: "Comfortable and clean. Pickup only.", condition: "good" },
+  { title: "Mountain skis 175cm + bindings", description: "Used two seasons. Great all-mountain pair.", condition: "good" },
 ];
 
 /**
@@ -48,8 +48,7 @@ async function seedListingsFor(userId: string) {
     user_id: userId,
     title: s.title,
     description: s.description,
-    price: s.price,
-    currency: "USD",
+    item_age: "Used",
     condition: s.condition,
     status: "active" as const,
     category_id: cats[i % cats.length].id,

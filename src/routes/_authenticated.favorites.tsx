@@ -17,7 +17,7 @@ function Favorites() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("favorites")
-        .select(`listings(id, title, price, currency,
+        .select(`listings(id, title,
           cities(name, region, country),
           listing_images(url, sort_order))`)
         .eq("user_id", user!.id);

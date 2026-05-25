@@ -26,7 +26,7 @@ function ListingsPage() {
   const { data } = useQuery({
     queryKey: ["admin-listings", statusFilter],
     queryFn: async () => {
-      let qy = supabase.from("listings").select("id, title, status, view_count, created_at, user_id, price, currency").order("created_at", { ascending: false }).limit(200);
+      let qy = supabase.from("listings").select("id, title, status, view_count, created_at, user_id").order("created_at", { ascending: false }).limit(200);
       if (statusFilter !== "all") qy = qy.eq("status", statusFilter as "active" | "sold" | "removed" | "expired");
       const { data } = await qy;
       return data ?? [];
@@ -81,7 +81,7 @@ function ListingsPage() {
                   <span className="font-medium text-slate-100">{l.title}</span>
                   <Badge variant={l.status === "active" ? "default" : "secondary"} className="capitalize">{l.status}</Badge>
                 </div>
-                <div className="text-xs text-slate-400">{l.price ? `${l.currency} ${Number(l.price).toFixed(2)}` : "—"} · {l.view_count} views · {format(new Date(l.created_at), "MMM d")}</div>
+                <div className="text-xs text-slate-400">{l.view_count} views · {format(new Date(l.created_at), "MMM d")}</div>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 <Button asChild size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"><a href={`/listings/${l.id}`} target="_blank" rel="noopener noreferrer">View</a></Button>
