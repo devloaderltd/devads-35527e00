@@ -63,8 +63,8 @@ function PostListing() {
     if (!user) return toast.error("Sign in first");
     if (!categoryId || !cityId) return toast.error("Pick a category and city");
     const ageTrimmed = itemAge.trim();
-    if (!ageTrimmed) return toast.error("Item age is required");
-    if (ageTrimmed.length > 60) return toast.error("Item age must be 60 characters or less");
+    if (!ageTrimmed) return toast.error("Age is required");
+    if (ageTrimmed.length > 60) return toast.error("Age must be 60 characters or less");
     setSubmitting(true);
     try {
       const { data: listing, error } = await supabase
