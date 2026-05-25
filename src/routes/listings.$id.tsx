@@ -353,9 +353,6 @@ function ListingDetail() {
             </button>
           </div>
 
-          <div className="mt-6 whitespace-pre-wrap text-[0.95rem] leading-relaxed">
-            {listing.description}
-          </div>
 
           {/* Seller card */}
           <div className="iridescent-border mt-8 rounded-2xl border border-white/40 bg-white/65 p-4 shadow-[var(--shadow-float)] backdrop-blur-xl">
