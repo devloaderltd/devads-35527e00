@@ -8,12 +8,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3, Wallet, BookmarkCheck, Search } from "lucide-react";
+import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3, Wallet, BookmarkCheck, Search, Activity, Phone } from "lucide-react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend, AreaChart, Area,
 } from "recharts";
-import { format, subDays, startOfDay } from "date-fns";
+import { format, subDays, startOfDay, formatDistanceToNow } from "date-fns";
 import { getMyListingAnalytics } from "@/lib/extras.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -194,9 +194,13 @@ function DashboardPage() {
           </ChartCard>
         </TabsContent>
 
-        <TabsContent value="performance" className="mt-4">
+        <TabsContent value="performance" className="mt-4 space-y-6">
           <PerformancePanel />
+          <RecentActivity userId={user?.id} listings={stats?.listings ?? []} />
         </TabsContent>
+
+
+
 
 
 
@@ -356,3 +360,72 @@ function PerformancePanel() {
     </div>
   );
 }
+
+function RecentActivity({ userId, listings }: { userId: string | undefined; listings: { id: string; title: string }[] }) {
+  const ids = listings.map((l) => l.id);
+  const { data: events } = useQuery({
+    queryKey: ["dashboard-activity", userId, ids.length],
+    enabled: !!userId && ids.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("listing_events")
+        .select("id, listing_id, type, created_at")
+        .in("listing_id", ids)
+        .order("created_at", { ascending: false })
+        .limit(15);
+      return data ?? [];
+    },
+  });
+
+  const titleById = new Map(listings.map((l) => [l.id, l.title]));
+  const iconFor: Record<string, React.ReactNode> = {
+    view: <Eye className="h-3.5 w-3.5" />,
+    favorite: <Heart className="h-3.5 w-3.5" />,
+    message: <MessageSquare className="h-3.5 w-3.5" />,
+    contact_reveal: <Phone className="h-3.5 w-3.5" />,
+  };
+  const labelFor: Record<string, string> = {
+    view: "Someone viewed",
+    favorite: "Someone favorited",
+    message: "New message on",
+    contact_reveal: "Contact revealed on",
+  };
+
+  return (
+    <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Activity className="h-4 w-4 text-primary" /> Recent activity
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {!events?.length ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">No activity yet.</div>
+        ) : (
+          <ul className="divide-y divide-border/40">
+            {events.map((e) => {
+              const title = titleById.get(e.listing_id) ?? "your listing";
+              return (
+                <li key={e.id} className="flex items-center gap-3 py-2.5">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    {iconFor[e.type] ?? <Activity className="h-3.5 w-3.5" />}
+                  </span>
+                  <div className="min-w-0 flex-1 text-sm">
+                    <span className="text-muted-foreground">{labelFor[e.type] ?? e.type} </span>
+                    <Link to="/listings/$id" params={{ id: e.listing_id }} className="font-medium hover:text-primary">
+                      {title}
+                    </Link>
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(e.created_at), { addSuffix: true })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
