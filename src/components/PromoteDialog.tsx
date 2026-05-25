@@ -88,11 +88,22 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
             onClick={() => pay("featured")}
           />
           <PlanCard
+            icon={<Sparkles className="h-4 w-4" />}
+            title="Featured"
+            price={FEATURED}
+            gradientClass="btn-gradient"
+            description={`Pin to the top of search & homepage for ${FEATURED_DAYS} days with the iridescent Premium badge.`}
+            disabled={busy !== null}
+            loading={busy === "featured"}
+            insufficient={balance < FEATURED}
+            onClick={() => pay("featured")}
+          />
+          <PlanCard
             icon={<ArrowUp className="h-4 w-4" />}
             title="Bump"
             price={BUMP}
             gradientStyle={{ background: "var(--gradient-warm)" }}
-            description={`Bump back to the top of recent results with a warm "Just bumped" chip.`}
+            description={`Bump back to the top of recent results for ${BUMP_DAYS} day${BUMP_DAYS === 1 ? "" : "s"} with a warm "Just bumped" chip.`}
             disabled={busy !== null}
             loading={busy === "bump"}
             insufficient={balance < BUMP}
