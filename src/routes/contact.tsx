@@ -15,9 +15,9 @@ export const Route = createFileRoute("/contact")({
       { name: "description", content: "Get in touch with the CallEscort24 team for support, trust & safety, partnerships or press inquiries." },
       { property: "og:title", content: "Contact — CallEscort24" },
       { property: "og:description", content: "Reach the CallEscort24 team." },
-      { property: "og:url", content: "https://devads.lovable.app/contact" },
+      { property: "og:url", content: "https://callescort24.org/contact" },
     ],
-    links: [{ rel: "canonical", href: "https://devads.lovable.app/contact" }],
+    links: [{ rel: "canonical", href: "https://callescort24.org/contact" }],
   }),
   component: ContactPage,
 });

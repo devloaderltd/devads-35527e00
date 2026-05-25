@@ -8,9 +8,9 @@ export const Route = createFileRoute("/about")({
       { name: "description", content: "CallEscort24 is a modern marketplace for buying and selling across the US, UK and Canada. Learn about our mission and team." },
       { property: "og:title", content: "About — CallEscort24" },
       { property: "og:description", content: "A modern marketplace built for trust, speed and beautiful design." },
-      { property: "og:url", content: "https://devads.lovable.app/about" },
+      { property: "og:url", content: "https://callescort24.org/about" },
     ],
-    links: [{ rel: "canonical", href: "https://devads.lovable.app/about" }],
+    links: [{ rel: "canonical", href: "https://callescort24.org/about" }],
   }),
   component: AboutPage,
 });

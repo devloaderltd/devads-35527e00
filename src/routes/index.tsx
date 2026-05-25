@@ -36,10 +36,10 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Find great deals on vehicles, housing, jobs, electronics, furniture and more. Post a free listing in minutes." },
       { property: "og:title", content: "CallEscort24 — Buy & sell locally" },
       { property: "og:description", content: "Country-wide classifieds marketplace. Browse or post free listings in minutes." },
-      { property: "og:url", content: "https://devads.lovable.app/" },
+      { property: "og:url", content: "https://callescort24.org/" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://devads.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://callescort24.org/" }],
   }),
   component: Home,
 });

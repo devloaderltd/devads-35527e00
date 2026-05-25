@@ -106,10 +106,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@context": "https://schema.org",
           "@type": "WebSite",
           name: "CallEscort24",
-          url: "https://devads.lovable.app",
+          url: "https://callescort24.org",
           potentialAction: {
             "@type": "SearchAction",
-            target: "https://devads.lovable.app/search?q={search_term_string}",
+            target: "https://callescort24.org/search?q={search_term_string}",
             "query-input": "required name=search_term_string",
           },
         }),

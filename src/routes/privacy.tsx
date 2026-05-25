@@ -8,9 +8,9 @@ export const Route = createFileRoute("/privacy")({
       { name: "description", content: "How CallEscort24 collects, uses, stores, and protects your personal data when you use our marketplace." },
       { property: "og:title", content: "Privacy Policy — CallEscort24" },
       { property: "og:description", content: "How we handle your data on CallEscort24." },
-      { property: "og:url", content: "https://devads.lovable.app/privacy" },
+      { property: "og:url", content: "https://callescort24.org/privacy" },
     ],
-    links: [{ rel: "canonical", href: "https://devads.lovable.app/privacy" }],
+    links: [{ rel: "canonical", href: "https://callescort24.org/privacy" }],
   }),
   component: PrivacyPage,
 });
@@ -21,7 +21,7 @@ function PrivacyPage() {
       <p>
         This Privacy Policy explains how <strong>CallEscort24</strong> ("we", "us", "our") collects, uses, and
         protects information when you visit or use our marketplace, accessible at{" "}
-        <a href="https://devads.lovable.app">devads.lovable.app</a>. By using CallEscort24 you agree to this
+        <a href="https://callescort24.org">callescort24.org</a>. By using CallEscort24 you agree to this
         policy.
       </p>
 
@@ -61,7 +61,7 @@ function PrivacyPage() {
       <h2>4. Sharing your information</h2>
       <ul>
         <li><strong>Other users</strong>: your display name, avatar, bio, city, listings, and reviews are publicly visible.</li>
-        <li><strong>Service providers</strong>: hosting (Lovable Cloud / Supabase), payment processors, email/SMS senders, and analytics.</li>
+        <li><strong>Service providers</strong>: hosting and infrastructure providers, payment processors, email/SMS senders, and analytics.</li>
         <li><strong>Authorities</strong>: where required by law, court order, or to protect our rights and the safety of users.</li>
         <li><strong>Business transfers</strong>: in the event of a merger, acquisition, or asset sale.</li>
       </ul>

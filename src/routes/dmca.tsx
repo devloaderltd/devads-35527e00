@@ -8,9 +8,9 @@ export const Route = createFileRoute("/dmca")({
       { name: "description", content: "How to submit a DMCA takedown notice or counter-notification for content on CallEscort24." },
       { property: "og:title", content: "DMCA Copyright Policy — CallEscort24" },
       { property: "og:description", content: "Report copyright infringement on CallEscort24 under the DMCA." },
-      { property: "og:url", content: "https://devads.lovable.app/dmca" },
+      { property: "og:url", content: "https://callescort24.org/dmca" },
     ],
-    links: [{ rel: "canonical", href: "https://devads.lovable.app/dmca" }],
+    links: [{ rel: "canonical", href: "https://callescort24.org/dmca" }],
   }),
   component: DmcaPage,
 });

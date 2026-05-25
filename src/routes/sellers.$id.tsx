@@ -15,11 +15,11 @@ export const Route = createFileRoute("/sellers/$id")({
       { name: "description", content: "View this seller's active listings, location and member history on CallEscort24." },
       { property: "og:title", content: "Seller profile — CallEscort24" },
       { property: "og:description", content: "Browse a seller's active listings on CallEscort24." },
-      { property: "og:url", content: `https://devads.lovable.app/sellers/${params.id}` },
+      { property: "og:url", content: `https://callescort24.org/sellers/${params.id}` },
       { property: "og:type", content: "profile" },
       { name: "robots", content: "index,follow" },
     ],
-    links: [{ rel: "canonical", href: `https://devads.lovable.app/sellers/${params.id}` }],
+    links: [{ rel: "canonical", href: `https://callescort24.org/sellers/${params.id}` }],
   }),
   component: SellerPage,
 });

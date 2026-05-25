@@ -50,10 +50,10 @@ export const Route = createFileRoute("/search")({
       { name: "description", content: "Search vehicles, housing, jobs, electronics, furniture and more across the CallEscort24 marketplace." },
       { property: "og:title", content: "Browse listings — CallEscort24" },
       { property: "og:description", content: "Filter by category, city and condition to find what you need." },
-      { property: "og:url", content: "https://devads.lovable.app/search" },
+      { property: "og:url", content: "https://callescort24.org/search" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://devads.lovable.app/search" }],
+    links: [{ rel: "canonical", href: "https://callescort24.org/search" }],
   }),
   component: SearchPage,
 });

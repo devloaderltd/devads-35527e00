@@ -8,9 +8,9 @@ export const Route = createFileRoute("/terms")({
       { name: "description", content: "The rules and conditions governing the use of CallEscort24's online marketplace." },
       { property: "og:title", content: "Terms of Service — CallEscort24" },
       { property: "og:description", content: "The rules of the road for buying, selling and posting on CallEscort24." },
-      { property: "og:url", content: "https://devads.lovable.app/terms" },
+      { property: "og:url", content: "https://callescort24.org/terms" },
     ],
-    links: [{ rel: "canonical", href: "https://devads.lovable.app/terms" }],
+    links: [{ rel: "canonical", href: "https://callescort24.org/terms" }],
   }),
   component: TermsPage,
 });
@@ -21,7 +21,7 @@ function TermsPage() {
       <p>
         Welcome to CallEscort24. These Terms of Service ("Terms") form a binding agreement between you and
         CallEscort24 governing your use of our marketplace, accessible at{" "}
-        <a href="https://devads.lovable.app">devads.lovable.app</a>. By creating an account, posting a listing,
+        <a href="https://callescort24.org">callescort24.org</a>. By creating an account, posting a listing,
         or otherwise using the service you accept these Terms in full.
       </p>
 

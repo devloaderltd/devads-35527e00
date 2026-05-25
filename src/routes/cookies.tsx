@@ -8,9 +8,9 @@ export const Route = createFileRoute("/cookies")({
       { name: "description", content: "How CallEscort24 uses cookies and similar technologies, and how you can manage your preferences." },
       { property: "og:title", content: "Cookies Policy — CallEscort24" },
       { property: "og:description", content: "Cookies and tracking technologies used on CallEscort24." },
-      { property: "og:url", content: "https://devads.lovable.app/cookies" },
+      { property: "og:url", content: "https://callescort24.org/cookies" },
     ],
-    links: [{ rel: "canonical", href: "https://devads.lovable.app/cookies" }],
+    links: [{ rel: "canonical", href: "https://callescort24.org/cookies" }],
   }),
   component: CookiesPage,
 });
@@ -38,7 +38,7 @@ function CookiesPage() {
         wallet, fraud prevention, and load balancing. They cannot be turned off in our systems.
       </p>
       <ul>
-        <li><code>sb-*</code> — Lovable Cloud / Supabase session and auth tokens.</li>
+        <li><code>sb-*</code> — session and authentication tokens.</li>
         <li><code>callescort24.city</code> — your selected browsing city (localStorage).</li>
         <li><code>callescort24.theme</code> — light/dark mode preference (localStorage).</li>
         <li><code>callescort24.cookie-consent</code> — your consent choice for this banner (localStorage).</li>
