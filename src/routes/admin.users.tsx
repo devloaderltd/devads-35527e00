@@ -91,12 +91,30 @@ function UsersPage() {
         <Input placeholder="Search name or email…" value={qInput} onChange={(e) => setQInput(e.target.value)} className="ml-auto w-full max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
         <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => downloadCSV(`users-${new Date().toISOString().slice(0,10)}`, toCSV(users.map(u => ({ ...u, roles: u.roles.join("|") }))))}><Download className="mr-1 h-3.5 w-3.5" /> CSV</Button>
       </div>
+
+      {selected.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3">
+          <span className="text-sm text-slate-200">{selected.size} selected</span>
+          <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => { const d = Number(prompt("Ban for how many days?", "7") ?? "0"); if (d > 0) bulk.mutate({ action: "ban", days: d }); }}>Ban</Button>
+          <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => bulk.mutate({ action: "unban" })}>Unban</Button>
+          <Button size="sm" variant="destructive" className="rounded-full" onClick={() => { if (confirm(`Permanently delete ${selected.size} users? This cannot be undone.`)) bulk.mutate({ action: "delete" }); }}>Delete</Button>
+          <Button size="sm" variant="ghost" className="ml-auto rounded-full text-slate-300" onClick={() => setSelected(new Set())}>Clear</Button>
+        </div>
+      )}
+
       <Panel>
+        {users.length > 0 && (
+          <label className="mb-2 flex items-center gap-2 text-xs text-slate-400">
+            <input type="checkbox" checked={selected.size === users.length && users.length > 0} onChange={toggleAll} className="h-4 w-4" />
+            Select all on page
+          </label>
+        )}
         <div className="space-y-2">
           {usersQ.isLoading && <div className="py-8 text-center text-sm text-slate-400">Loading…</div>}
           {!usersQ.isLoading && users.map(u => (
-            <div key={u.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
-              <div className="flex flex-wrap items-start justify-between gap-2">
+            <div key={u.id} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+              <input type="checkbox" checked={selected.has(u.id)} onChange={() => toggle(u.id)} className="mt-1 h-4 w-4" />
+              <div className="flex-1 min-w-0 flex flex-wrap items-start justify-between gap-2">
                 <button onClick={() => setActive(u)} className="min-w-0 text-left">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-slate-100 hover:underline">{u.display_name}</span>
