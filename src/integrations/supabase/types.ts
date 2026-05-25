@@ -359,6 +359,27 @@ export type Database = {
           },
         ]
       }
+      listing_price_history: {
+        Row: {
+          changed_at: string
+          id: string
+          listing_id: string
+          price: number
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          listing_id: string
+          price: number
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          listing_id?: string
+          price?: number
+        }
+        Relationships: []
+      }
       listing_promotions: {
         Row: {
           created_at: string
@@ -399,6 +420,7 @@ export type Database = {
       }
       listings: {
         Row: {
+          auto_renew: boolean
           bumped_at: string
           category_id: string
           city_id: string
@@ -407,15 +429,19 @@ export type Database = {
           description: string
           expires_at: string
           id: string
+          is_negotiable: boolean
           item_age: string
+          price: number | null
           search_tsv: unknown
           status: Database["public"]["Enums"]["listing_status"]
           title: string
           updated_at: string
           user_id: string
+          verified_at: string | null
           view_count: number
         }
         Insert: {
+          auto_renew?: boolean
           bumped_at?: string
           category_id: string
           city_id: string
@@ -424,15 +450,19 @@ export type Database = {
           description: string
           expires_at?: string
           id?: string
+          is_negotiable?: boolean
           item_age?: string
+          price?: number | null
           search_tsv?: unknown
           status?: Database["public"]["Enums"]["listing_status"]
           title: string
           updated_at?: string
           user_id: string
+          verified_at?: string | null
           view_count?: number
         }
         Update: {
+          auto_renew?: boolean
           bumped_at?: string
           category_id?: string
           city_id?: string
@@ -441,12 +471,15 @@ export type Database = {
           description?: string
           expires_at?: string
           id?: string
+          is_negotiable?: boolean
           item_age?: string
+          price?: number | null
           search_tsv?: unknown
           status?: Database["public"]["Enums"]["listing_status"]
           title?: string
           updated_at?: string
           user_id?: string
+          verified_at?: string | null
           view_count?: number
         }
         Relationships: [
@@ -656,7 +689,9 @@ export type Database = {
           display_name: string
           email_verified_at: string | null
           id: string
+          id_verified_at: string | null
           phone: string | null
+          phone_verified_at: string | null
           updated_at: string
         }
         Insert: {
@@ -668,7 +703,9 @@ export type Database = {
           display_name: string
           email_verified_at?: string | null
           id: string
+          id_verified_at?: string | null
           phone?: string | null
+          phone_verified_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -680,8 +717,73 @@ export type Database = {
           display_name?: string
           email_verified_at?: string | null
           id?: string
+          id_verified_at?: string | null
           phone?: string | null
+          phone_verified_at?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      recently_viewed: {
+        Row: {
+          listing_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          listing_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          listing_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          credited_at: string | null
+          id: string
+          referred_id: string
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          credited_at?: string | null
+          id?: string
+          referred_id: string
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          credited_at?: string | null
+          id?: string
+          referred_id?: string
+          referrer_id?: string
+          status?: string
         }
         Relationships: []
       }
@@ -756,13 +858,61 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_bumps: {
+        Row: {
+          created_at: string
+          executed_at: string | null
+          id: string
+          listing_id: string
+          scheduled_for: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          executed_at?: string | null
+          id?: string
+          listing_id: string
+          scheduled_for: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          executed_at?: string | null
+          id?: string
+          listing_id?: string
+          scheduled_for?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      seller_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          seller_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          seller_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          seller_id?: string
+        }
+        Relationships: []
+      }
       seller_reviews: {
         Row: {
           body: string | null
           created_at: string
           id: string
           listing_id: string | null
+          photo_urls: string[]
           rating: number
+          response: string | null
+          response_at: string | null
           reviewer_id: string
           seller_id: string
           updated_at: string
@@ -772,7 +922,10 @@ export type Database = {
           created_at?: string
           id?: string
           listing_id?: string | null
+          photo_urls?: string[]
           rating: number
+          response?: string | null
+          response_at?: string | null
           reviewer_id: string
           seller_id: string
           updated_at?: string
@@ -782,7 +935,10 @@ export type Database = {
           created_at?: string
           id?: string
           listing_id?: string | null
+          photo_urls?: string[]
           rating?: number
+          response?: string | null
+          response_at?: string | null
           reviewer_id?: string
           seller_id?: string
           updated_at?: string
@@ -912,6 +1068,24 @@ export type Database = {
           last_read_at?: string
           thread_id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
         }
         Relationships: []
       }
