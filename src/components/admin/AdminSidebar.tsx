@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Flag, Package, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, FileClock, ShieldCheck,
-  ShieldAlert, Sparkles,
+  ShieldAlert, Sparkles, BarChart3,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -12,7 +12,10 @@ import {
 const groups = [
   {
     label: "Overview",
-    items: [{ title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true }],
+    items: [
+      { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
+      { title: "Insights", url: "/admin/insights", icon: BarChart3 },
+    ],
   },
   {
     label: "People",
