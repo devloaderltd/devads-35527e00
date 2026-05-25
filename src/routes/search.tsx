@@ -1,18 +1,49 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Bookmark, X, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+import { createSavedSearch } from "@/lib/extras.functions";
+import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
+
+const PAGE_SIZE = 24;
+
+const CONDITIONS = [
+  { value: "new", label: "New" },
+  { value: "like_new", label: "Like new" },
+  { value: "good", label: "Good" },
+  { value: "fair", label: "Fair" },
+  { value: "poor", label: "For parts" },
+  { value: "not_applicable", label: "Not applicable" },
+] as const;
+
+const SORTS = [
+  { value: "recent", label: "Most recent" },
+  { value: "oldest", label: "Oldest" },
+  { value: "price_asc", label: "Price: low → high" },
+  { value: "price_desc", label: "Price: high → low" },
+] as const;
 
 const searchSchema = z.object({
   q: z.string().optional(),
   category: z.string().optional(),
   country: z.string().optional(),
   city: z.string().optional(),
+  condition: z.string().optional(),
+  priceMin: z.coerce.number().optional(),
+  priceMax: z.coerce.number().optional(),
+  sort: z.enum(["recent", "oldest", "price_asc", "price_desc"]).optional(),
+  page: z.coerce.number().min(1).optional(),
 });
 
 export const Route = createFileRoute("/search")({
@@ -24,6 +55,14 @@ export const Route = createFileRoute("/search")({
 function SearchPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { user } = useAuth();
+  const saveFn = useServerFn(createSavedSearch);
+  const page = search.page ?? 1;
+  const sort = search.sort ?? "recent";
+
+  const [qInput, setQInput] = useState(search.q ?? "");
+  const [minInput, setMinInput] = useState(search.priceMin?.toString() ?? "");
+  const [maxInput, setMaxInput] = useState(search.priceMax?.toString() ?? "");
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -47,50 +86,126 @@ function SearchPage() {
     },
   });
 
-  const { data: listings, isLoading } = useQuery({
+  const { data: result, isLoading } = useQuery({
     queryKey: ["listings", "search", search],
     queryFn: async () => {
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from("listings")
         .select(`
-          id, title, price, currency, created_at, bumped_at,
+          id, title, price, currency, created_at, bumped_at, condition,
           categories!inner(name, slug),
           cities!inner(name, region, country, slug),
           listing_images(url, sort_order),
           listing_promotions(type, ends_at)
-        `)
-        .eq("status", "active")
-        .order("bumped_at", { ascending: false })
-        .limit(60);
+        `, { count: "exact" })
+        .eq("status", "active");
+
       if (search.q) q = q.textSearch("search_tsv", search.q, { type: "websearch" });
       if (search.category) q = q.eq("categories.slug", search.category);
       if (search.country) q = q.eq("cities.country", search.country);
       if (search.city) q = q.eq("cities.slug", search.city);
-      const { data, error } = await q;
+      if (search.condition) q = q.eq("condition", search.condition);
+      if (search.priceMin != null && !Number.isNaN(search.priceMin)) q = q.gte("price", search.priceMin);
+      if (search.priceMax != null && !Number.isNaN(search.priceMax)) q = q.lte("price", search.priceMax);
+
+      switch (sort) {
+        case "oldest": q = q.order("created_at", { ascending: true }); break;
+        case "price_asc": q = q.order("price", { ascending: true, nullsFirst: false }); break;
+        case "price_desc": q = q.order("price", { ascending: false, nullsFirst: false }); break;
+        default: q = q.order("bumped_at", { ascending: false });
+      }
+
+      const { data, error, count } = await q.range(from, to);
       if (error) throw error;
-      return data;
+      return { listings: data ?? [], count: count ?? 0 };
     },
   });
 
-  const update = (patch: Partial<typeof search>) =>
-    navigate({ search: { ...search, ...patch } as any });
+  const update = (patch: Partial<typeof search>, resetPage = true) =>
+    navigate({ search: { ...search, ...patch, ...(resetPage ? { page: undefined } : {}) } as any });
+
+  const applyQ = () => update({ q: qInput.trim() || undefined });
+  const applyPrice = () => update({
+    priceMin: minInput ? Number(minInput) : undefined,
+    priceMax: maxInput ? Number(maxInput) : undefined,
+  });
+
+  const clearAll = () => {
+    setQInput(""); setMinInput(""); setMaxInput("");
+    navigate({ search: {} as any });
+  };
+
+  const saveSearch = useMutation({
+    mutationFn: async () => {
+      const name = prompt("Name this search", search.q || "My search") ?? "";
+      if (!name.trim()) throw new Error("cancelled");
+      return saveFn({ data: {
+        name: name.trim(),
+        filters: Object.fromEntries(Object.entries(search).filter(([_, v]) => v != null && v !== "")) as Record<string, unknown>,
+        notify: true,
+      } });
+    },
+    onSuccess: () => toast.success("Search saved. You'll be notified of matches."),
+    onError: (e: Error) => { if (e.message !== "cancelled") toast.error(e.message); },
+  });
+
+  const listings = result?.listings ?? [];
+  const totalCount = result?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const activeFilters = [
+    search.q && { key: "q", label: `"${search.q}"` },
+    search.category && { key: "category", label: search.category },
+    search.country && { key: "country", label: search.country },
+    search.city && { key: "city", label: search.city },
+    search.condition && { key: "condition", label: CONDITIONS.find(c => c.value === search.condition)?.label ?? search.condition },
+    (search.priceMin != null || search.priceMax != null) && {
+      key: "price",
+      label: `$${search.priceMin ?? 0}–${search.priceMax ?? "∞"}`,
+    },
+  ].filter(Boolean) as { key: string; label: string }[];
+
+  const clearKey = (k: string) => {
+    if (k === "price") { setMinInput(""); setMaxInput(""); update({ priceMin: undefined, priceMax: undefined }); }
+    else if (k === "q") { setQInput(""); update({ q: undefined }); }
+    else update({ [k]: undefined } as any);
+  };
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-          Browse <span className="gradient-text">listings</span>
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Find something great near you.</p>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
+            Browse <span className="gradient-text">listings</span>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isLoading ? "Searching…" : `${totalCount.toLocaleString()} result${totalCount === 1 ? "" : "s"}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={sort} onValueChange={(v) => update({ sort: v as any })}>
+            <SelectTrigger className="w-[180px] bg-white/70"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {SORTS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {user && (
+            <Button variant="outline" className="gap-2 rounded-full bg-white/70" onClick={() => saveSearch.mutate()} disabled={saveSearch.isPending}>
+              <Bookmark className="h-4 w-4" /> Save search
+            </Button>
+          )}
+        </div>
       </div>
-      <div className="mb-6 grid gap-3 rounded-2xl border border-white/40 bg-white/55 p-3 shadow-[var(--shadow-float)] backdrop-blur-xl md:grid-cols-[1fr_180px_180px_180px]">
+
+      <div className="mb-4 grid gap-3 rounded-2xl border border-white/40 bg-white/55 p-3 shadow-[var(--shadow-float)] backdrop-blur-xl lg:grid-cols-[1fr_160px_160px_160px_160px]">
         <Input
-          placeholder="Search…"
-          defaultValue={search.q ?? ""}
+          placeholder="Search title, description…"
+          value={qInput}
           className="bg-white/70"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") update({ q: (e.target as HTMLInputElement).value || undefined });
-          }}
+          onChange={(e) => setQInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") applyQ(); }}
+          onBlur={applyQ}
         />
         <Select value={search.category ?? "all"} onValueChange={(v) => update({ category: v === "all" ? undefined : v })}>
           <SelectTrigger className="bg-white/70"><SelectValue placeholder="Category" /></SelectTrigger>
@@ -119,8 +234,45 @@ function SearchPage() {
             {cities?.map((c) => <SelectItem key={c.id} value={c.slug}>{c.name}, {c.region}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={search.condition ?? "all"} onValueChange={(v) => update({ condition: v === "all" ? undefined : v })}>
+          <SelectTrigger className="bg-white/70"><SelectValue placeholder="Condition" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any condition</SelectItem>
+            {CONDITIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
+      <div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-white/40 bg-white/55 p-3 backdrop-blur-xl">
+        <SlidersHorizontal className="ml-1 h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Price</span>
+        <Input
+          type="number" inputMode="decimal" min={0} placeholder="Min"
+          value={minInput} onChange={(e) => setMinInput(e.target.value)}
+          onBlur={applyPrice} onKeyDown={(e) => { if (e.key === "Enter") applyPrice(); }}
+          className="h-9 w-24 bg-white/70"
+        />
+        <span className="text-muted-foreground">–</span>
+        <Input
+          type="number" inputMode="decimal" min={0} placeholder="Max"
+          value={maxInput} onChange={(e) => setMaxInput(e.target.value)}
+          onBlur={applyPrice} onKeyDown={(e) => { if (e.key === "Enter") applyPrice(); }}
+          className="h-9 w-24 bg-white/70"
+        />
+        <div className="ml-2 flex flex-wrap items-center gap-1.5">
+          {activeFilters.map(f => (
+            <Badge key={f.key} variant="secondary" className="gap-1 rounded-full bg-white/70 pl-2.5 pr-1">
+              {f.label}
+              <button onClick={() => clearKey(f.key)} className="ml-0.5 grid h-5 w-5 place-items-center rounded-full hover:bg-black/10" aria-label={`Remove ${f.label}`}>
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+        {activeFilters.length > 0 && (
+          <Button variant="ghost" size="sm" className="ml-auto rounded-full text-xs" onClick={clearAll}>Clear all</Button>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -128,17 +280,30 @@ function SearchPage() {
             <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
-      ) : !listings?.length ? (
+      ) : !listings.length ? (
         <div className="rounded-xl border bg-card p-10 text-center text-muted-foreground">
           No matching listings. Try a different search or <Link to="/post" className="text-primary hover:underline">post one</Link>.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {listings.map((l: any) => {
-            const isFeatured = l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date());
-            return <ListingCard key={l.id} listing={l} featured={isFeatured} />;
-          })}
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {listings.map((l: any) => {
+              const isFeatured = l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date());
+              return <ListingCard key={l.id} listing={l} featured={isFeatured} />;
+            })}
+          </div>
+          {totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-2">
+              <Button variant="outline" size="sm" className="rounded-full bg-white/70" disabled={page <= 1} onClick={() => update({ page: page - 1 }, false)}>
+                <ChevronLeft className="h-4 w-4" /> Prev
+              </Button>
+              <span className="px-3 text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+              <Button variant="outline" size="sm" className="rounded-full bg-white/70" disabled={page >= totalPages} onClick={() => update({ page: page + 1 }, false)}>
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
