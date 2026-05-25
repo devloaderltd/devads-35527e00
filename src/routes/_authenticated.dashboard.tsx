@@ -281,6 +281,10 @@ function DashboardPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="reviews" className="mt-4">
+          <DashboardReviewsPanel />
+        </TabsContent>
       </Tabs>
     </div>
   );
