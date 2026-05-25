@@ -18,6 +18,7 @@ import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 
 import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
+import { pushRecentlyViewed } from "@/lib/recently-viewed";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 export const Route = createFileRoute("/listings/$id")({
@@ -56,10 +57,11 @@ function ListingDetail() {
     },
   });
 
-  // Fire-and-forget view increment
+  // Fire-and-forget view increment + recently viewed tracking
   useEffect(() => {
     if (!listing?.id) return;
     supabase.rpc("increment_listing_view", { _listing_id: listing.id });
+    pushRecentlyViewed(listing.id);
   }, [listing?.id]);
 
   // Keyboard nav for gallery + lightbox
