@@ -18,7 +18,7 @@ export interface ConsentState {
 }
 
 const KEY = "callescort24.cookie-consent.v1";
-const LEGACY_KEY = "callescort24.cookie-consent";
+const LEGACY_KEY = "marketly.cookie-consent.v1";
 const EVENT_NAME = "callescort24:consent-change";
 const CURRENT_VERSION = 1 as const;
 
