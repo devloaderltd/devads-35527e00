@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ImagePlus, Save } from "lucide-react";
+import { ImagePlus, Save, Star, Package, Calendar, ExternalLink } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -42,10 +44,26 @@ function ProfileEdit() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, bio, phone, avatar_url, country, city_id")
+        .select("display_name, bio, phone, avatar_url, country, city_id, created_at")
         .eq("id", user!.id)
         .maybeSingle();
       return data;
+    },
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["profile-stats", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const [listingsRes, reviewsRes] = await Promise.all([
+        supabase.from("listings").select("id, status", { count: "exact", head: false }).eq("user_id", user!.id),
+        supabase.from("seller_reviews").select("rating").eq("seller_id", user!.id),
+      ]);
+      const all = listingsRes.data ?? [];
+      const active = all.filter((l) => l.status === "active").length;
+      const ratings = reviewsRes.data ?? [];
+      const avg = ratings.length ? ratings.reduce((s, r) => s + r.rating, 0) / ratings.length : 0;
+      return { total: all.length, active, ratingAvg: avg, ratingCount: ratings.length };
     },
   });
 
@@ -119,12 +137,46 @@ function ProfileEdit() {
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-6">
-      <h1 className="font-display text-3xl font-bold">
-        Your <span className="gradient-text">profile</span>
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        How buyers see you across the marketplace.
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-bold">
+            Your <span className="gradient-text">profile</span>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            How buyers see you across the marketplace.
+          </p>
+        </div>
+        {user && (
+          <Link
+            to="/sellers/$id"
+            params={{ id: user.id }}
+            className="inline-flex items-center gap-1 rounded-full bg-white/60 px-3 py-1.5 text-xs font-medium text-primary backdrop-blur hover:bg-white"
+          >
+            <ExternalLink className="h-3.5 w-3.5" /> View public page
+          </Link>
+        )}
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <StatTile
+          icon={<Package className="h-4 w-4" />}
+          label="Active listings"
+          value={stats ? `${stats.active}` : "—"}
+          hint={stats ? `${stats.total} total` : ""}
+        />
+        <StatTile
+          icon={<Star className="h-4 w-4" />}
+          label="Seller rating"
+          value={stats?.ratingCount ? stats.ratingAvg.toFixed(1) : "—"}
+          hint={stats?.ratingCount ? `${stats.ratingCount} review${stats.ratingCount === 1 ? "" : "s"}` : "No reviews yet"}
+        />
+        <StatTile
+          icon={<Calendar className="h-4 w-4" />}
+          label="Member since"
+          value={profile?.created_at ? formatDistanceToNow(new Date(profile.created_at), { addSuffix: false }) : "—"}
+          hint={profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : ""}
+        />
+      </div>
 
       <div className="iridescent-border mt-6 rounded-3xl border border-white/40 bg-white/65 p-6 shadow-[var(--shadow-float-lg)] backdrop-blur-2xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -239,6 +291,19 @@ function ProfileEdit() {
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function StatTile({ icon, label, value, hint }: { icon: React.ReactNode; label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-2xl border border-white/40 bg-white/65 p-4 shadow-[var(--shadow-float)] backdrop-blur">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span className="grid h-6 w-6 place-items-center rounded-lg bg-primary/10 text-primary">{icon}</span>
+        {label}
+      </div>
+      <div className="mt-1 font-display text-xl font-bold">{value}</div>
+      {hint && <div className="text-[11px] text-muted-foreground">{hint}</div>}
     </div>
   );
 }
