@@ -135,7 +135,9 @@ function SellerPage() {
         </div>
       )}
 
-      <SellerReviews sellerId={id} />
+      <div id="reviews" className="scroll-mt-24">
+        <SellerReviews sellerId={id} />
+      </div>
     </div>
   );
 }
