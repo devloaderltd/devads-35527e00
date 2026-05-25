@@ -11,8 +11,8 @@ async function audit(actor: string, action: string, target_type: string | null, 
   await supabaseAdmin.rpc("log_admin_action", {
     _actor: actor,
     _action: action,
-    _target_type: target_type,
-    _target_id: target_id,
+    _target_type: target_type ?? "",
+    _target_id: target_id ?? "",
     _metadata: metadata as never,
   });
 }
