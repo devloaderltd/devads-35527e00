@@ -15,6 +15,7 @@ import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
+import { SeedDemoButton } from "@/components/admin/SeedDemoButton";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Marketly" }, { name: "robots", content: "noindex" }] }),
@@ -146,6 +147,8 @@ function OverviewTab({ isAdmin }: { isAdmin: boolean }) {
         {isAdmin && <KpiCard icon={<DollarSign className="h-5 w-5" />} label="Revenue (USD)" value={`$${totalRevenue.toFixed(2)}`} />}
         <KpiCard icon={<Flag className="h-5 w-5" />} label="Open reports" value={data?.openReports ?? "—"} />
       </div>
+
+      {isAdmin && <div className="mt-4"><SeedDemoButton /></div>}
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard title="New signups & listings (30 days)">
