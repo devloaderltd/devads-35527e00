@@ -276,11 +276,17 @@ function ListingDetail() {
                   </dd>
                 </div>
               )}
+              {listing.item_age && (
+                <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                  <dt className="text-muted-foreground">Item age</dt>
+                  <dd className="truncate text-right font-medium">{listing.item_age}</dd>
+                </div>
+              )}
               {(() => {
                 const days = Math.floor((Date.now() - new Date(listing.created_at).getTime()) / 86_400_000);
                 return (
                   <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
-                    <dt className="text-muted-foreground">Age</dt>
+                    <dt className="text-muted-foreground">Ad age</dt>
                     <dd className="font-medium">{days === 0 ? "Today" : `${days} day${days === 1 ? "" : "s"}`}</dd>
                   </div>
                 );

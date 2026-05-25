@@ -408,6 +408,7 @@ export type Database = {
           description: string
           expires_at: string
           id: string
+          item_age: string
           price: number | null
           search_tsv: unknown
           status: Database["public"]["Enums"]["listing_status"]
@@ -426,6 +427,7 @@ export type Database = {
           description: string
           expires_at?: string
           id?: string
+          item_age?: string
           price?: number | null
           search_tsv?: unknown
           status?: Database["public"]["Enums"]["listing_status"]
@@ -444,6 +446,7 @@ export type Database = {
           description?: string
           expires_at?: string
           id?: string
+          item_age?: string
           price?: number | null
           search_tsv?: unknown
           status?: Database["public"]["Enums"]["listing_status"]

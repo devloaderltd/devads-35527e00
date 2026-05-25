@@ -25,6 +25,7 @@ function PostListing() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState("USD");
+  const [itemAge, setItemAge] = useState("");
   
   const [categoryId, setCategoryId] = useState("");
   const [country, setCountry] = useState<"US" | "UK" | "CA" | "">("");
@@ -61,6 +62,9 @@ function PostListing() {
     e.preventDefault();
     if (!user) return toast.error("Sign in first");
     if (!categoryId || !cityId) return toast.error("Pick a category and city");
+    const ageTrimmed = itemAge.trim();
+    if (!ageTrimmed) return toast.error("Item age is required");
+    if (ageTrimmed.length > 60) return toast.error("Item age must be 60 characters or less");
     setSubmitting(true);
     try {
       const { data: listing, error } = await supabase
@@ -71,7 +75,7 @@ function PostListing() {
           description: description.trim(),
           price: price ? Number(price) : null,
           currency,
-          
+          item_age: ageTrimmed,
           category_id: categoryId,
           city_id: cityId,
         })
@@ -140,6 +144,20 @@ function PostListing() {
             </Select>
           </div>
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="item-age">Item age</Label>
+          <Input
+            id="item-age"
+            required
+            maxLength={60}
+            value={itemAge}
+            onChange={(e) => setItemAge(e.target.value)}
+            placeholder="e.g. 2 years, 6 months, brand new"
+            className="bg-white/70"
+          />
+        </div>
+
 
         <div className="space-y-2">
           <Label>Category</Label>
