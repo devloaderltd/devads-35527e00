@@ -41,8 +41,9 @@ function UsersPage() {
   const [page, setPage] = useState(1);
   const perPage = 25;
   const [active, setActive] = useState<ListUser | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  useEffect(() => { setPage(1); }, [q, filter]);
+  useEffect(() => { setPage(1); setSelected(new Set()); }, [q, filter]);
 
   const listFn = useServerFn(listUsersAdmin);
   const roleFn = useServerFn(setUserRole);
