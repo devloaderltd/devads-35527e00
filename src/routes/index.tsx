@@ -353,6 +353,30 @@ function Home() {
         )}
       </section>
       </>)}
+
+      {/* Trust strip */}
+      <section className="container mx-auto px-4 pb-16">
+        <div className="grid grid-cols-1 gap-4 rounded-[2rem] glass p-6 md:grid-cols-4 md:p-8">
+          <TrustTile icon={<Sparkles className="h-5 w-5" />} value={(siteStats?.listings ?? 0).toLocaleString()} label="Active listings" />
+          <TrustTile icon={<Users className="h-5 w-5" />} value={(siteStats?.sellers ?? 0).toLocaleString()} label="Trusted sellers" />
+          <TrustTile icon={<MapPin className="h-5 w-5" />} value={(siteStats?.cities ?? 0).toLocaleString()} label="Cities covered" />
+          <TrustTile icon={<ShieldCheck className="h-5 w-5" />} value="100%" label="Free to post" />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TrustTile({ icon, value, label }: { icon: React.ReactNode; value: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[image:var(--gradient-primary)] text-white shadow-[var(--shadow-glow-primary)]">
+        {icon}
+      </span>
+      <div>
+        <div className="font-display text-2xl font-bold leading-none">{value}</div>
+        <div className="text-xs text-muted-foreground">{label}</div>
+      </div>
     </div>
   );
 }
