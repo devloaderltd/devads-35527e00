@@ -88,19 +88,21 @@ function AdminPage() {
 
   return (
     <AdminShell email={user.email}>
-      <div className="mb-6">
-        <h1 className="font-display text-3xl font-bold">Admin <span className="bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent">control</span></h1>
-        <p className="text-sm text-slate-400">Manage users, listings, payments and reports.</p>
+      <div className="mb-5 sm:mb-6">
+        <h1 className="font-display text-2xl font-bold sm:text-3xl">Admin <span className="bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent">control</span></h1>
+        <p className="text-xs text-slate-400 sm:text-sm">Manage users, listings, payments and reports.</p>
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList className="rounded-full bg-white/5">
-          <TabsTrigger value="overview" className="rounded-full data-[state=active]:bg-white/10">Overview</TabsTrigger>
-          {isAdmin && <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-white/10">Users</TabsTrigger>}
-          <TabsTrigger value="listings" className="rounded-full data-[state=active]:bg-white/10">Listings</TabsTrigger>
-          {isAdmin && <TabsTrigger value="payments" className="rounded-full data-[state=active]:bg-white/10">Payments</TabsTrigger>}
-          <TabsTrigger value="reports" className="rounded-full data-[state=active]:bg-white/10">Reports</TabsTrigger>
-        </TabsList>
+        <div className="-mx-3 overflow-x-auto px-3 no-scrollbar sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-max rounded-full bg-white/5">
+            <TabsTrigger value="overview" className="rounded-full data-[state=active]:bg-white/10">Overview</TabsTrigger>
+            {isAdmin && <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-white/10">Users</TabsTrigger>}
+            <TabsTrigger value="listings" className="rounded-full data-[state=active]:bg-white/10">Listings</TabsTrigger>
+            {isAdmin && <TabsTrigger value="payments" className="rounded-full data-[state=active]:bg-white/10">Payments</TabsTrigger>}
+            <TabsTrigger value="reports" className="rounded-full data-[state=active]:bg-white/10">Reports</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview" className="mt-4"><OverviewTab isAdmin={!!isAdmin} /></TabsContent>
         {isAdmin && <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>}
