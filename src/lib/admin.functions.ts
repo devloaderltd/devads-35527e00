@@ -592,3 +592,82 @@ export const getQuickStats = createServerFn({ method: "GET" })
       openReports: (openReports as { count: number | null }).count ?? 0,
     };
   });
+
+/* ---------------- Insights (date-range analytics) ---------------- */
+
+export const getAdminInsights = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { days?: number }) => ({
+    days: [7, 30, 90].includes(Math.floor(input.days ?? 30)) ? Math.floor(input.days ?? 30) : 30,
+  }))
+  .handler(async ({ data }) => {
+    const now = Date.now();
+    const sinceMs = now - data.days * 86400000;
+    const priorSinceMs = sinceMs - data.days * 86400000;
+    const sinceIso = new Date(sinceMs).toISOString();
+    const priorSinceIso = new Date(priorSinceMs).toISOString();
+
+    const [usersRes, listingsRes, paymentsRes, eventsRes] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id, created_at").gte("created_at", priorSinceIso),
+      supabaseAdmin.from("listings").select("id, created_at, status").gte("created_at", priorSinceIso),
+      supabaseAdmin.from("payments").select("amount, currency, status, promotion_type, created_at").gte("created_at", priorSinceIso),
+      supabaseAdmin.from("listing_events").select("type, created_at").gte("created_at", sinceIso),
+    ]);
+
+    const users = usersRes.data ?? [];
+    const listings = listingsRes.data ?? [];
+    const payments = paymentsRes.data ?? [];
+    const events = eventsRes.data ?? [];
+
+    const inRange = <T extends { created_at: string }>(rows: T[], from: number, to: number) =>
+      rows.filter((r) => {
+        const t = new Date(r.created_at).getTime();
+        return t >= from && t < to;
+      });
+
+    const current = {
+      signups: inRange(users, sinceMs, now).length,
+      listings: inRange(listings, sinceMs, now).length,
+      gmv: inRange(payments, sinceMs, now).filter((p) => p.status === "completed").reduce((s, p) => s + Number(p.amount ?? 0), 0),
+    };
+    const prior = {
+      signups: inRange(users, priorSinceMs, sinceMs).length,
+      listings: inRange(listings, priorSinceMs, sinceMs).length,
+      gmv: inRange(payments, priorSinceMs, sinceMs).filter((p) => p.status === "completed").reduce((s, p) => s + Number(p.amount ?? 0), 0),
+    };
+
+    const daily: { date: string; signups: number; listings: number; revenue: number }[] = [];
+    for (let i = data.days - 1; i >= 0; i--) {
+      const d = new Date(now - i * 86400000);
+      d.setHours(0, 0, 0, 0);
+      const key = d.toISOString().slice(0, 10);
+      daily.push({
+        date: key,
+        signups: users.filter((u) => u.created_at.slice(0, 10) === key).length,
+        listings: listings.filter((l) => l.created_at.slice(0, 10) === key).length,
+        revenue: payments
+          .filter((p) => p.status === "completed" && p.created_at.slice(0, 10) === key)
+          .reduce((s, p) => s + Number(p.amount ?? 0), 0),
+      });
+    }
+
+    const eventCounts: Record<string, number> = {};
+    events.forEach((e) => { eventCounts[e.type] = (eventCounts[e.type] ?? 0) + 1; });
+    const funnel = [
+      { stage: "Views", count: eventCounts.view ?? 0 },
+      { stage: "Favorites", count: eventCounts.favorite ?? 0 },
+      { stage: "Messages", count: eventCounts.message ?? 0 },
+      { stage: "Contact reveals", count: eventCounts.contact_reveal ?? 0 },
+    ];
+
+    const revByType: Record<string, number> = {};
+    inRange(payments, sinceMs, now)
+      .filter((p) => p.status === "completed")
+      .forEach((p) => {
+        const k = p.promotion_type ?? "other";
+        revByType[k] = (revByType[k] ?? 0) + Number(p.amount ?? 0);
+      });
+    const revenueByPromotion = Object.entries(revByType).map(([name, value]) => ({ name, value }));
+
+    return { days: data.days, current, prior, daily, funnel, revenueByPromotion };
+  });
