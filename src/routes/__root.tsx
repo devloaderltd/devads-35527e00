@@ -9,6 +9,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
 
@@ -16,6 +18,8 @@ import { CityProvider } from "@/lib/city-context";
 import { CitySelectorDialog } from "@/components/CitySelectorDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeProvider, themeBootScript } from "@/lib/theme-context";
+import { getSiteSettings, getMyRoles } from "@/lib/admin.functions";
+import { AlertTriangle } from "lucide-react";
 
 import appCss from "../styles.css?url";
 
