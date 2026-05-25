@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
+import { SiteBanner } from "@/components/SiteBanner";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin } from "lucide-react";
+import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Zap, Users } from "lucide-react";
 import { useCity } from "@/lib/city-context";
 import catForSale from "@/assets/cat-for-sale.jpg";
 import catVehicles from "@/assets/cat-vehicles.jpg";
@@ -99,7 +100,8 @@ function Home() {
   const petsCat = cat("pets");
 
   return (
-    <div className="pt-4">
+    <div className="pt-0">
+      <SiteBanner />
       {/* Hero band */}
       <section className="container mx-auto px-4 pt-6">
         <div className="relative overflow-hidden rounded-[2rem] glass-strong p-6 md:p-12 shadow-[var(--shadow-float)]">
