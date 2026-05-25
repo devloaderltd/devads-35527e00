@@ -81,17 +81,6 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
             title="Featured"
             price={FEATURED}
             gradientClass="btn-gradient"
-            description="Pin to the top of search & homepage for 7 days with the iridescent Premium badge."
-            disabled={busy !== null}
-            loading={busy === "featured"}
-            insufficient={balance < FEATURED}
-            onClick={() => pay("featured")}
-          />
-          <PlanCard
-            icon={<Sparkles className="h-4 w-4" />}
-            title="Featured"
-            price={FEATURED}
-            gradientClass="btn-gradient"
             description={`Pin to the top of search & homepage for ${FEATURED_DAYS} days with the iridescent Premium badge.`}
             disabled={busy !== null}
             loading={busy === "featured"}
