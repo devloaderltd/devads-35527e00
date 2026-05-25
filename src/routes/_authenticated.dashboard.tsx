@@ -250,3 +250,77 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
     </Card>
   );
 }
+
+function PerformancePanel() {
+  const [days, setDays] = useState<7 | 30 | 90>(30);
+  const fn = useServerFn(getMyListingAnalytics);
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-listing-analytics", days],
+    queryFn: () => fn({ data: { days } }),
+  });
+
+  const totals = data?.totalsByType ?? {};
+  const conv = totals.view ? Math.round(((totals.contact_reveal ?? 0) + (totals.message ?? 0)) / totals.view * 1000) / 10 : 0;
+  const topListings = useMemo(() => {
+    const map = new Map<string, { id: string; title: string; views: number }>();
+    (data?.listings ?? []).forEach((l: any) => map.set(l.id, { id: l.id, title: l.title, views: l.view_count ?? 0 }));
+    return [...map.values()].sort((a, b) => b.views - a.views).slice(0, 5);
+  }, [data]);
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <BarChart3 className="h-4 w-4" /> Engagement on your listings
+        </div>
+        <div className="flex gap-1 rounded-full border bg-white/50 p-0.5 dark:bg-white/5">
+          {([7, 30, 90] as const).map(d => (
+            <button key={d} onClick={() => setDays(d)} className={`rounded-full px-3 py-1 text-xs font-medium ${days === d ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>{d}d</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <KpiCard icon={<Eye className="h-5 w-5" />} label="Views" value={totals.view ?? 0} />
+        <KpiCard icon={<MessageSquare className="h-5 w-5" />} label="Messages" value={totals.message ?? 0} />
+        <KpiCard icon={<Heart className="h-5 w-5" />} label="Favorites" value={totals.favorite ?? 0} />
+        <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="Conversion" value={`${conv}%`} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title={`Engagement (last ${days} days)`}>
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={data?.daily ?? []}>
+              <defs>
+                <linearGradient id="gv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7c5cff" stopOpacity={0.6} /><stop offset="100%" stopColor="#7c5cff" stopOpacity={0} /></linearGradient>
+                <linearGradient id="gm" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#22c1c3" stopOpacity={0.6} /><stop offset="100%" stopColor="#22c1c3" stopOpacity={0} /></linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor((data?.daily?.length ?? 0) / 8)} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Legend />
+              <Area type="monotone" dataKey="views" stroke="#7c5cff" fill="url(#gv)" strokeWidth={2} />
+              <Area type="monotone" dataKey="messages" stroke="#22c1c3" fill="url(#gm)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Top 5 listings by views">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={topListings.map(l => ({ name: l.title.length > 22 ? l.title.slice(0, 22) + "…" : l.title, views: l.views }))} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+              <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Bar dataKey="views" fill="#ff7a59" radius={[0, 8, 8, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      {isLoading && <div className="mt-4 text-center text-sm text-muted-foreground">Loading analytics…</div>}
+      {!isLoading && !data?.listings.length && <div className="mt-6 text-center text-sm text-muted-foreground">Post a listing to start collecting analytics.</div>}
+    </div>
+  );
+}
