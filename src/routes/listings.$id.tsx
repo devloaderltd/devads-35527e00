@@ -295,24 +295,6 @@ function ListingDetail() {
                 <dt className="text-muted-foreground">Total ad views</dt>
                 <dd className="font-medium">{listing.view_count ?? 0}</dd>
               </div>
-              {listing.cities && (
-                <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
-                  <dt className="text-muted-foreground">Location</dt>
-                  <dd className="truncate text-right font-medium">
-                    {listing.cities.name}, {listing.cities.region}
-                  </dd>
-                </div>
-              )}
-              <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
-                <dt className="text-muted-foreground">Posted</dt>
-                <dd className="font-medium">
-                  {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
-                <dt className="text-muted-foreground">Views</dt>
-                <dd className="font-medium">{listing.view_count ?? 0}</dd>
-              </div>
               <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
                 <dt className="text-muted-foreground">Listing ID</dt>
                 <dd className="font-mono text-xs font-medium text-muted-foreground">
