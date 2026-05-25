@@ -297,6 +297,52 @@ function ListingDetail() {
               </Button>
             </div>
 
+            {/* Contact */}
+            <div className="mt-4 border-t border-white/40 pt-3">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Contact seller
+              </div>
+              {!user ? (
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm text-muted-foreground hover:bg-white"
+                >
+                  <Lock className="h-4 w-4" />
+                  Sign in to see phone & email
+                </Link>
+              ) : (
+                <div className="space-y-1.5">
+                  {contact?.phone ? (
+                    <a
+                      href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
+                      className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
+                    >
+                      <Phone className="h-4 w-4 text-primary" />
+                      {contact.phone}
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-xl bg-white/40 px-3 py-2 text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4" />
+                      Phone not provided
+                    </div>
+                  )}
+                  {contact?.email ? (
+                    <a
+                      href={`mailto:${contact.email}?subject=${encodeURIComponent("Re: " + listing.title)}`}
+                      className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
+                    >
+                      <Mail className="h-4 w-4 text-primary" />
+                      <span className="truncate">{contact.email}</span>
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-xl bg-white/40 px-3 py-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      {contact ? "Email not available" : "Loading…"}
+                    </div>
+                  )}
+                </div>
+              )}
+
             {user?.id === listing.user_id && (
               <div className="mt-2">
                 <PromoteDialog listingId={listing.id} />
