@@ -4,12 +4,20 @@ import { Cookie, X, ShieldCheck, BarChart3, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useConsent } from "@/lib/cookie-consent";
+import { useCity } from "@/lib/city-context";
 
 export function CookieConsent() {
   const { consent, save } = useConsent();
+  const { cityId, hydrated, pickerOpen } = useCity();
   const [customizing, setCustomizing] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
+
+  // The city selector dialog (non-dismissable for first-time visitors) covers
+  // the screen with a modal overlay and would block clicks on this banner.
+  // Wait until it's closed before showing cookie consent.
+  const cityDialogOpen = pickerOpen || (hydrated && !cityId);
+  if (cityDialogOpen) return null;
 
   // Only show the banner when no decision has been recorded yet.
   if (consent) return null;
