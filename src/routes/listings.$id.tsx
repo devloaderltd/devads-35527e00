@@ -80,6 +80,15 @@ function ListingDetail() {
     },
   });
 
+  // Seller contact (only visible to signed-in users)
+  const fetchContact = useServerFn(getSellerContact);
+  const { data: contact } = useQuery({
+    queryKey: ["seller-contact", id],
+    enabled: !!user && !!listing?.id,
+    queryFn: () => fetchContact({ data: { listingId: id } }),
+    staleTime: 60_000,
+  });
+
   if (isLoading) return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
   if (error || !listing) return <div className="container mx-auto px-4 py-10">Listing not found.</div>;
 
