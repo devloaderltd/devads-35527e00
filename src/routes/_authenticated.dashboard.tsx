@@ -54,6 +54,8 @@ const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8"
 
 function DashboardPage() {
   const { user } = useAuth();
+  const search = useSearch({ from: "/_authenticated/dashboard" });
+  const initialTab = search.tab ?? "analytics";
 
   const { data: wallet } = useQuery({
     queryKey: ["wallet-balance", user?.id],
