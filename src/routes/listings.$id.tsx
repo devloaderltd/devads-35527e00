@@ -60,6 +60,19 @@ function ListingDetail() {
     supabase.rpc("increment_listing_view", { _listing_id: listing.id });
   }, [listing?.id]);
 
+  // Keyboard nav for gallery + lightbox
+  useEffect(() => {
+    if (!listing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") setActiveIdx((i) => Math.max(0, i - 1));
+      else if (e.key === "ArrowRight") setActiveIdx((i) => i + 1);
+      else if (e.key === "Escape") setLightbox(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [listing]);
+
+
   // Similar listings (same category, prefer same city)
   const { data: similar } = useQuery({
     queryKey: ["similar-listings", listing?.id, listing?.category_id, listing?.city_id],
