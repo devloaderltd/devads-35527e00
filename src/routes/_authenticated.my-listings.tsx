@@ -7,11 +7,14 @@ import { ListingCard } from "@/components/ListingCard";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { ListingSparkline } from "@/components/ThreadSparkline";
+import { BulkActionBar } from "@/components/BulkActionBar";
 
 export const Route = createFileRoute("/_authenticated/my-listings")({
   head: () => ({ meta: [{ title: "My listings — CallEscort24" }] }),
@@ -39,10 +42,10 @@ function MyListings() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("newest");
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["my-listings", user?.id],
-    enabled: !!user,
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggle = (id: string) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const clearSel = () => setSelected(new Set());
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("listings")
