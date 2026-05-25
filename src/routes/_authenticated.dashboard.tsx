@@ -178,6 +178,12 @@ function DashboardPage() {
           </ChartCard>
         </TabsContent>
 
+        <TabsContent value="performance" className="mt-4">
+          <PerformancePanel />
+        </TabsContent>
+
+
+
         <TabsContent value="listings" className="mt-4">
           <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
             <CardContent className="p-0">
