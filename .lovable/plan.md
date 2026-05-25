@@ -1,40 +1,30 @@
 ## Goal
-On first visit to the homepage, prompt the visitor to pick a city. Persist the selection and only show listings (and category/featured/recent feeds) after a city is chosen. Selected city should filter all homepage listings and remain changeable from the header.
+Replace the "More from this seller" section on the single listing page with a "Similar listings" section.
 
-## UX flow
-1. First-time visitor lands on `/` → a centered, non-dismissable city picker modal appears over a dimmed hero. No listing grids render underneath (skeleton or empty state hidden behind the modal).
-2. User searches/selects a city → modal closes, city is saved to `localStorage` (`marketly.cityId`), homepage queries refetch scoped to that city.
-3. Returning visitor with a saved city → modal does NOT appear; homepage loads listings filtered by that city immediately.
-4. Header gets a city chip ("📍 Austin ▾") that opens the same picker so users can change city anytime. "Change city" also clears and reopens the modal.
+## Definition of "similar"
+Pick active listings (excluding the current one) that match the same `category_id`, prioritized by:
+1. Same `city_id` first (most relevant), then fallback to same category in any city if not enough results.
+2. Order by `bumped_at` desc.
+3. Limit 4 (or up to 8 if available, then trim to 4 for grid).
 
-## Technical details
+Optional bonus: prefer listings within ±50% of current `price` when price is set, but keep this as a soft filter (only apply if it still returns ≥4 results) to avoid empty states.
 
-### New component: `src/components/CitySelectorDialog.tsx`
-- Shadcn `Dialog` (or `Command` inside Dialog) listing cities from `cities` table grouped by country/region.
-- Search input filtering by `name`/`region`.
-- On select: call `setCity(cityId, cityName)` from context.
-- `open` controlled by parent; `dismissable={false}` for first-visit case, dismissable when triggered from header.
+## Technical changes (single file: `src/routes/listings.$id.tsx`)
 
-### New context: `src/lib/city-context.tsx`
-- Provides `{ cityId, cityName, setCity, clearCity }`.
-- Reads/writes `localStorage` keys `marketly.cityId` and `marketly.cityName`.
-- Hydrates on mount (SSR-safe: initial state null, sync from localStorage in `useEffect`).
-- Wrap app in `__root.tsx`.
-
-### Homepage changes (`src/routes/index.tsx`)
-- Read `cityId` from context.
-- Show `<CitySelectorDialog open={!cityId} dismissable={false} />` when no city.
-- Listings `useQuery` key becomes `["listings","home", cityId]`, `enabled: !!cityId`, query adds `.eq("city_id", cityId)`.
-- While no city: render hero/categories shell but skip listing sections (or show "Select a city to see ads").
-
-### Header (likely `src/components/Header.tsx` or in `__root.tsx`)
-- Add city chip button showing current city name (or "Select city"). Clicking opens the picker dialog (dismissable=true).
-
-### No DB changes
-- `cities` table and `listings.city_id` already exist. No migration needed.
-- Logged-in users' `profiles.city_id` is unrelated; we keep this purely client-side for now (works for anonymous visitors too).
+1. Replace the `more` useQuery (currently keyed on seller `user_id`) with a `similar` useQuery:
+   - `queryKey: ["similar-listings", listing?.id, listing?.category_id, listing?.city_id]`
+   - `enabled: !!listing?.category_id`
+   - Strategy: one query that selects active listings where `category_id = current`, `id != current`, ordered by `bumped_at desc`, limit 8. Then in JS, sort city matches first, slice to 4.
+   - Select shape unchanged (id, title, price, currency, bumped_at, cities, listing_images, listing_promotions) so `ListingCard` keeps working.
+2. Also select `category_id` and `city_id` on the main listing query if not already (verify; add if missing).
+3. Rename the rendered section heading from "More from this seller" → "Similar <span class='gradient-text'>listings</span>".
+4. Update variable name `more` → `similar` for clarity.
 
 ## Out of scope
-- Saving city to profile for logged-in users (can be added later).
-- Filtering `/search` route by the selected city (only homepage per request).
-- Geo-IP auto-detection.
+- Backend RPC / DB function (pure client query, fast enough at this scale).
+- Search/filter UI changes.
+- Recommending across categories.
+- Saving impressions/clicks for recs.
+
+## Files touched
+- `src/routes/listings.$id.tsx` (only)

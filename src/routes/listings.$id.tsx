@@ -60,23 +60,27 @@ function ListingDetail() {
     supabase.rpc("increment_listing_view", { _listing_id: listing.id });
   }, [listing?.id]);
 
-  // Other listings by the same seller
-  const { data: more } = useQuery({
-    queryKey: ["more-from-seller", listing?.user_id, listing?.id],
-    enabled: !!listing?.user_id,
+  // Similar listings (same category, prefer same city)
+  const { data: similar } = useQuery({
+    queryKey: ["similar-listings", listing?.id, listing?.category_id, listing?.city_id],
+    enabled: !!listing?.category_id,
     queryFn: async () => {
       const { data } = await supabase
         .from("listings")
-        .select(`id, title, price, currency, bumped_at,
+        .select(`id, title, price, currency, bumped_at, city_id,
           cities(name, region, country),
           listing_images(url, sort_order),
           listing_promotions(type, ends_at)`)
-        .eq("user_id", listing!.user_id)
+        .eq("category_id", listing!.category_id)
         .eq("status", "active")
         .neq("id", listing!.id)
         .order("bumped_at", { ascending: false })
-        .limit(4);
-      return data ?? [];
+        .limit(12);
+      const rows = data ?? [];
+      const cityId = listing!.city_id;
+      const sameCity = rows.filter((l: any) => l.city_id === cityId);
+      const otherCity = rows.filter((l: any) => l.city_id !== cityId);
+      return [...sameCity, ...otherCity].slice(0, 4);
     },
   });
 
@@ -358,13 +362,13 @@ function ListingDetail() {
         </div>
       </div>
 
-      {more && more.length > 0 && (
+      {similar && similar.length > 0 && (
         <section className="mt-12">
           <h2 className="font-display text-xl font-bold">
-            More from <span className="gradient-text">this seller</span>
+            Similar <span className="gradient-text">listings</span>
           </h2>
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {more.map((l: any) => <ListingCard key={l.id} listing={l} />)}
+            {similar.map((l: any) => <ListingCard key={l.id} listing={l} />)}
           </div>
         </section>
       )}
