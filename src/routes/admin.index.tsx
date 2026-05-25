@@ -489,7 +489,27 @@ function PaymentsTab() {
     <Card className={panelCls + " border-0"}>
       <CardHeader><CardTitle className="text-base text-slate-100">Payments ({data?.length ?? 0})</CardTitle></CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile cards */}
+        <div className="space-y-2 p-3 md:hidden">
+          {(data ?? []).map(p => (
+            <div key={p.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-medium text-slate-100">{p.currency} {Number(p.amount).toFixed(2)}</div>
+                  <div className="mt-0.5 text-xs text-slate-400">{format(new Date(p.created_at), "MMM d, HH:mm")}</div>
+                </div>
+                <Badge variant={p.status === "completed" ? "default" : "secondary"} className="capitalize">{p.status}</Badge>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
+                <span className="capitalize">Type: {p.promotion_type ?? "—"}</span>
+                <span>· {p.provider}</span>
+              </div>
+            </div>
+          ))}
+          {!data?.length && <div className="px-2 py-8 text-center text-sm text-slate-400">No payments yet.</div>}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-white/5 text-left text-xs uppercase text-slate-400">
               <tr>
