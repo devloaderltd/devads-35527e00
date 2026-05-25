@@ -166,7 +166,12 @@ function DashboardPage() {
           </TabsList>
         </div>
 
-        <TabsContent value="analytics" className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <TabsContent value="analytics" className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <OnboardingChecklist userId={user?.id} />
+            <ExpiringSoonCard userId={user?.id} />
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <ChartCard title="Listings created (last 30 days)">
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={charts?.days ?? []}>
