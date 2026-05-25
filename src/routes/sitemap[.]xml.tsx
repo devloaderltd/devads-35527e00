@@ -16,9 +16,15 @@ export const Route = createFileRoute("/sitemap.xml")({
         const urls: string[] = [
           `${BASE}/`,
           `${BASE}/search`,
+          `${BASE}/about`,
+          `${BASE}/contact`,
           `${BASE}/login`,
           `${BASE}/signup`,
+          `${BASE}/privacy`,
+          `${BASE}/terms`,
+          `${BASE}/cookies`,
         ];
+
         (categories ?? []).forEach((c) => urls.push(`${BASE}/search?category=${encodeURIComponent(c.slug)}`));
         (cities ?? []).forEach((c) => urls.push(`${BASE}/search?city=${encodeURIComponent(c.slug)}`));
 
