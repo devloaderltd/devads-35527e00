@@ -51,9 +51,10 @@ function PostListing() {
     },
   });
 
+  const MAX_PHOTOS = 5;
   const onFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const list = Array.from(e.target.files ?? []).slice(0, 8 - files.length);
-    setFiles((prev) => [...prev, ...list].slice(0, 8));
+    const list = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS - files.length);
+    setFiles((prev) => [...prev, ...list].slice(0, MAX_PHOTOS));
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -188,17 +189,23 @@ function PostListing() {
         </div>
 
         <div className="space-y-2">
-          <Label>Photos (up to 8)</Label>
+          <Label>Photos (up to {MAX_PHOTOS})</Label>
+          <p className="text-xs text-muted-foreground">First photo is the cover. {files.length}/{MAX_PHOTOS} added.</p>
           <div className="flex flex-wrap gap-2">
             {files.map((f, i) => (
               <div key={i} className="relative h-20 w-20 overflow-hidden rounded-xl border ring-1 ring-white/40 shadow-[var(--shadow-float)]">
                 <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
+                {i === 0 && (
+                  <span className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 text-center text-[10px] font-semibold text-white">
+                    Cover
+                  </span>
+                )}
                 <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} className="absolute right-0 top-0 rounded-bl bg-black/60 p-0.5 text-white">
                   <X className="h-3 w-3" />
                 </button>
               </div>
             ))}
-            {files.length < 8 && (
+            {files.length < MAX_PHOTOS && (
               <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border border-dashed bg-white/50 text-muted-foreground transition hover:border-primary hover:text-primary">
                 <ImagePlus className="h-5 w-5" />
                 <input type="file" accept="image/*" multiple className="hidden" onChange={onFiles} />
