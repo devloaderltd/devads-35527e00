@@ -423,6 +423,32 @@ function ListingDetail() {
           />
         </div>
       )}
+
+      {/* JSON-LD Product schema for richer search results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: listing.title,
+            description: listing.description?.slice(0, 5000) ?? "",
+            image: images.map((i: any) => i.url).slice(0, 6),
+            category: listing.categories?.name,
+            offers: listing.price != null ? {
+              "@type": "Offer",
+              price: Number(listing.price),
+              priceCurrency: listing.currency || "USD",
+              availability: listing.status === "active"
+                ? "https://schema.org/InStock"
+                : "https://schema.org/SoldOut",
+              url: typeof window !== "undefined" ? window.location.href : undefined,
+            } : undefined,
+            seller: seller ? { "@type": "Person", name: seller.display_name } : undefined,
+            areaServed: listing.cities ? `${listing.cities.name}, ${listing.cities.region}` : undefined,
+          }),
+        }}
+      />
     </div>
   );
 }
