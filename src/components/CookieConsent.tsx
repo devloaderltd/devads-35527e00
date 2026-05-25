@@ -12,6 +12,9 @@ export function CookieConsent() {
   const [customizing, setCustomizing] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  // Local dismissal so the banner unmounts immediately even if localStorage
+  // is blocked (private mode, restrictive mobile browsers).
+  const [dismissed, setDismissed] = useState(false);
 
   // The city selector dialog (non-dismissable for first-time visitors) covers
   // the screen with a modal overlay and would block clicks on this banner.
@@ -20,14 +23,14 @@ export function CookieConsent() {
   if (cityDialogOpen) return null;
 
   // Only show the banner when no decision has been recorded yet.
-  if (consent) return null;
+  if (consent || dismissed) return null;
 
-  const acceptAll = () => save({ analytics: true, marketing: true });
-  const rejectOptional = () => save({ analytics: false, marketing: false });
-  const savePreferences = () => save({ analytics, marketing });
+  const acceptAll = () => { setDismissed(true); save({ analytics: true, marketing: true }); };
+  const rejectOptional = () => { setDismissed(true); save({ analytics: false, marketing: false }); };
+  const savePreferences = () => { setDismissed(true); save({ analytics, marketing }); };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center px-3 md:bottom-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-3 z-[60] flex justify-center px-3 md:bottom-6">
       <div className="pointer-events-auto w-full max-w-2xl rounded-2xl border border-white/40 bg-white/85 p-4 shadow-[var(--shadow-float-lg)] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/80">
         <div className="flex items-start gap-3">
           <div
