@@ -258,6 +258,22 @@ function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string;
   );
 }
 
+function QuickAction({ to, icon, label, accent }: { to: string; icon: React.ReactNode; label: string; accent?: boolean }) {
+  return (
+    <Link
+      to={to as never}
+      className={`flex items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-medium transition hover:bg-white/90 ${
+        accent
+          ? "border-0 bg-gradient-to-r from-primary to-purple-500 text-white hover:opacity-95"
+          : "border-white/40 bg-white/70 text-foreground backdrop-blur dark:bg-white/5"
+      }`}
+    >
+      <span className={accent ? "text-white" : "text-primary"}>{icon}</span>
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
