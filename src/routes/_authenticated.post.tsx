@@ -32,6 +32,37 @@ function PostListing() {
   const [cityId, setCityId] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [aiHint, setAiHint] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const writeListingFn = useServerFn(aiWriteListing);
+
+  const fileToDataUrl = (f: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(f);
+    });
+
+  const runAi = async () => {
+    if (!aiHint.trim()) return toast.error("Add a short hint first");
+    setAiLoading(true);
+    try {
+      const categoryName = categories?.find((c) => c.id === categoryId)?.name;
+      let imageDataUrl: string | undefined;
+      if (files[0] && files[0].size < 2_000_000) {
+        imageDataUrl = await fileToDataUrl(files[0]);
+      }
+      const out = await writeListingFn({ data: { hint: aiHint.trim(), category: categoryName, imageDataUrl } });
+      if (out.title) setTitle(out.title.slice(0, 140));
+      if (out.description) setDescription(out.description);
+      toast.success("Draft generated — edit before posting");
+    } catch (e: any) {
+      toast.error(e?.message ?? "AI failed");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
