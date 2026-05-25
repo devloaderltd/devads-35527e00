@@ -28,6 +28,7 @@ import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authen
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api/public/seed-demo'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
 import { Route as AuthenticatedDebugSessionRouteImport } from './routes/_authenticated.debug.session'
+import { Route as ApiPublicPaymentsNowpaymentsIpnRouteImport } from './routes/api/public/payments/nowpayments-ipn'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -126,6 +127,12 @@ const AuthenticatedDebugSessionRoute =
     path: '/debug/session',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicPaymentsNowpaymentsIpnRoute =
+  ApiPublicPaymentsNowpaymentsIpnRouteImport.update({
+    id: '/api/public/payments/nowpayments-ipn',
+    path: '/api/public/payments/nowpayments-ipn',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -165,6 +173,7 @@ export interface FileRoutesByTo {
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
+  '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -187,6 +196,7 @@ export interface FileRoutesById {
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/messages/$threadId'
     | '/api/public/seed-demo'
     | '/messages/'
+    | '/api/public/payments/nowpayments-ipn'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/messages/$threadId'
     | '/api/public/seed-demo'
     | '/messages'
+    | '/api/public/payments/nowpayments-ipn'
   id:
     | '__root__'
     | '/'
@@ -249,6 +261,7 @@ export interface FileRouteTypes {
     | '/_authenticated/messages/$threadId'
     | '/api/public/seed-demo'
     | '/_authenticated/messages/'
+    | '/api/public/payments/nowpayments-ipn'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -262,6 +275,7 @@ export interface RootRouteChildren {
   SellersIdRoute: typeof SellersIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
+  ApiPublicPaymentsNowpaymentsIpnRoute: typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -399,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDebugSessionRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/payments/nowpayments-ipn': {
+      id: '/api/public/payments/nowpayments-ipn'
+      path: '/api/public/payments/nowpayments-ipn'
+      fullPath: '/api/public/payments/nowpayments-ipn'
+      preLoaderRoute: typeof ApiPublicPaymentsNowpaymentsIpnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -452,6 +473,7 @@ const rootRouteChildren: RootRouteChildren = {
   SellersIdRoute: SellersIdRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
+  ApiPublicPaymentsNowpaymentsIpnRoute: ApiPublicPaymentsNowpaymentsIpnRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
