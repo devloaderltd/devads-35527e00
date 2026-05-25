@@ -1061,7 +1061,17 @@ export const adminPeekTable = createServerFn({ method: "POST" })
     }).parse(input))
   .handler(async ({ data }) => {
     const cols = SAFE_TABLES[data.table as SafeTable];
-    const { data: rows, error } = await supabaseAdmin
+    // Supabase's generated types don't accept dynamic select strings; cast to bypass.
+    const client = supabaseAdmin as unknown as {
+      from: (t: string) => {
+        select: (s: string) => {
+          order: (c: string, o: { ascending: boolean }) => {
+            limit: (n: number) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>;
+          };
+        };
+      };
+    };
+    const { data: rows, error } = await client
       .from(data.table)
       .select(cols)
       .order("created_at", { ascending: false })
