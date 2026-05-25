@@ -7,12 +7,17 @@ import { formatDistanceToNow } from "date-fns";
 import { SellerReviews } from "@/components/SellerReviews";
 
 export const Route = createFileRoute("/sellers/$id")({
-  head: () => ({
+  head: ({ params }) => ({
     meta: [
       { title: "Seller profile — Marketly" },
-      { name: "description", content: "View a seller's profile and active listings on Marketly." },
+      { name: "description", content: "View this seller's active listings, location and member history on Marketly." },
+      { property: "og:title", content: "Seller profile — Marketly" },
+      { property: "og:description", content: "Browse a seller's active listings on Marketly." },
+      { property: "og:url", content: `https://devads.lovable.app/sellers/${params.id}` },
+      { property: "og:type", content: "profile" },
       { name: "robots", content: "index,follow" },
     ],
+    links: [{ rel: "canonical", href: `https://devads.lovable.app/sellers/${params.id}` }],
   }),
   component: SellerPage,
 });
