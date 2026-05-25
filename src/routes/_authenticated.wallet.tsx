@@ -10,7 +10,7 @@ import { getWallet, createTopupInvoice } from "@/lib/wallet.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
-  head: () => ({ meta: [{ title: "Wallet — Marketly" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Wallet — CallEscort24" }, { name: "robots", content: "noindex" }] }),
   component: WalletPage,
 });
 

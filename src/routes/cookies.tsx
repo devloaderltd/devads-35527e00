@@ -4,10 +4,10 @@ import { LegalLayout } from "@/components/LegalLayout";
 export const Route = createFileRoute("/cookies")({
   head: () => ({
     meta: [
-      { title: "Cookies Policy — Marketly" },
-      { name: "description", content: "How Marketly uses cookies and similar technologies, and how you can manage your preferences." },
-      { property: "og:title", content: "Cookies Policy — Marketly" },
-      { property: "og:description", content: "Cookies and tracking technologies used on Marketly." },
+      { title: "Cookies Policy — CallEscort24" },
+      { name: "description", content: "How CallEscort24 uses cookies and similar technologies, and how you can manage your preferences." },
+      { property: "og:title", content: "Cookies Policy — CallEscort24" },
+      { property: "og:description", content: "Cookies and tracking technologies used on CallEscort24." },
       { property: "og:url", content: "https://devads.lovable.app/cookies" },
     ],
     links: [{ rel: "canonical", href: "https://devads.lovable.app/cookies" }],
@@ -19,7 +19,7 @@ function CookiesPage() {
   return (
     <LegalLayout title="Cookies Policy" updated="May 25, 2026">
       <p>
-        This Cookies Policy explains how <strong>Marketly</strong> uses cookies and similar storage
+        This Cookies Policy explains how <strong>CallEscort24</strong> uses cookies and similar storage
         technologies (such as localStorage) on our website. For more information about how we handle
         personal data, see our <Link to="/privacy">Privacy Policy</Link>.
       </p>
@@ -39,9 +39,9 @@ function CookiesPage() {
       </p>
       <ul>
         <li><code>sb-*</code> — Lovable Cloud / Supabase session and auth tokens.</li>
-        <li><code>marketly.city</code> — your selected browsing city (localStorage).</li>
-        <li><code>marketly.theme</code> — light/dark mode preference (localStorage).</li>
-        <li><code>marketly.cookie-consent</code> — your consent choice for this banner (localStorage).</li>
+        <li><code>callescort24.city</code> — your selected browsing city (localStorage).</li>
+        <li><code>callescort24.theme</code> — light/dark mode preference (localStorage).</li>
+        <li><code>callescort24.cookie-consent</code> — your consent choice for this banner (localStorage).</li>
       </ul>
 
       <h3>Functional</h3>

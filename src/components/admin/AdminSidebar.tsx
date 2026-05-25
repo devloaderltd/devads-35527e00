@@ -70,7 +70,7 @@ export function AdminSidebar() {
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-inner">
             <ShieldCheck className="h-4 w-4" />
           </span>
-          {!collapsed && <span className="truncate">Marketly <span className="text-slate-400">Admin</span></span>}
+          {!collapsed && <span className="truncate">CallEscort24 <span className="text-slate-400">Admin</span></span>}
         </Link>
       </SidebarHeader>
       <SidebarContent className="bg-slate-950">

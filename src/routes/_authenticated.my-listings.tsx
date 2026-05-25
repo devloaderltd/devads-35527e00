@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/my-listings")({
-  head: () => ({ meta: [{ title: "My listings — Marketly" }] }),
+  head: () => ({ meta: [{ title: "My listings — CallEscort24" }] }),
   component: MyListings,
 });
 

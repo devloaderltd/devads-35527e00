@@ -17,7 +17,7 @@ import { format, subDays, startOfDay } from "date-fns";
 import { getMyListingAnalytics } from "@/lib/extras.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Marketly" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — CallEscort24" }, { name: "robots", content: "noindex" }] }),
   component: DashboardPage,
 });
 

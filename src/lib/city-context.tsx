@@ -12,8 +12,8 @@ type CityCtx = {
 };
 
 const Ctx = createContext<CityCtx | null>(null);
-const KEY_ID = "marketly.cityId";
-const KEY_NAME = "marketly.cityName";
+const KEY_ID = "callescort24.cityId";
+const KEY_NAME = "callescort24.cityName";
 
 export function CityProvider({ children }: { children: ReactNode }) {
   const [cityId, setCityId] = useState<string | null>(null);
@@ -23,8 +23,10 @@ export function CityProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      setCityId(localStorage.getItem(KEY_ID));
-      setCityName(localStorage.getItem(KEY_NAME));
+      const id = localStorage.getItem(KEY_ID) ?? localStorage.getItem("marketly.cityId");
+      const name = localStorage.getItem(KEY_NAME) ?? localStorage.getItem("marketly.cityName");
+      setCityId(id);
+      setCityName(name);
     } catch {}
     setHydrated(true);
   }, []);

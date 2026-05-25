@@ -8,7 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { listMyNotifications, markNotificationRead, deleteNotification } from "@/lib/extras.functions";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
-  head: () => ({ meta: [{ title: "Notifications — Marketly" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Notifications — CallEscort24" }, { name: "robots", content: "noindex" }] }),
   component: Page,
 });
 

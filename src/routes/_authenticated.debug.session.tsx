@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/debug/session")({
-  head: () => ({ meta: [{ title: "Session debug — Marketly" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Session debug — CallEscort24" }, { name: "robots", content: "noindex" }] }),
   component: DebugSessionPage,
 });
 

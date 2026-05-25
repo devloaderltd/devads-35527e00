@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Create account — Marketly" }] }),
+  head: () => ({ meta: [{ title: "Create account — CallEscort24" }] }),
   component: SignupPage,
 });
 
@@ -39,7 +39,7 @@ function SignupPage() {
     <div className="container mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-10">
       <div className="iridescent-border rounded-3xl border border-white/40 bg-white/65 p-8 shadow-[var(--shadow-float-lg)] backdrop-blur-2xl">
         <h1 className="font-display text-3xl font-bold">
-          Join <span className="gradient-text">Marketly</span>
+          Join <span className="gradient-text">CallEscort24</span>
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">Free forever. Post in seconds.</p>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">

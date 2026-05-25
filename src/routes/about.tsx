@@ -4,9 +4,9 @@ import { Globe2, ShieldCheck, Sparkles, Users } from "lucide-react";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — Marketly" },
-      { name: "description", content: "Marketly is a modern marketplace for buying and selling across the US, UK and Canada. Learn about our mission and team." },
-      { property: "og:title", content: "About — Marketly" },
+      { title: "About — CallEscort24" },
+      { name: "description", content: "CallEscort24 is a modern marketplace for buying and selling across the US, UK and Canada. Learn about our mission and team." },
+      { property: "og:title", content: "About — CallEscort24" },
       { property: "og:description", content: "A modern marketplace built for trust, speed and beautiful design." },
       { property: "og:url", content: "https://devads.lovable.app/about" },
     ],
@@ -30,7 +30,7 @@ function AboutPage() {
           A marketplace that <span className="gradient-text">feels good to use</span>
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-          Marketly is a modern classifieds platform for buying and selling across the US, UK and Canada.
+          CallEscort24 is a modern classifieds platform for buying and selling across the US, UK and Canada.
           We're rebuilding the experience from the ground up — fast, secure and a delight to look at.
         </p>
       </header>

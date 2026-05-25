@@ -20,7 +20,7 @@ export const Route = createFileRoute("/admin/login")({
   },
   head: () => ({
     meta: [
-      { title: "Admin sign in — Marketly" },
+      { title: "Admin sign in — CallEscort24" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -73,7 +73,7 @@ function AdminLoginPage() {
             <ShieldCheck className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="font-display text-2xl font-bold">Marketly Admin</h1>
+            <h1 className="font-display text-2xl font-bold">CallEscort24 Admin</h1>
             <p className="text-xs text-slate-400">Restricted access. Admin credentials only.</p>
           </div>
         </div>

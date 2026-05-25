@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { listSavedSearches, deleteSavedSearch, toggleSavedSearchAlert } from "@/lib/extras.functions";
 
 export const Route = createFileRoute("/_authenticated/saved-searches")({
-  head: () => ({ meta: [{ title: "Saved searches — Marketly" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Saved searches — CallEscort24" }, { name: "robots", content: "noindex" }] }),
   component: Page,
 });
 

@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ListingCard } from "@/components/ListingCard";
 
 export const Route = createFileRoute("/_authenticated/favorites")({
-  head: () => ({ meta: [{ title: "Favorites — Marketly" }] }),
+  head: () => ({ meta: [{ title: "Favorites — CallEscort24" }] }),
   component: Favorites,
 });
 

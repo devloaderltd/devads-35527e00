@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Github, Mail, Sparkles } from "lucide-react";
+import { Github, Mail } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 
 const sections: Array<{
   heading: string;
@@ -40,20 +41,15 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-12">
           <div className="md:col-span-4">
             <Link to="/" className="inline-flex items-center gap-2 font-display text-xl font-bold">
-              <span
-                className="grid h-8 w-8 place-items-center rounded-lg text-white shadow-md"
-                style={{ background: "var(--gradient-primary)" }}
-              >
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <span className="gradient-text">Marketly</span>
+              <img src={logoUrl} alt="CallEscort24" width={32} height={32} loading="lazy" className="h-8 w-8 rounded-lg object-contain" />
+              <span className="gradient-text">CallEscort24</span>
             </Link>
             <p className="mt-3 max-w-xs text-muted-foreground">
               A modern marketplace for buying and selling across the US, UK and Canada.
             </p>
             <div className="mt-4 flex items-center gap-2">
               <a
-                href="mailto:hello@marketly.example"
+                href="mailto:support@callescort24.com"
                 aria-label="Email"
                 className="grid h-9 w-9 place-items-center rounded-full border border-white/50 bg-white/70 text-muted-foreground transition hover:text-foreground"
               >
@@ -111,7 +107,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col items-center gap-3 border-t border-white/30 pt-6 text-xs text-muted-foreground md:flex-row md:justify-between dark:border-white/10">
-          <div>© {new Date().getFullYear()} Marketly. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} CallEscort24. All rights reserved.</div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
             <Link to="/terms" className="hover:text-foreground">Terms</Link>

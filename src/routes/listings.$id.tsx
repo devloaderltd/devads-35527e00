@@ -309,7 +309,7 @@ function ListingDetail() {
 
           {/* Safety tips */}
           <div className="iridescent-border mt-4 rounded-2xl border border-white/40 bg-white/65 p-5 shadow-[var(--shadow-float)] backdrop-blur-xl">
-            <h2 className="font-display text-lg font-bold">Stay safe on Marketly</h2>
+            <h2 className="font-display text-lg font-bold">Stay safe on CallEscort24</h2>
             <ul className="mt-3 space-y-2 text-sm text-foreground/90">
               <li className="flex gap-2"><span aria-hidden>•</span> Meet in a public, well-lit place whenever possible.</li>
               <li className="flex gap-2"><span aria-hidden>•</span> Inspect the item carefully before you pay.</li>
@@ -377,7 +377,7 @@ function ListingDetail() {
                 <div className="text-xs text-muted-foreground">
                   {seller?.created_at
                     ? `Member ${formatDistanceToNow(new Date(seller.created_at), { addSuffix: true })}`
-                    : "Marketly seller"}
+                    : "CallEscort24 seller"}
                 </div>
                 <div className="mt-1">
                   <SellerRatingBadge sellerId={listing.user_id} />

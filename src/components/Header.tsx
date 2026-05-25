@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import logoUrl from "@/assets/logo.png";
 
 export function Header() {
   const { user } = useAuth();
@@ -39,8 +40,8 @@ export function Header() {
     <header className="sticky top-3 z-40 mx-3 mt-3 md:mx-6">
       <div className="mx-auto flex max-w-6xl items-center gap-3 rounded-2xl glass-strong px-3 py-2.5">
         <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
-          <span className="grid h-9 w-9 place-items-center rounded-xl btn-gradient text-white shadow-inner">M</span>
-          <span className="hidden sm:inline">Marketly</span>
+          <img src={logoUrl} alt="CallEscort24" width={36} height={36} className="h-9 w-9 rounded-xl object-contain" />
+          <span className="hidden sm:inline">CallEscort24</span>
         </Link>
 
         <form onSubmit={onSearch} className="relative ml-2 hidden flex-1 max-w-md md:block">

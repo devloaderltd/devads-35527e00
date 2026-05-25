@@ -4,10 +4,10 @@ import { LegalLayout } from "@/components/LegalLayout";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Marketly" },
-      { name: "description", content: "How Marketly collects, uses, stores, and protects your personal data when you use our marketplace." },
-      { property: "og:title", content: "Privacy Policy — Marketly" },
-      { property: "og:description", content: "How we handle your data on Marketly." },
+      { title: "Privacy Policy — CallEscort24" },
+      { name: "description", content: "How CallEscort24 collects, uses, stores, and protects your personal data when you use our marketplace." },
+      { property: "og:title", content: "Privacy Policy — CallEscort24" },
+      { property: "og:description", content: "How we handle your data on CallEscort24." },
       { property: "og:url", content: "https://devads.lovable.app/privacy" },
     ],
     links: [{ rel: "canonical", href: "https://devads.lovable.app/privacy" }],
@@ -19,9 +19,9 @@ function PrivacyPage() {
   return (
     <LegalLayout title="Privacy Policy" updated="May 25, 2026">
       <p>
-        This Privacy Policy explains how <strong>Marketly</strong> ("we", "us", "our") collects, uses, and
+        This Privacy Policy explains how <strong>CallEscort24</strong> ("we", "us", "our") collects, uses, and
         protects information when you visit or use our marketplace, accessible at{" "}
-        <a href="https://devads.lovable.app">devads.lovable.app</a>. By using Marketly you agree to this
+        <a href="https://devads.lovable.app">devads.lovable.app</a>. By using CallEscort24 you agree to this
         policy.
       </p>
 
@@ -78,7 +78,7 @@ function PrivacyPage() {
       <p>
         Depending on where you live, you may have the right to access, correct, delete, restrict, or
         port your personal data, and to object to certain processing. To exercise these rights, contact us
-        at <a href="mailto:privacy@marketly.example">privacy@marketly.example</a>.
+        at <a href="mailto:support@callescort24.com">support@callescort24.com</a>.
       </p>
 
       <h2>7. Security</h2>
@@ -90,12 +90,12 @@ function PrivacyPage() {
 
       <h2>8. International transfers</h2>
       <p>
-        Marketly operates servers in regions used by our hosting provider. By using the service you
+        CallEscort24 operates servers in regions used by our hosting provider. By using the service you
         understand that your information may be processed outside your country of residence.
       </p>
 
       <h2>9. Children</h2>
-      <p>Marketly is not directed to children under 16. We do not knowingly collect data from children.</p>
+      <p>CallEscort24 is not directed to children under 16. We do not knowingly collect data from children.</p>
 
       <h2>10. Changes</h2>
       <p>
@@ -105,7 +105,7 @@ function PrivacyPage() {
 
       <h2>11. Contact</h2>
       <p>
-        Questions or requests? Email <a href="mailto:privacy@marketly.example">privacy@marketly.example</a>{" "}
+        Questions or requests? Email <a href="mailto:support@callescort24.com">support@callescort24.com</a>{" "}
         or use our <Link to="/contact">contact page</Link>.
       </p>
     </LegalLayout>
