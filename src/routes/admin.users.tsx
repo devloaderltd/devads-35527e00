@@ -18,6 +18,7 @@ import {
   adminAdjustWallet,
   getUserSummary, getUserListingsPage, getUserWalletTxsPage, getUserPaymentsPage,
 } from "@/lib/admin.functions";
+import { bulkUsersAction } from "@/lib/extras.functions";
 
 export const Route = createFileRoute("/admin/users")({ component: UsersPage });
 
