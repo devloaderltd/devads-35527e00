@@ -71,7 +71,7 @@ function PostListing() {
           description: description.trim(),
           price: price ? Number(price) : null,
           currency,
-          condition: condition as any,
+          condition: "not_applicable" as any,
           category_id: categoryId,
           city_id: cityId,
         })
