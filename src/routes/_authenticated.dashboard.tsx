@@ -26,6 +26,15 @@ const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8"
 function DashboardPage() {
   const { user } = useAuth();
 
+  const { data: wallet } = useQuery({
+    queryKey: ["wallet-balance", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("wallets").select("balance_usd").eq("user_id", user!.id).maybeSingle();
+      return data?.balance_usd ?? 0;
+    },
+  });
+
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats", user?.id],
     enabled: !!user,
