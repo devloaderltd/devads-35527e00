@@ -14,6 +14,8 @@ import { ReportDialog } from "@/components/ReportDialog";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ListingCard } from "@/components/ListingCard";
+import { SellerRatingBadge } from "@/components/SellerRatingBadge";
+
 import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
@@ -317,7 +319,11 @@ function ListingDetail() {
                     ? `Member ${formatDistanceToNow(new Date(seller.created_at), { addSuffix: true })}`
                     : "Marketly seller"}
                 </div>
+                <div className="mt-1">
+                  <SellerRatingBadge sellerId={listing.user_id} />
+                </div>
               </div>
+
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2">

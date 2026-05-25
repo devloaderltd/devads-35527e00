@@ -226,6 +226,20 @@ export const submitSellerReview = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deleteMyReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { reviewId: string }) => {
+    if (!uuid.safeParse(input.reviewId).success) throw new Error("Invalid reviewId");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("seller_reviews").delete().eq("id", data.reviewId).eq("reviewer_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 /* ============== Homepage slots & banners (admin) ============== */
 
 export const listHomepageSlots = createServerFn({ method: "GET" })
