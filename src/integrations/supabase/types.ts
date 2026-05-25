@@ -186,6 +186,78 @@ export type Database = {
           },
         ]
       }
+      homepage_slots: {
+        Row: {
+          active: boolean
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          id: string
+          image_url: string | null
+          listing_id: string | null
+          position: string
+          sort_order: number
+          subtitle: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          id?: string
+          image_url?: string | null
+          listing_id?: string | null
+          position: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          id?: string
+          image_url?: string | null
+          listing_id?: string | null
+          position?: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      listing_events: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          metadata: Json
+          type: Database["public"]["Enums"]["listing_event_type"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          metadata?: Json
+          type: Database["public"]["Enums"]["listing_event_type"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          metadata?: Json
+          type?: Database["public"]["Enums"]["listing_event_type"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       listing_images: {
         Row: {
           created_at: string
@@ -395,6 +467,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          metadata: Json
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -518,6 +626,111 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_searches: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          last_notified_at: string
+          name: string
+          notify: boolean
+          query: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          last_notified_at?: string
+          name: string
+          notify?: boolean
+          query?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          last_notified_at?: string
+          name?: string
+          notify?: boolean
+          query?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      seller_reviews: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          listing_id: string | null
+          rating: number
+          reviewer_id: string
+          seller_id: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          rating: number
+          reviewer_id: string
+          seller_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          rating?: number
+          reviewer_id?: string
+          seller_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_banners: {
+        Row: {
+          active: boolean
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          ends_at: string | null
+          id: string
+          message: string
+          starts_at: string
+          updated_at: string
+          variant: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          ends_at?: string | null
+          id?: string
+          message: string
+          starts_at?: string
+          updated_at?: string
+          variant?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          ends_at?: string | null
+          id?: string
+          message?: string
+          starts_at?: string
+          updated_at?: string
+          variant?: string
+        }
+        Relationships: []
       }
       site_settings: {
         Row: {
@@ -702,6 +915,7 @@ export type Database = {
         | "fair"
         | "poor"
         | "not_applicable"
+      listing_event_type: "view" | "favorite" | "message" | "contact_reveal"
       listing_status: "draft" | "active" | "sold" | "expired" | "removed"
       payment_status: "pending" | "completed" | "failed" | "refunded"
       promotion_type: "featured" | "bump" | "highlight"
@@ -855,6 +1069,7 @@ export const Constants = {
         "poor",
         "not_applicable",
       ],
+      listing_event_type: ["view", "favorite", "message", "contact_reveal"],
       listing_status: ["draft", "active", "sold", "expired", "removed"],
       payment_status: ["pending", "completed", "failed", "refunded"],
       promotion_type: ["featured", "bump", "highlight"],
