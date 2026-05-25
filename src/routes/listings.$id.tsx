@@ -501,6 +501,35 @@ function ListingDetail() {
         </div>
       )}
 
+      {/* Sticky mobile action bar */}
+      {listing.user_id !== user?.id && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/40 bg-white/85 p-2 backdrop-blur-xl shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.15)] md:hidden">
+          <div className="container mx-auto flex items-center gap-2 px-2">
+            <FavoriteButton listingId={listing.id} variant="inline" />
+            <button
+              type="button"
+              onClick={share}
+              aria-label="Share"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/60 bg-white/70 hover:bg-white"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+            {contact?.phone && (
+              <a
+                href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
+                aria-label="Call seller"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/60 bg-white/70 hover:bg-white"
+              >
+                <Phone className="h-4 w-4 text-primary" />
+              </a>
+            )}
+            <Button onClick={startThread} disabled={contacting} className="btn-gradient h-10 flex-1 gap-2 rounded-full border-0">
+              <MessageSquare className="h-4 w-4" /> Message seller
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* JSON-LD Product schema for richer search results */}
       <script
         type="application/ld+json"
