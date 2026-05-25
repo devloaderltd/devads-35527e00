@@ -1,16 +1,21 @@
 ## Changes
 
-### 1. `src/routes/listings.$id.tsx` (listing detail)
-- **Details card**: add explicit "Age" row showing days since `created_at` (e.g. `12 days`). Keep existing "Posted" row (relative time). Rename "Views" → "Total ad views".
-- **Remove Condition**: delete the Condition row in the Details card and the standalone condition chip in the right column.
+### 1. DB migration
+- Add `item_age text NOT NULL DEFAULT ''` column on `public.listings`. New listings will be required to provide a value at the form layer; default empty string keeps existing rows valid.
 
-### 2. `src/routes/_authenticated.post.tsx` (post ad form)
-- Remove the Condition select field, its label, its state, and its inclusion in the insert payload (let the column fall back to its DB default `not_applicable`).
+### 2. `src/routes/_authenticated.post.tsx`
+- Add `itemAge` state + a free-text `<Input>` field labeled "Item age" (placeholder: `e.g. 2 years, 6 months, brand new`).
+- Validate on submit: required, trimmed length 1–60 chars; show toast on failure.
+- Include `item_age: itemAge.trim()` in the insert payload.
 
-### Out of scope
-- No DB migration — the `condition` column stays so existing listings and other code paths keep working.
-- No change to search filters, cards, or anywhere else condition is read.
+### 3. `src/routes/listings.$id.tsx`
+- In the Details card, add an "Item age" row above the existing "Age" (listing age in days) row, shown only when `listing.item_age` is non-empty.
+- Keep the listing-age-in-days row I added previously (now clearly the "ad age").
+
+## Out of scope
+- No search filter on item age (free text isn't filterable cleanly).
+- No edit-flow changes beyond the post form.
 
 ## Technical notes
-- Age in days = `Math.floor((Date.now() - new Date(listing.created_at).getTime()) / 86_400_000)`, rendered as `${n} day${n===1?'':'s'}` (or `Today` when 0).
-- Total ad views = `listing.view_count ?? 0` (same data, new label).
+- Column type `text` because the value is free-form ("2 years", "brand new").
+- Length bounded to 60 chars client-side; we won't add a CHECK constraint to keep DB flexible.
