@@ -396,12 +396,42 @@ function ListingsTab() {
 
   return (
     <Card className={panelCls + " border-0"}>
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base text-slate-100">Listings ({data?.length ?? 0})</CardTitle>
-        <Input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
+        <Input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} className="w-full rounded-full border-white/10 bg-white/5 text-slate-100 sm:max-w-xs" />
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile cards */}
+        <div className="space-y-2 p-3 md:hidden">
+          {filtered.map((l) => (
+            <div key={l.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="line-clamp-2 text-sm font-medium text-slate-100">{l.title}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                    <Badge variant={l.status === "active" ? "default" : "secondary"} className="capitalize">{l.status}</Badge>
+                    <span>{l.price ? `${l.currency} ${Number(l.price).toFixed(2)}` : "—"}</span>
+                    <span>· {l.view_count ?? 0} views</span>
+                    <span>· {format(new Date(l.created_at), "MMM d")}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button asChild size="sm" variant="outline" className="flex-1 rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10">
+                  <a href={`/listings/${l.id}`} target="_blank" rel="noopener noreferrer"><Eye className="mr-1.5 h-3.5 w-3.5" /> View</a>
+                </Button>
+                {l.status !== "removed" && (
+                  <Button size="sm" variant="destructive" className="flex-1 rounded-full" onClick={() => remove.mutate(l.id)}>
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+          {!filtered.length && <div className="px-2 py-8 text-center text-sm text-slate-400">No listings.</div>}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-white/5 text-left text-xs uppercase text-slate-400">
               <tr>
