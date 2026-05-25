@@ -1,21 +1,42 @@
-## Changes
+## Goal
+Remove the listing item **price** and **currency** from the post form, listing displays, search filters, saved searches, admin listings, and seed data. Wallet, promotion pricing, and admin payment money stays untouched (platform money, not listing price).
 
-### 1. DB migration
-- Add `item_age text NOT NULL DEFAULT ''` column on `public.listings`. New listings will be required to provide a value at the form layer; default empty string keeps existing rows valid.
+## DB migration
+Drop `price` and `currency` columns from `public.listings`.
 
-### 2. `src/routes/_authenticated.post.tsx`
-- Add `itemAge` state + a free-text `<Input>` field labeled "Item age" (placeholder: `e.g. 2 years, 6 months, brand new`).
-- Validate on submit: required, trimmed length 1–60 chars; show toast on failure.
-- Include `item_age: itemAge.trim()` in the insert payload.
+## Post form — `src/routes/_authenticated.post.tsx`
+- Remove `price` and `currency` state, the Price `<Input>`, and the Currency `<Select>`.
+- Drop `price` / `currency` from the insert payload.
 
-### 3. `src/routes/listings.$id.tsx`
-- In the Details card, add an "Item age" row above the existing "Age" (listing age in days) row, shown only when `listing.item_age` is non-empty.
-- Keep the listing-age-in-days row I added previously (now clearly the "ad age").
+## Listing detail — `src/routes/listings.$id.tsx`
+- Remove `price`/`currency` from the select, remove `priceFmt` and the `{priceFmt}` chip in the hero, remove `offers` block from JSON-LD.
 
-## Out of scope
-- No search filter on item age (free text isn't filterable cleanly).
-- No edit-flow changes beyond the post form.
+## Listing card — `src/components/ListingCard.tsx`
+- Remove `price`/`currency` from the type and the price badge (`{priceFmt}`). Replace the price chip with nothing (clean image), so cards are visual + title + location only.
 
-## Technical notes
-- Column type `text` because the value is free-form ("2 years", "brand new").
-- Length bounded to 60 chars client-side; we won't add a CHECK constraint to keep DB flexible.
+## Home — `src/routes/index.tsx`
+- Drop `price, currency` from the select. Remove `heroPrice` and any UI referencing it.
+
+## Search — `src/routes/search.tsx`
+- Remove `priceMin`/`priceMax` from schema and query string.
+- Remove `price_asc` / `price_desc` sort options (and the related `.order("price", …)` branches).
+- Remove the Min/Max price inputs, the price chip in active filters, and the meta description "by category, city, price and condition" → "by category, city and condition".
+- Drop `price`/`currency` from the listings select.
+
+## Saved searches
+- `src/lib/extras.functions.ts` — remove `priceMin`/`priceMax` from the Zod filters schema.
+- `src/routes/_authenticated.saved-searches.tsx` — remove the price summary span.
+- `src/routes/api/public/cron/match-saved-searches.ts` — remove `priceMin`/`priceMax` from the `Filters` type, remove `.gte/.lte("price", …)`, drop `price, currency` from the select.
+
+## Other listing reads
+- `src/routes/_authenticated.my-listings.tsx`, `src/routes/_authenticated.favorites.tsx`, `src/routes/sellers.$id.tsx`, `src/routes/admin.listings.tsx` — remove `price`/`currency` from selects and any UI line that prints them (admin listings: drop the `"${currency} ${price}"` chunk from the meta line).
+
+## Seed data
+- `src/lib/seed-demo.server.ts` — remove `price` from the sample type/array and drop `price` / `currency: "USD"` from the insert payload.
+
+## Out of scope (untouched)
+- `payments`, `wallets`, `crypto_topups`, `site_settings.featured_price_usd / bump_price_usd`, `PromoteDialog`, `wallet.functions.ts`, `nowpayments-ipn.ts`, admin payments/topups/settings pages, terms/privacy copy.
+
+## Notes
+- DB column drop is destructive; existing price data on listings will be lost (intentional per request).
+- `src/integrations/supabase/types.ts` regenerates automatically after the migration.
