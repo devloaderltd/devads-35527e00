@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -120,26 +121,32 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <CityProvider>
           <AuthInvalidator />
-          <div className="relative flex min-h-screen flex-col">
-            <div className="aurora-mesh" aria-hidden />
-            <PaymentTestModeBanner />
-            <Header />
-            <main className="flex-1">
-              <Outlet />
-            </main>
-            <footer className="mt-16 border-t border-white/40 bg-white/40 backdrop-blur-md py-8 text-center text-sm text-muted-foreground dark:border-white/10 dark:bg-white/5">
-              <div className="container mx-auto px-4 flex flex-col items-center gap-3">
-                <div className="h-[2px] w-24 rounded-full" style={{ background: "var(--gradient-primary)" }} />
-                <div>© {new Date().getFullYear()} <span className="font-display font-bold gradient-text">Marketly</span> — Buy and sell across the US, UK & Canada.</div>
-              </div>
-            </footer>
-          </div>
-          <CitySelectorDialog dismissable />
+          {isAdminArea ? (
+            <Outlet />
+          ) : (
+            <div className="relative flex min-h-screen flex-col">
+              <div className="aurora-mesh" aria-hidden />
+              <PaymentTestModeBanner />
+              <Header />
+              <main className="flex-1">
+                <Outlet />
+              </main>
+              <footer className="mt-16 border-t border-white/40 bg-white/40 backdrop-blur-md py-8 text-center text-sm text-muted-foreground dark:border-white/10 dark:bg-white/5">
+                <div className="container mx-auto px-4 flex flex-col items-center gap-3">
+                  <div className="h-[2px] w-24 rounded-full" style={{ background: "var(--gradient-primary)" }} />
+                  <div>© {new Date().getFullYear()} <span className="font-display font-bold gradient-text">Marketly</span> — Buy and sell across the US, UK & Canada.</div>
+                </div>
+              </footer>
+            </div>
+          )}
+          {!isAdminArea && <CitySelectorDialog dismissable />}
         </CityProvider>
       </ThemeProvider>
       <Toaster richColors position="top-right" />

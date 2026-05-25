@@ -9,10 +9,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => {
     const r = search.redirect;
-    const redirect = typeof r === "string" && r.startsWith("/") && !r.startsWith("//") && !r.startsWith("/login")
-      ? r
-      : "/";
-    return { redirect };
+    const ok =
+      typeof r === "string" &&
+      r.startsWith("/") &&
+      !r.startsWith("//") &&
+      !r.startsWith("/login") &&
+      !r.startsWith("/admin");
+    return { redirect: ok ? (r as string) : "/" };
   },
   head: () => ({ meta: [{ title: "Sign in — Marketly" }] }),
   component: LoginPage,
