@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -489,6 +519,45 @@ export type Database = {
           },
         ]
       }
+      site_settings: {
+        Row: {
+          bump_days: number
+          bump_price_usd: number
+          featured_days: number
+          featured_price_usd: number
+          id: string
+          maintenance_message: string
+          maintenance_mode: boolean
+          site_name: string
+          support_email: string
+          updated_at: string
+        }
+        Insert: {
+          bump_days?: number
+          bump_price_usd?: number
+          featured_days?: number
+          featured_price_usd?: number
+          id?: string
+          maintenance_message?: string
+          maintenance_mode?: boolean
+          site_name?: string
+          support_email?: string
+          updated_at?: string
+        }
+        Update: {
+          bump_days?: number
+          bump_price_usd?: number
+          featured_days?: number
+          featured_price_usd?: number
+          id?: string
+          maintenance_message?: string
+          maintenance_mode?: boolean
+          site_name?: string
+          support_email?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -569,6 +638,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_wallet: {
+        Args: { _amount: number; _description: string; _user_id: string }
+        Returns: number
+      }
       credit_wallet: {
         Args: {
           _amount: number
@@ -596,6 +669,16 @@ export type Database = {
       }
       increment_listing_view: {
         Args: { _listing_id: string }
+        Returns: undefined
+      }
+      log_admin_action: {
+        Args: {
+          _action: string
+          _actor: string
+          _metadata: Json
+          _target_id: string
+          _target_type: string
+        }
         Returns: undefined
       }
     }

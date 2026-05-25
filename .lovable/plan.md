@@ -1,45 +1,117 @@
-## Goal
-Replace Stripe with NOWPayments crypto gateway and add a wallet (USD credits) system. Users top up with crypto → balance stored as USD credits → spend credits on Featured ($9.99) or Bump ($2.99) promotions.
 
-## Database changes (migration)
-- New table `wallets`: `user_id` (PK, FK profiles), `balance_usd` numeric(12,2) default 0, `updated_at`. RLS: user reads own; service role writes.
-- New table `wallet_transactions`: `id`, `user_id`, `type` (`topup` | `spend` | `refund` | `adjustment`), `amount_usd` (signed), `balance_after`, `reference` (e.g. listing_id / nowpayments invoice id), `description`, `created_at`. RLS: user reads own.
-- New table `crypto_topups`: `id`, `user_id`, `nowpayments_invoice_id` / `payment_id`, `pay_currency`, `pay_amount`, `price_amount_usd`, `status` (`waiting`|`confirming`|`confirmed`|`finished`|`failed`|`expired`), `credited` boolean default false, timestamps.
-- Repurpose `payments` table for wallet spends (provider = `'wallet'`), or insert new rows on spend. Keep historical Stripe rows untouched.
-- Postgres function `credit_wallet(user_id, amount_usd, reference, description)` and `debit_wallet(...)` — SECURITY DEFINER, atomic, returns new balance, raises if insufficient funds. Grant EXECUTE to service role only.
+# Admin Control Panel Overhaul
 
-## Backend (server functions + webhook)
-- Remove: `src/lib/stripe.ts`, `src/lib/stripe.server.ts`, `src/components/StripeEmbeddedCheckout.tsx`, `src/components/PaymentTestModeBanner.tsx`, `src/utils/payments.functions.ts`, `src/routes/api/public/payments/webhook.ts`, `src/routes/checkout.return.tsx`. Uninstall `@stripe/*` and `stripe` packages.
-- New `src/lib/nowpayments.server.ts`: helper to call NOWPayments REST API (`https://api.nowpayments.io/v1`), reads `NOWPAYMENTS_API_KEY` and `NOWPAYMENTS_IPN_SECRET` from env.
-- New `src/lib/wallet.functions.ts` (server functions, all behind `requireSupabaseAuth`):
-  - `getWallet()` → balance + recent transactions
-  - `createTopupInvoice({ amountUsd })` → calls NOWPayments `/invoice` with `price_amount`, `price_currency='usd'`, `ipn_callback_url`, `success_url`, `cancel_url`, `order_id=<topup row id>`; inserts `crypto_topups` row; returns `invoice_url` to redirect to NOWPayments hosted checkout.
-  - `promoteWithWallet({ listingId, type })` → validates listing ownership, debits wallet ($9.99 or $2.99 via `debit_wallet` RPC), then applies bump (`bumped_at = now()`) or inserts `listing_promotions` (7d featured). Inserts `payments` row with `provider='wallet'`, `status='completed'`.
-- New webhook `src/routes/api/public/payments/nowpayments-ipn.ts`:
-  - Verifies HMAC-SHA512 signature header `x-nowpayments-sig` against sorted JSON body using `NOWPAYMENTS_IPN_SECRET`.
-  - On `payment_status='finished'`: looks up `crypto_topups` by `order_id`, if `credited=false` calls `credit_wallet` RPC with `price_amount_usd`, sets `credited=true`, status to `finished`. Idempotent.
-  - Other statuses: update `status` column only.
+Convert the current single-page tabbed admin into a multi-route admin app with a collapsible sidebar, richer dashboard, and deeper control panels for every area.
 
-## Frontend
-- Remove `<PaymentTestModeBanner />` from `__root.tsx`.
-- New `src/components/WalletBalanceBadge.tsx`: pill in header showing balance for authed users, click → `/wallet`.
-- New route `src/routes/_authenticated.wallet.tsx`: shows balance, "Top up" presets ($10/$25/$50/$100 + custom), transaction history table, list of pending crypto top-ups with status.
-- Top-up flow: user picks amount → calls `createTopupInvoice` → opens NOWPayments `invoice_url` in new tab → on return, wallet page polls/realtime-subscribes to `wallets` and `crypto_topups` and shows toast when credited.
-- Replace `src/components/PromoteDialog.tsx`:
-  - Show current wallet balance.
-  - Two options (Featured $9.99 / Bump $2.99). If balance sufficient → "Pay with wallet" button calls `promoteWithWallet`. If insufficient → "Top up to continue" linking to `/wallet`.
-  - Remove all Stripe imports.
-- Admin (`src/routes/admin.index.tsx`) Payments tab: show wallet spends + crypto top-ups; add a "Top-ups" subview.
+## 1. Navigation & layout
 
-## Secrets needed
-Will call `add_secret` for: `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET`. User gets these from nowpayments.io → Settings → API keys / IPN. They must set IPN callback URL in NOWPayments dashboard to `https://devads.lovable.app/api/public/payments/nowpayments-ipn`.
+Replace the horizontal `Tabs` in `admin.index.tsx` with a shadcn sidebar (`SidebarProvider`, `Sidebar`, `SidebarInset`) inside `AdminShell.tsx`.
 
-## Verification
-- Migration applies cleanly; `credit_wallet` / `debit_wallet` RPCs work.
-- `/wallet` renders, balance shows $0 for new user.
-- Top-up creates invoice, redirect works; simulate IPN with curl → balance increments, transaction row appears.
-- Insufficient balance blocks promotion; sufficient balance debits and applies promotion atomically.
-- No `@stripe` imports remain (`rg "@stripe"` empty); build passes.
+Sidebar groups:
+- **Overview** — Dashboard
+- **People** — Users, Roles, Reports
+- **Content** — Listings, Categories, Cities
+- **Finance** — Payments, Crypto Top-ups, Wallets
+- **System** — Site Settings, Audit Log
+
+Each item becomes its own route file:
+
+```
+src/routes/admin.index.tsx          → Dashboard (default)
+src/routes/admin.tsx                → Layout (sidebar + Outlet + role gate)
+src/routes/admin.users.tsx
+src/routes/admin.reports.tsx
+src/routes/admin.listings.tsx
+src/routes/admin.categories.tsx
+src/routes/admin.cities.tsx
+src/routes/admin.payments.tsx
+src/routes/admin.topups.tsx
+src/routes/admin.wallets.tsx
+src/routes/admin.settings.tsx
+src/routes/admin.audit.tsx
+```
+
+`admin.tsx` becomes the parent route — moves the role check + `AdminShell` wrapping out of `admin.index.tsx` so it runs once for the whole subtree. Mobile keeps a `SidebarTrigger` in the header; sidebar collapses to icon-only on desktop.
+
+## 2. Dashboard (admin.index.tsx)
+
+- **KPI cards** (existing four) + new: Wallet balance total, Pending top-ups, New users (7d), Revenue this month
+- **Charts** (keep current) + add: Wallet top-ups per day, Featured vs Bump split
+- **Recent activity feed** — unified stream of last 20 events (signups, listings, payments, top-ups, reports) via a single query that fans out and merges by `created_at`
+- **Quick actions panel** — buttons linking to: Pending reports, Listings awaiting moderation, Pending crypto top-ups, Low-balance wallets
+
+## 3. Users & roles (admin.users.tsx)
+
+Adds to the existing table:
+- Search by name **and** email (requires server fn since `auth.users.email` isn't in `profiles` — new `listUsersAdmin` serverFn using `supabaseAdmin.auth.admin.listUsers()` joined with `profiles` + `user_roles` + wallet balance)
+- **Ban / unban** user (sets `banned_until` via `supabaseAdmin.auth.admin.updateUserById`)
+- **Send password reset email**
+- **Delete user** (admin only, confirmation dialog)
+- **View user detail drawer** — listings, payments, wallet tx, messages count
+- Filter chips: All / Admins / Moderators / Banned
+
+## 4. Listings moderation (admin.listings.tsx)
+
+- Filter by status, category, city, search title
+- Multi-select with bulk actions: **Mark sold**, **Hide**, **Delete**, **Restore**, **Force-expire**
+- Per-row: **Edit** (opens dialog with title/desc/price/category/city/status), **Grant Featured (free)**, **Grant Bump (free)** — admin gift promotions that insert into `listing_promotions` without a payment
+- Quick stat header: total, active, hidden, sold, expired
+
+## 5. Wallet & Payments
+
+**admin.payments.tsx** — all `payments` rows with filters (provider, status, date range), CSV export.
+
+**admin.topups.tsx** — all `crypto_topups` with status filter, "Retry credit" button for stuck `finished` rows that didn't credit, link to NOWPayments invoice URL.
+
+**admin.wallets.tsx** — list all wallets sorted by balance, per-row:
+- **Credit** — manual top-up (calls `credit_wallet` RPC via new `adminCreditWallet` serverFn, type `adjustment`)
+- **Debit** — manual deduction (calls `debit_wallet`, type `adjustment`)
+- **View transactions** — drawer with `wallet_transactions` history
+
+Requires: extend `wallet_transaction_type` enum to include `adjustment` (migration), and a new `admin_adjust_wallet(_user_id, _amount, _description)` SECURITY DEFINER RPC that supports signed amounts.
+
+## 6. Site settings (admin.settings.tsx)
+
+New `site_settings` table (single-row key/value JSONB) with RLS: admins manage, public read.
+
+Sections:
+- **Categories** — add/edit/delete/reorder (existing table, no new schema)
+- **Cities** — add/edit/delete/reorder
+- **Promotion pricing** — featured price USD, bump price USD, featured duration days, bump duration days (stored in `site_settings`, consumed by `wallet.functions.ts` instead of hardcoded $9.99 / $2.99)
+- **Maintenance mode** — boolean + message, read by `__root.tsx` to show banner / block posting
+- **Branding** — site name, support email
+
+## 7. Audit log (admin.audit.tsx)
+
+New `audit_log` table: `id, actor_id, action, target_type, target_id, metadata jsonb, created_at`. RLS admin-only read; inserts via SECURITY DEFINER helper `log_admin_action()` called from every mutating admin serverFn (role changes, bans, deletions, wallet adjustments, settings changes, free promotions).
+
+## Technical details
+
+**New server functions** (`src/lib/admin.functions.ts` extended):
+- `listUsersAdmin({ q, filter })` — uses `supabaseAdmin` for email + ban status
+- `banUser({ userId, until })`, `unbanUser`, `deleteUser`, `sendPasswordReset`
+- `adminCreditWallet({ userId, amount, description })`
+- `adminDebitWallet({ userId, amount, description })`
+- `retryTopupCredit({ topupId })`
+- `grantPromotion({ listingId, type, days })`
+- `bulkUpdateListings({ ids, action })`
+- `getSiteSettings`, `updateSiteSettings`
+- `getAuditLog({ limit, cursor })`
+- `getRecentActivity()` — for dashboard feed
+
+All gated by `requireSupabaseAuth` + internal `has_role(userId, 'admin')` check; mutating ones call `log_admin_action`.
+
+**Migrations**:
+1. `ALTER TYPE wallet_transaction_type ADD VALUE 'adjustment'`
+2. `CREATE TABLE site_settings` + seed default row
+3. `CREATE TABLE audit_log` + RLS + `log_admin_action()` function
+4. `admin_adjust_wallet()` RPC
+
+**Files removed from `admin.index.tsx`**: each `*Tab` component moves into its own route file; the file becomes only the Dashboard.
 
 ## Out of scope
-- Auto-refund of failed promotions, multi-currency wallets, withdrawal/payout from wallet, referral credits.
+
+- Email broadcast to users
+- User impersonation (security-sensitive, separate ticket)
+- Real-time admin notifications
+- Server-side CSV streaming (client-side CSV is fine for current data sizes)
