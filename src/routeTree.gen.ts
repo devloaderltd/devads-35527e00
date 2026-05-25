@@ -17,8 +17,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SellersIdRouteImport } from './routes/sellers.$id'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
-import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated.wallet'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated.profile'
 import { Route as AuthenticatedPostRouteImport } from './routes/_authenticated.post'
 import { Route as AuthenticatedMyListingsRouteImport } from './routes/_authenticated.my-listings'
@@ -29,7 +29,7 @@ import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authen
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api/public/seed-demo'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
 import { Route as AuthenticatedDebugSessionRouteImport } from './routes/_authenticated.debug.session'
-import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicPaymentsNowpaymentsIpnRouteImport } from './routes/api/public/payments/nowpayments-ipn'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -70,15 +70,15 @@ const ListingsIdRoute = ListingsIdRouteImport.update({
   path: '/listings/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
-  id: '/checkout/return',
-  path: '/checkout/return',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
@@ -133,10 +133,10 @@ const AuthenticatedDebugSessionRoute =
     path: '/debug/session',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const ApiPublicPaymentsWebhookRoute =
-  ApiPublicPaymentsWebhookRouteImport.update({
-    id: '/api/public/payments/webhook',
-    path: '/api/public/payments/webhook',
+const ApiPublicPaymentsNowpaymentsIpnRoute =
+  ApiPublicPaymentsNowpaymentsIpnRouteImport.update({
+    id: '/api/public/payments/nowpayments-ipn',
+    path: '/api/public/payments/nowpayments-ipn',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -151,8 +151,8 @@ export interface FileRoutesByFullPath {
   '/my-listings': typeof AuthenticatedMyListingsRoute
   '/post': typeof AuthenticatedPostRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/wallet': typeof AuthenticatedWalletRoute
   '/admin/login': typeof AdminLoginRoute
-  '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -160,7 +160,7 @@ export interface FileRoutesByFullPath {
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -172,8 +172,8 @@ export interface FileRoutesByTo {
   '/my-listings': typeof AuthenticatedMyListingsRoute
   '/post': typeof AuthenticatedPostRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/wallet': typeof AuthenticatedWalletRoute
   '/admin/login': typeof AdminLoginRoute
-  '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
   '/admin': typeof AdminIndexRoute
@@ -181,7 +181,7 @@ export interface FileRoutesByTo {
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -196,8 +196,8 @@ export interface FileRoutesById {
   '/_authenticated/my-listings': typeof AuthenticatedMyListingsRoute
   '/_authenticated/post': typeof AuthenticatedPostRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/admin/login': typeof AdminLoginRoute
-  '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -205,7 +205,7 @@ export interface FileRoutesById {
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -220,8 +220,8 @@ export interface FileRouteTypes {
     | '/my-listings'
     | '/post'
     | '/profile'
+    | '/wallet'
     | '/admin/login'
-    | '/checkout/return'
     | '/listings/$id'
     | '/sellers/$id'
     | '/admin/'
@@ -229,7 +229,7 @@ export interface FileRouteTypes {
     | '/messages/$threadId'
     | '/api/public/seed-demo'
     | '/messages/'
-    | '/api/public/payments/webhook'
+    | '/api/public/payments/nowpayments-ipn'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -241,8 +241,8 @@ export interface FileRouteTypes {
     | '/my-listings'
     | '/post'
     | '/profile'
+    | '/wallet'
     | '/admin/login'
-    | '/checkout/return'
     | '/listings/$id'
     | '/sellers/$id'
     | '/admin'
@@ -250,7 +250,7 @@ export interface FileRouteTypes {
     | '/messages/$threadId'
     | '/api/public/seed-demo'
     | '/messages'
-    | '/api/public/payments/webhook'
+    | '/api/public/payments/nowpayments-ipn'
   id:
     | '__root__'
     | '/'
@@ -264,8 +264,8 @@ export interface FileRouteTypes {
     | '/_authenticated/my-listings'
     | '/_authenticated/post'
     | '/_authenticated/profile'
+    | '/_authenticated/wallet'
     | '/admin/login'
-    | '/checkout/return'
     | '/listings/$id'
     | '/sellers/$id'
     | '/admin/'
@@ -273,7 +273,7 @@ export interface FileRouteTypes {
     | '/_authenticated/messages/$threadId'
     | '/api/public/seed-demo'
     | '/_authenticated/messages/'
-    | '/api/public/payments/webhook'
+    | '/api/public/payments/nowpayments-ipn'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -283,12 +283,11 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
   AdminLoginRoute: typeof AdminLoginRoute
-  CheckoutReturnRoute: typeof CheckoutReturnRoute
   ListingsIdRoute: typeof ListingsIdRoute
   SellersIdRoute: typeof SellersIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
-  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicPaymentsNowpaymentsIpnRoute: typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -349,19 +348,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/checkout/return': {
-      id: '/checkout/return'
-      path: '/checkout/return'
-      fullPath: '/checkout/return'
-      preLoaderRoute: typeof CheckoutReturnRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/login': {
       id: '/admin/login'
       path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/wallet': {
+      id: '/_authenticated/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof AuthenticatedWalletRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
@@ -433,11 +432,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDebugSessionRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/api/public/payments/webhook': {
-      id: '/api/public/payments/webhook'
-      path: '/api/public/payments/webhook'
-      fullPath: '/api/public/payments/webhook'
-      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+    '/api/public/payments/nowpayments-ipn': {
+      id: '/api/public/payments/nowpayments-ipn'
+      path: '/api/public/payments/nowpayments-ipn'
+      fullPath: '/api/public/payments/nowpayments-ipn'
+      preLoaderRoute: typeof ApiPublicPaymentsNowpaymentsIpnRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -465,6 +464,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMyListingsRoute: typeof AuthenticatedMyListingsRoute
   AuthenticatedPostRoute: typeof AuthenticatedPostRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedDebugSessionRoute: typeof AuthenticatedDebugSessionRoute
 }
 
@@ -475,6 +475,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMyListingsRoute: AuthenticatedMyListingsRoute,
   AuthenticatedPostRoute: AuthenticatedPostRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedDebugSessionRoute: AuthenticatedDebugSessionRoute,
 }
 
@@ -489,12 +490,11 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
   AdminLoginRoute: AdminLoginRoute,
-  CheckoutReturnRoute: CheckoutReturnRoute,
   ListingsIdRoute: ListingsIdRoute,
   SellersIdRoute: SellersIdRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
-  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicPaymentsNowpaymentsIpnRoute: ApiPublicPaymentsNowpaymentsIpnRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

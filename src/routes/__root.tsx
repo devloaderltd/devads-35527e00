@@ -11,7 +11,7 @@ import {
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+
 import { CityProvider } from "@/lib/city-context";
 import { CitySelectorDialog } from "@/components/CitySelectorDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -133,7 +133,7 @@ function RootComponent() {
           ) : (
             <div className="relative flex min-h-screen flex-col">
               <div className="aurora-mesh" aria-hidden />
-              <PaymentTestModeBanner />
+
               <Header />
               <main className="flex-1">
                 <Outlet />

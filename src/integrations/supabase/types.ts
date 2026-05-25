@@ -82,6 +82,54 @@ export type Database = {
         }
         Relationships: []
       }
+      crypto_topups: {
+        Row: {
+          created_at: string
+          credited: boolean
+          id: string
+          invoice_url: string | null
+          np_invoice_id: string | null
+          np_payment_id: string | null
+          pay_amount: number | null
+          pay_currency: string | null
+          price_amount_usd: number
+          raw_last_ipn: Json | null
+          status: Database["public"]["Enums"]["crypto_topup_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credited?: boolean
+          id?: string
+          invoice_url?: string | null
+          np_invoice_id?: string | null
+          np_payment_id?: string | null
+          pay_amount?: number | null
+          pay_currency?: string | null
+          price_amount_usd: number
+          raw_last_ipn?: Json | null
+          status?: Database["public"]["Enums"]["crypto_topup_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credited?: boolean
+          id?: string
+          invoice_url?: string | null
+          np_invoice_id?: string | null
+          np_payment_id?: string | null
+          pay_amount?: number | null
+          pay_currency?: string | null
+          price_amount_usd?: number
+          raw_last_ipn?: Json | null
+          status?: Database["public"]["Enums"]["crypto_topup_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -462,11 +510,83 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount_usd: number
+          balance_after: number
+          created_at: string
+          description: string | null
+          id: string
+          reference: string | null
+          type: Database["public"]["Enums"]["wallet_tx_type"]
+          user_id: string
+        }
+        Insert: {
+          amount_usd: number
+          balance_after: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference?: string | null
+          type: Database["public"]["Enums"]["wallet_tx_type"]
+          user_id: string
+        }
+        Update: {
+          amount_usd?: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference?: string | null
+          type?: Database["public"]["Enums"]["wallet_tx_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance_usd: number
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_usd?: number
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_usd?: number
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      credit_wallet: {
+        Args: {
+          _amount: number
+          _description: string
+          _reference: string
+          _user_id: string
+        }
+        Returns: number
+      }
+      debit_wallet: {
+        Args: {
+          _amount: number
+          _description: string
+          _reference: string
+          _user_id: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -482,6 +602,16 @@ export type Database = {
     Enums: {
       app_role: "user" | "moderator" | "admin"
       country_code: "US" | "UK" | "CA"
+      crypto_topup_status:
+        | "waiting"
+        | "confirming"
+        | "confirmed"
+        | "sending"
+        | "partially_paid"
+        | "finished"
+        | "failed"
+        | "expired"
+        | "refunded"
       listing_condition:
         | "new"
         | "like_new"
@@ -493,6 +623,7 @@ export type Database = {
       payment_status: "pending" | "completed" | "failed" | "refunded"
       promotion_type: "featured" | "bump" | "highlight"
       report_status: "open" | "reviewing" | "resolved" | "dismissed"
+      wallet_tx_type: "topup" | "spend" | "refund" | "adjustment"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -622,6 +753,17 @@ export const Constants = {
     Enums: {
       app_role: ["user", "moderator", "admin"],
       country_code: ["US", "UK", "CA"],
+      crypto_topup_status: [
+        "waiting",
+        "confirming",
+        "confirmed",
+        "sending",
+        "partially_paid",
+        "finished",
+        "failed",
+        "expired",
+        "refunded",
+      ],
       listing_condition: [
         "new",
         "like_new",
@@ -634,6 +776,7 @@ export const Constants = {
       payment_status: ["pending", "completed", "failed", "refunded"],
       promotion_type: ["featured", "bump", "highlight"],
       report_status: ["open", "reviewing", "resolved", "dismissed"],
+      wallet_tx_type: ["topup", "spend", "refund", "adjustment"],
     },
   },
 } as const
