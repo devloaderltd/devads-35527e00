@@ -9,7 +9,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => {
     const r = search.redirect;
-    const redirect = typeof r === "string" && r.startsWith("/") && !r.startsWith("//")
+    const redirect = typeof r === "string" && r.startsWith("/") && !r.startsWith("//") && !r.startsWith("/login")
       ? r
       : "/";
     return { redirect };
@@ -32,7 +32,8 @@ function LoginPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back!");
-    const target = redirect && redirect !== "/login" ? redirect : "/";
+    await supabase.auth.getSession();
+    const target = redirect && !redirect.startsWith("/login") ? redirect : "/";
     navigate({ to: target, replace: true });
   };
 
