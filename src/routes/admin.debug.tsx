@@ -215,9 +215,8 @@ function InspectorTab() {
   );
 }
 
-function formatCell(v: unknown): string {
+function formatCell(v: string | number | boolean | null | undefined): string {
   if (v === null || v === undefined) return "—";
   if (typeof v === "string") return v.length > 40 ? v.slice(0, 40) + "…" : v;
-  if (typeof v === "object") return JSON.stringify(v).slice(0, 60);
   return String(v);
 }
