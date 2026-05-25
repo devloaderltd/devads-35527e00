@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
+import { downloadCSV, toCSV } from "@/lib/csv";
 import {
   listUsersAdmin, setUserRole, banUser, unbanUser, deleteUserAdmin, sendPasswordReset,
   adminAdjustWallet,
@@ -78,6 +79,7 @@ function UsersPage() {
           <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} className="rounded-full capitalize" onClick={() => setFilter(f)}>{f}</Button>
         ))}
         <Input placeholder="Search name or email…" value={qInput} onChange={(e) => setQInput(e.target.value)} className="ml-auto w-full max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
+        <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => downloadCSV(`users-${new Date().toISOString().slice(0,10)}`, toCSV(users.map(u => ({ ...u, roles: u.roles.join("|") }))))}><Download className="mr-1 h-3.5 w-3.5" /> CSV</Button>
       </div>
       <Panel>
         <div className="space-y-2">

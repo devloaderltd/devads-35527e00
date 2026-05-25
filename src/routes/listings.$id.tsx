@@ -38,7 +38,7 @@ function ListingDetail() {
         .select(`
           *,
           categories(name, slug),
-          cities(name, region, country),
+          cities(name, region, country, slug),
           listing_images(url, sort_order)
         `)
         .eq("id", id)
@@ -59,6 +59,20 @@ function ListingDetail() {
     if (!listing?.id) return;
     supabase.rpc("increment_listing_view", { _listing_id: listing.id });
   }, [listing?.id]);
+
+  // Keyboard nav for gallery + lightbox
+  useEffect(() => {
+    if (!listing) return;
+    const len = (listing.listing_images?.length ?? 0) || 1;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") setActiveIdx((i) => (i - 1 + len) % len);
+      else if (e.key === "ArrowRight") setActiveIdx((i) => (i + 1) % len);
+      else if (e.key === "Escape") setLightbox(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [listing]);
+
 
   // Similar listings (same category, prefer same city)
   const { data: similar } = useQuery({
@@ -152,9 +166,33 @@ function ListingDetail() {
 
   return (
     <div className="container mx-auto px-4 py-6">
+      {/* Breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+        <Link to="/" className="hover:text-foreground">Home</Link>
+        <span>›</span>
+        {listing.categories && (
+          <>
+            <Link to="/search" search={{ category: listing.categories.slug } as any} className="hover:text-foreground">
+              {listing.categories.name}
+            </Link>
+            <span>›</span>
+          </>
+        )}
+        {listing.cities && (
+          <>
+            <Link to="/search" search={{ city: listing.cities.slug, country: listing.cities.country } as any} className="hover:text-foreground">
+              {listing.cities.name}
+            </Link>
+            <span>›</span>
+          </>
+        )}
+        <span className="truncate text-foreground">{listing.title}</span>
+      </nav>
+
       <Link to="/search" className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-4 w-4" /> Back to results
       </Link>
+
 
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
         <div>
@@ -375,7 +413,7 @@ function ListingDetail() {
 
       {lightbox && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/85 p-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/90 p-4"
           onClick={() => setLightbox(false)}
         >
           <img
@@ -384,8 +422,55 @@ function ListingDetail() {
             className="max-h-[90vh] max-w-[95vw] rounded-xl object-contain shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); prev(); }}
+                aria-label="Previous image"
+                className="absolute left-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-lg hover:bg-white"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); next(); }}
+                aria-label="Next image"
+                className="absolute right-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-lg hover:bg-white"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-3 py-1 text-sm font-medium text-white">
+                {activeIdx + 1} / {images.length}
+              </div>
+            </>
+          )}
         </div>
       )}
+
+      {/* JSON-LD Product schema for richer search results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: listing.title,
+            description: listing.description?.slice(0, 5000) ?? "",
+            image: images.map((i: any) => i.url).slice(0, 6),
+            category: listing.categories?.name,
+            offers: listing.price != null ? {
+              "@type": "Offer",
+              price: Number(listing.price),
+              priceCurrency: listing.currency || "USD",
+              availability: listing.status === "active"
+                ? "https://schema.org/InStock"
+                : "https://schema.org/SoldOut",
+              url: typeof window !== "undefined" ? window.location.href : undefined,
+            } : undefined,
+            seller: seller ? { "@type": "Person", name: seller.display_name } : undefined,
+            areaServed: listing.cities ? `${listing.cities.name}, ${listing.cities.region}` : undefined,
+          }),
+        }}
+      />
     </div>
   );
 }

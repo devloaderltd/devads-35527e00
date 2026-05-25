@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
+import { SiteBanner } from "@/components/SiteBanner";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin } from "lucide-react";
+import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Users } from "lucide-react";
 import { useCity } from "@/lib/city-context";
 import catForSale from "@/assets/cat-for-sale.jpg";
 import catVehicles from "@/assets/cat-vehicles.jpg";
@@ -79,6 +80,23 @@ function Home() {
     },
   });
 
+  const { data: siteStats } = useQuery({
+    queryKey: ["site-stats"],
+    queryFn: async () => {
+      const [listingsRes, sellersRes, citiesRes] = await Promise.all([
+        supabase.from("listings").select("id", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("cities").select("id", { count: "exact", head: true }),
+      ]);
+      return {
+        listings: listingsRes.count ?? 0,
+        sellers: sellersRes.count ?? 0,
+        cities: citiesRes.count ?? 0,
+      };
+    },
+    staleTime: 10 * 60_000,
+  });
+
   const featured = listings?.filter((l: any) =>
     l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date())
   ) ?? [];
@@ -99,7 +117,8 @@ function Home() {
   const petsCat = cat("pets");
 
   return (
-    <div className="pt-4">
+    <div className="pt-0">
+      <SiteBanner />
       {/* Hero band */}
       <section className="container mx-auto px-4 pt-6">
         <div className="relative overflow-hidden rounded-[2rem] glass-strong p-6 md:p-12 shadow-[var(--shadow-float)]">
@@ -334,6 +353,30 @@ function Home() {
         )}
       </section>
       </>)}
+
+      {/* Trust strip */}
+      <section className="container mx-auto px-4 pb-16">
+        <div className="grid grid-cols-1 gap-4 rounded-[2rem] glass p-6 md:grid-cols-4 md:p-8">
+          <TrustTile icon={<Sparkles className="h-5 w-5" />} value={(siteStats?.listings ?? 0).toLocaleString()} label="Active listings" />
+          <TrustTile icon={<Users className="h-5 w-5" />} value={(siteStats?.sellers ?? 0).toLocaleString()} label="Trusted sellers" />
+          <TrustTile icon={<MapPin className="h-5 w-5" />} value={(siteStats?.cities ?? 0).toLocaleString()} label="Cities covered" />
+          <TrustTile icon={<ShieldCheck className="h-5 w-5" />} value="100%" label="Free to post" />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TrustTile({ icon, value, label }: { icon: React.ReactNode; value: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[image:var(--gradient-primary)] text-white shadow-[var(--shadow-glow-primary)]">
+        {icon}
+      </span>
+      <div>
+        <div className="font-display text-2xl font-bold leading-none">{value}</div>
+        <div className="text-xs text-muted-foreground">{label}</div>
+      </div>
     </div>
   );
 }

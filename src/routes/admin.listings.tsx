@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { bulkUpdateListings, grantPromotion } from "@/lib/admin.functions";
+import { downloadCSV, toCSV } from "@/lib/csv";
+import { Download } from "lucide-react";
 
 export const Route = createFileRoute("/admin/listings")({ component: ListingsPage });
 
@@ -56,6 +58,7 @@ function ListingsPage() {
           <Button key={s} size="sm" variant={statusFilter === s ? "default" : "outline"} className="rounded-full capitalize" onClick={() => setStatusFilter(s)}>{s}</Button>
         ))}
         <Input placeholder="Search title…" value={q} onChange={(e) => setQ(e.target.value)} className="ml-auto w-full max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
+        <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => downloadCSV(`listings-${new Date().toISOString().slice(0,10)}`, toCSV(filtered))}><Download className="mr-1 h-3.5 w-3.5" /> CSV</Button>
       </div>
 
       {selected.size > 0 && (
