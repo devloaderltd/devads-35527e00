@@ -20,7 +20,7 @@ function MyListings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select(`id, title, price, currency, status, created_at,
+        .select(`id, title, status, created_at,
           cities(name, region, country),
           listing_images(url, sort_order)`)
         .eq("user_id", user!.id)

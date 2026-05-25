@@ -65,7 +65,7 @@ function Home() {
       const { data, error } = await supabase
         .from("listings")
         .select(`
-          id, title, price, currency, condition, created_at, bumped_at,
+          id, title, condition, created_at, bumped_at,
           categories(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),
@@ -107,9 +107,6 @@ function Home() {
 
   const heroFeatured = featured[0] ?? listings?.[0];
   const heroImg = heroFeatured?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ?? emptyListingImg;
-  const heroPrice = heroFeatured?.price != null
-    ? new Intl.NumberFormat("en-US", { style: "currency", currency: heroFeatured.currency || "USD", maximumFractionDigits: 0 }).format(Number(heroFeatured.price))
-    : null;
 
   const cat = (slug: string) => categories?.find((c) => c.slug === slug);
   const electronicsCat = cat("electronics");
@@ -174,11 +171,6 @@ function Home() {
                     <p className="mt-1 text-sm text-white/80">
                       {heroFeatured.cities.name}, {heroFeatured.cities.region}
                     </p>
-                  )}
-                  {heroPrice && (
-                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-base font-bold text-foreground backdrop-blur-md">
-                      {heroPrice}
-                    </div>
                   )}
                 </div>
               </div>

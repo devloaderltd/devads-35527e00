@@ -73,8 +73,6 @@ const filtersSchema = z.object({
   category: z.string().max(60).optional(),
   city: z.string().max(60).optional(),
   country: z.string().max(8).optional(),
-  priceMin: z.number().min(0).max(1e9).optional(),
-  priceMax: z.number().min(0).max(1e9).optional(),
   condition: z.string().max(40).optional(),
   sort: z.string().max(20).optional(),
 }).strict();

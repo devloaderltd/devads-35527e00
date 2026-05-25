@@ -38,7 +38,7 @@ function Page() {
                   {f.q && <span>"{f.q}"</span>}
                   {f.category && <span>· {f.category}</span>}
                   {f.city && <span>· {f.city}</span>}
-                  {(f.priceMin || f.priceMax) && <span>· ${f.priceMin ?? 0}–${f.priceMax ?? "∞"}</span>}
+                  
                 </div>
               </div>
               <div className="flex items-center gap-2 text-xs">

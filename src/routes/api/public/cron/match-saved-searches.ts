@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-type Filters = { q?: string; category?: string; city?: string; country?: string; priceMin?: number; priceMax?: number; condition?: string };
+type Filters = { q?: string; category?: string; city?: string; country?: string; condition?: string };
 
 export const Route = createFileRoute("/api/public/cron/match-saved-searches")({
   server: {
@@ -15,10 +15,8 @@ export const Route = createFileRoute("/api/public/cron/match-saved-searches")({
         for (const s of searches) {
           const filters = (s.filters ?? {}) as Filters;
           let q = supabaseAdmin.from("listings")
-            .select("id, title, category_id, city_id, price, currency, categories(slug), cities(slug, country)")
+            .select("id, title, category_id, city_id, categories(slug), cities(slug, country)")
             .eq("status", "active").gte("created_at", s.last_notified_at).limit(50);
-          if (filters.priceMin != null) q = q.gte("price", filters.priceMin);
-          if (filters.priceMax != null) q = q.lte("price", filters.priceMax);
           if (filters.q) q = q.textSearch("search_tsv", filters.q, { type: "websearch" });
           const { data: matches } = await q;
           const filtered = (matches ?? []).filter((m: { categories: { slug: string } | null; cities: { slug: string; country: string } | null }) => {

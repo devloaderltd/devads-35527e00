@@ -83,7 +83,7 @@ function ListingDetail() {
     queryFn: async () => {
       const { data } = await supabase
         .from("listings")
-        .select(`id, title, price, currency, bumped_at, city_id,
+        .select(`id, title, bumped_at, city_id,
           cities(name, region, country),
           listing_images(url, sort_order),
           listing_promotions(type, ends_at)`)
@@ -155,9 +155,6 @@ function ListingDetail() {
 
   const images = (listing.listing_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
   const hero = images[activeIdx]?.url ?? listingPlaceholder;
-  const priceFmt = listing.price != null
-    ? new Intl.NumberFormat("en-US", { style: "currency", currency: listing.currency || "USD", maximumFractionDigits: 0 }).format(Number(listing.price))
-    : "Contact for price";
 
   const prev = () => setActiveIdx((i) => (i - 1 + Math.max(images.length, 1)) % Math.max(images.length, 1));
   const next = () => setActiveIdx((i) => (i + 1) % Math.max(images.length, 1));
@@ -324,9 +321,7 @@ function ListingDetail() {
 
         <div>
           <h1 className="font-display text-2xl font-bold md:text-3xl">{listing.title}</h1>
-          <div className="mt-2 inline-block rounded-xl bg-[image:var(--gradient-primary)] px-3 py-1 text-2xl font-extrabold text-white shadow-[var(--shadow-glow-primary)]">
-            {priceFmt}
-          </div>
+
 
           <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
             {listing.cities && (
@@ -528,15 +523,6 @@ function ListingDetail() {
             description: listing.description?.slice(0, 5000) ?? "",
             image: images.map((i: any) => i.url).slice(0, 6),
             category: listing.categories?.name,
-            offers: listing.price != null ? {
-              "@type": "Offer",
-              price: Number(listing.price),
-              priceCurrency: listing.currency || "USD",
-              availability: listing.status === "active"
-                ? "https://schema.org/InStock"
-                : "https://schema.org/SoldOut",
-              url: typeof window !== "undefined" ? window.location.href : undefined,
-            } : undefined,
             seller: seller ? { "@type": "Person", name: seller.display_name } : undefined,
             areaServed: listing.cities ? `${listing.cities.name}, ${listing.cities.region}` : undefined,
           }),

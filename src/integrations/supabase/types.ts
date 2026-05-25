@@ -404,12 +404,10 @@ export type Database = {
           city_id: string
           condition: Database["public"]["Enums"]["listing_condition"]
           created_at: string
-          currency: string
           description: string
           expires_at: string
           id: string
           item_age: string
-          price: number | null
           search_tsv: unknown
           status: Database["public"]["Enums"]["listing_status"]
           title: string
@@ -423,12 +421,10 @@ export type Database = {
           city_id: string
           condition?: Database["public"]["Enums"]["listing_condition"]
           created_at?: string
-          currency?: string
           description: string
           expires_at?: string
           id?: string
           item_age?: string
-          price?: number | null
           search_tsv?: unknown
           status?: Database["public"]["Enums"]["listing_status"]
           title: string
@@ -442,12 +438,10 @@ export type Database = {
           city_id?: string
           condition?: Database["public"]["Enums"]["listing_condition"]
           created_at?: string
-          currency?: string
           description?: string
           expires_at?: string
           id?: string
           item_age?: string
-          price?: number | null
           search_tsv?: unknown
           status?: Database["public"]["Enums"]["listing_status"]
           title?: string

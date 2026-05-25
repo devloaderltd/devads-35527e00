@@ -23,8 +23,6 @@ function PostListing() {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [currency, setCurrency] = useState("USD");
   const [itemAge, setItemAge] = useState("");
   
   const [categoryId, setCategoryId] = useState("");
@@ -73,8 +71,6 @@ function PostListing() {
           user_id: user.id,
           title: title.trim(),
           description: description.trim(),
-          price: price ? Number(price) : null,
-          currency,
           item_age: ageTrimmed,
           category_id: categoryId,
           city_id: cityId,
@@ -127,23 +123,6 @@ function PostListing() {
           <Textarea id="desc" required rows={6} maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Condition, size, history, why you're selling…" className="bg-white/70" />
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div className="space-y-2 col-span-2 sm:col-span-1">
-            <Label>Price</Label>
-            <Input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0 for free" className="bg-white/70" />
-          </div>
-          <div className="space-y-2">
-            <Label>Currency</Label>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger className="bg-white/70"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD $</SelectItem>
-                <SelectItem value="GBP">GBP £</SelectItem>
-                <SelectItem value="CAD">CAD $</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
 
         <div className="space-y-2">
           <Label htmlFor="item-age">Age</Label>

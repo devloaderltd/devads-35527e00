@@ -6,8 +6,6 @@ import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 type Listing = {
   id: string;
   title: string;
-  price: number | null;
-  currency: string;
   condition?: string;
   bumped_at?: string;
   cities?: { name: string; region: string; country: string } | null;
@@ -17,11 +15,6 @@ type Listing = {
 
 export function ListingCard({ listing, featured }: { listing: Listing; featured?: boolean }) {
   const img = listing.listing_images?.sort((a, b) => a.sort_order - b.sort_order)[0]?.url;
-  const priceFmt =
-    listing.price != null
-      ? new Intl.NumberFormat("en-US", { style: "currency", currency: listing.currency || "USD", maximumFractionDigits: 0 }).format(Number(listing.price))
-      : "Contact";
-
   const isFeatured = featured || listing.listing_promotions?.some((p) => new Date(p.ends_at) > new Date());
   const isBumped = !isFeatured && listing.bumped_at && (Date.now() - new Date(listing.bumped_at).getTime()) < 24 * 60 * 60 * 1000;
 
@@ -39,12 +32,6 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
           className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
-        <span
-          className="absolute right-2 top-2 rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-md"
-          style={{ background: "var(--gradient-primary)", backgroundSize: "200% 200%" }}
-        >
-          {priceFmt}
-        </span>
         {isFeatured && (
           <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full btn-gradient px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
             <Sparkles className="h-3 w-3" /> Premium
