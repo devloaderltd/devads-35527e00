@@ -120,6 +120,13 @@ function DashboardPage() {
         </Button>
       </div>
 
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <QuickAction to="/post" icon={<Plus className="h-4 w-4" />} label="New listing" accent />
+        <QuickAction to="/saved-searches" icon={<BookmarkCheck className="h-4 w-4" />} label="Saved searches" />
+        <QuickAction to="/messages" icon={<MessageSquare className="h-4 w-4" />} label="Messages" />
+        <QuickAction to="/wallet" icon={<Wallet className="h-4 w-4" />} label={`Wallet · $${Number(wallet ?? 0).toFixed(2)}`} />
+      </div>
+
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-5">
         <KpiCard icon={<Package className="h-5 w-5" />} label="Total listings" value={stats?.totalListings ?? "—"} />
         <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="Active" value={stats?.activeListings ?? "—"} />
