@@ -95,8 +95,15 @@ function ThreadView() {
 
   return (
     <div className="flex h-[70vh] flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-white/40 p-3">
-        <div className="min-w-0 text-sm">
+      <div className="flex items-center gap-2 border-b border-white/40 p-3">
+        <Link
+          to="/messages"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/60 backdrop-blur hover:bg-white md:hidden"
+          aria-label="Back to conversations"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Link>
+        <div className="min-w-0 flex-1 text-sm">
           <div className="text-xs text-muted-foreground">Listing</div>
           {thread?.listing ? (
             <Link to="/listings/$id" params={{ id: thread.listing.id }} className="block truncate font-medium hover:text-primary">
@@ -122,7 +129,7 @@ function ThreadView() {
                 {(thread.other.display_name || "?").slice(0, 1).toUpperCase()}
               </div>
             )}
-            <span className="max-w-[10rem] truncate">{thread.other.display_name}</span>
+            <span className="hidden max-w-[10rem] truncate sm:inline">{thread.other.display_name}</span>
           </Link>
         )}
       </div>
