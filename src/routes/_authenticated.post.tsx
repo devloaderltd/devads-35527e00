@@ -23,8 +23,6 @@ function PostListing() {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [currency, setCurrency] = useState("USD");
   const [itemAge, setItemAge] = useState("");
   
   const [categoryId, setCategoryId] = useState("");
@@ -73,8 +71,6 @@ function PostListing() {
           user_id: user.id,
           title: title.trim(),
           description: description.trim(),
-          price: price ? Number(price) : null,
-          currency,
           item_age: ageTrimmed,
           category_id: categoryId,
           city_id: cityId,
