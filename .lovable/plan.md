@@ -1,58 +1,43 @@
-## Unfinished / weak spots found
+## Goals
 
-- **Seller info is minimal** — listing detail only shows `display_name`. No avatar, member-since, location, other listings, or a way to view the seller's profile.
-- **No public seller profile page** — clicking a seller name goes nowhere.
-- **No "bio" field on profiles** — sellers can't introduce themselves.
-- **No favorites toggle** on listing cards or detail page — `favorites` table exists, route exists, but nothing writes to it.
-- **No image carousel** on listing detail — only the first image is large; the rest are thumbnails with no click behavior.
-- **No share button** on listings.
-- **No profile edit page** — users can't change their display_name, avatar, phone, city, or bio.
-- **No "Other listings by this seller"** rail on listing pages.
-- **No view-count increment** — `listings.view_count` exists but never increments.
+1. Listings should support a real photo gallery, not just one image.
+2. Cap uploads at 5 photos per listing.
+3. Seed extra photos for the existing demo listings (which only have 1 each).
+4. Show the seller's avatar on the listing page (avatars are currently empty).
+5. Show the seller's contact info (phone + email) on the listing page.
+
+## What's already there
+
+- The listing detail page (`src/routes/listings.$id.tsx`) already renders a carousel + thumbnails + lightbox — the gallery UI works, it just has no extra images to show.
+- The post form (`src/routes/_authenticated.post.tsx`) already accepts up to 8 photos with previews — needs to be reduced to 5.
+- The seller card on the listing page already shows an avatar slot — but `profiles.avatar_url` is `null` for every seeded user, so it always falls back to initials.
+- `profiles.phone` exists but is empty; email lives in `auth.users`, not in `profiles`.
 
 ## Plan
 
-### 1. DB additions (single migration)
-- Add `bio text` and `created_at` is already there. Add `bio` only.
-- Add SQL function `increment_listing_view(listing_id uuid)` (SECURITY DEFINER) that increments `listings.view_count`. Grant execute to `anon` and `authenticated` so public viewers can bump it. RLS already restricts row visibility — the function just bumps a counter on active listings.
-- No other schema changes.
+### 1. Post form — cap at 5 photos
+- Change the limit in `_authenticated.post.tsx` from 8 → 5 (slice, guard, and the "Photos (up to 8)" label).
 
-### 2. New route — public seller profile (`src/routes/sellers.$id.tsx`)
-- Hero card: avatar, display_name, city + country, member-since, bio, listing count.
-- "Active listings" grid (uses `ListingCard`).
-- SEO `head()` with seller name + canonical URL.
-- Linkable from listing detail and message threads.
+### 2. Seed photos for demo listings
+- Generate 4 extra marketplace-style stock images per existing listing using `imagegen` (themed roughly by category: electronics, furniture, vehicles, fashion, etc.) and upload them to the `listing-images` bucket, then insert rows in `listing_images` with `sort_order` 1–4 so the existing cover stays as `sort_order: 0`.
+- This makes the gallery + thumbnails + lightbox visible on every demo listing.
 
-### 3. New route — edit profile (`src/routes/_authenticated.profile.tsx`)
-- Form: display_name, bio (textarea), phone, city select, avatar upload (uses `listing-images` bucket under `avatars/<uid>/…`).
-- Save updates `profiles` row. Toast on success.
-- Header dropdown gets a "Profile" link.
+### 3. Avatars for demo sellers
+- Generate a clean avatar portrait for each of the 6 seeded profiles, upload to `listing-images/avatars/<user_id>.jpg`, and update `profiles.avatar_url`.
+- The listing detail seller card and the seller profile page already read `avatar_url`, so no UI change needed.
 
-### 4. Listing detail enrichments (`src/routes/listings.$id.tsx`)
-- Replace plain seller block with a glass card: avatar, name (linked to `/sellers/$id`), member-since, city, listing count badge, **View profile** button next to Message seller.
-- **Image carousel**: clicking a thumbnail swaps the hero; left/right arrows; keyboard nav; lightbox modal on click.
-- **Favorite button** (heart) in the seller card — toggles `favorites` row for the current user; shows count of favorites for the listing.
-- **Share button** — uses Web Share API where available, falls back to copy-to-clipboard with toast.
-- **"More from this seller" rail** — 4 of the seller's other active listings as `ListingCard`s.
-- Fire `increment_listing_view` RPC once on mount.
+### 4. Contact info on the listing
+- Add `phone` and a public-contact opt-in to the post form, and write phone to `profiles.phone` on first post (or via the profile edit page — already exists).
+- Seed `phone` for the 6 demo profiles so listings have something to show.
+- On the listing detail page, add a compact "Contact" block inside the seller card:
+  - **Phone:** click-to-call `tel:` link (only shown if `profile.phone` is set).
+  - **Email:** click-to-mail `mailto:` link.
 
-### 5. Favorites toggle on cards (`src/components/ListingCard.tsx`)
-- Small heart button (top-right corner, under the price chip) — toggles favorite for logged-in users; redirects to `/login` if anonymous.
-- Optimistic update via TanStack Query mutation; invalidates `favorites` and `listing-favorites` keys.
+  Email source: read it via a small server function (`getSellerContact(listingId)`) that uses `supabaseAdmin` to look up `auth.users.email` for the listing's `user_id`, gated by `requireSupabaseAuth` so only signed-in users see it. This avoids exposing emails to anonymous scrapers while still letting real buyers contact the seller. Anonymous visitors see a "Sign in to see contact info" prompt instead.
 
-### 6. Small polish
-- Header dropdown: add **Profile** link before **My listings**.
-- Search results: each card uses the new favorite toggle.
-- Messages thread header: link the other party name to their `/sellers/$id` page.
-
-## Technical notes
-- All new pages follow the established Vapor glass/gradient tokens — no new design tokens needed.
-- Public seller profile + listing detail stay public (no auth required), so loaders query Supabase directly using the browser client (RLS already allows `profiles` public read and active listings public read).
-- View-count RPC is fire-and-forget — failure is silently ignored.
-- No edge functions, no new packages.
+### 5. Profile edit polish
+- The existing `/profile` route already edits `display_name`, `bio`, `phone`, `city`, avatar — confirm phone is wired and add a small helper text explaining it shows on their listings.
 
 ## Out of scope
-- Seller ratings/reviews (would need new table + moderation).
-- Verification badges.
-- Following sellers.
-- Saved searches.
+
+- Reordering photos after upload, image cropping, public seller email without sign-in, SMS verification of phone numbers.
