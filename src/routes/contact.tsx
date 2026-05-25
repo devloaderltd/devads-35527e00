@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Mail, MessageSquare, ShieldAlert } from "lucide-react";
+import { Mail, MessageSquare, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,15 +37,24 @@ const channels = [
 
 function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [errors, setErrors] = useState<Partial<Record<keyof typeof form, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState<null | { name: string; email: string }>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = contactSchema.safeParse(form);
     if (!parsed.success) {
+      const fieldErrors: Partial<Record<keyof typeof form, string>> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as keyof typeof form;
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
       toast.error(parsed.error.issues[0].message);
       return;
     }
+    setErrors({});
     setSubmitting(true);
     // No backend mailer wired — open the user's email client as a graceful fallback.
     const body = encodeURIComponent(
@@ -55,9 +64,17 @@ function ContactPage() {
     window.location.href = `mailto:hello@marketly.example?subject=${subject}&body=${body}`;
     setTimeout(() => {
       setSubmitting(false);
-      toast.success("Opening your email client…");
+      setSubmitted({ name: parsed.data.name, email: parsed.data.email });
+      toast.success("Your message is ready in your email client.");
     }, 300);
   }
+
+  function resetForm() {
+    setForm({ name: "", email: "", subject: "", message: "" });
+    setErrors({});
+    setSubmitted(null);
+  }
+
 
   return (
     <div className="container mx-auto max-w-5xl px-4 py-10">
