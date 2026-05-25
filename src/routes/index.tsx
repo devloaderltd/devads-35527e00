@@ -244,6 +244,39 @@ function Home() {
         </div>
       </section>
 
+      {/* City context banner */}
+      {hydrated && cityId && (
+        <section className="container mx-auto px-4 pt-6">
+          <button
+            type="button"
+            onClick={openPicker}
+            className="inline-flex items-center gap-2 rounded-full glass px-4 py-2 text-sm font-medium hover:border-primary/50"
+          >
+            <MapPin className="h-4 w-4 text-primary" />
+            Showing listings in <span className="font-bold">{cityName}</span>
+            <span className="text-xs text-muted-foreground">· change</span>
+          </button>
+        </section>
+      )}
+
+      {hydrated && !cityId && (
+        <section className="container mx-auto px-4 pt-10 pb-16">
+          <div className="flex flex-col items-center gap-4 rounded-[2rem] glass p-10 text-center">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl btn-gradient text-white">
+              <MapPin className="h-6 w-6" />
+            </div>
+            <h2 className="font-display text-2xl font-semibold">Pick a city to see listings</h2>
+            <p className="max-w-md text-sm text-muted-foreground">
+              We'll only show ads from the city you choose so you can find what's near you faster.
+            </p>
+            <Button onClick={openPicker} className="btn-gradient rounded-full border-0 px-6">
+              Choose your city
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {cityId && (<>
       {/* Featured row */}
       {featured.length > 1 && (
         <section className="container mx-auto px-4 pt-10">
