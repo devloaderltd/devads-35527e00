@@ -63,9 +63,10 @@ function ListingDetail() {
   // Keyboard nav for gallery + lightbox
   useEffect(() => {
     if (!listing) return;
+    const len = (listing.listing_images?.length ?? 0) || 1;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") setActiveIdx((i) => Math.max(0, i - 1));
-      else if (e.key === "ArrowRight") setActiveIdx((i) => i + 1);
+      if (e.key === "ArrowLeft") setActiveIdx((i) => (i - 1 + len) % len);
+      else if (e.key === "ArrowRight") setActiveIdx((i) => (i + 1) % len);
       else if (e.key === "Escape") setLightbox(false);
     };
     window.addEventListener("keydown", onKey);
