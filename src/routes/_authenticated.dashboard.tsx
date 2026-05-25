@@ -1,18 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus } from "lucide-react";
+import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3 } from "lucide-react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, CartesianGrid, Legend,
+  XAxis, YAxis, Tooltip, CartesianGrid, Legend, AreaChart, Area,
 } from "recharts";
 import { format, subDays, startOfDay } from "date-fns";
+import { getMyListingAnalytics } from "@/lib/extras.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Marketly" }, { name: "robots", content: "noindex" }] }),
@@ -120,7 +122,8 @@ function DashboardPage() {
       <Tabs defaultValue="analytics" className="mt-8">
         <div className="-mx-3 overflow-x-auto px-3 no-scrollbar sm:mx-0 sm:px-0">
           <TabsList className="inline-flex w-max rounded-full bg-white/60 backdrop-blur dark:bg-white/10">
-            <TabsTrigger value="analytics" className="rounded-full">Analytics</TabsTrigger>
+            <TabsTrigger value="analytics" className="rounded-full">Overview</TabsTrigger>
+            <TabsTrigger value="performance" className="rounded-full">Performance</TabsTrigger>
             <TabsTrigger value="listings" className="rounded-full">My Listings</TabsTrigger>
           </TabsList>
         </div>
