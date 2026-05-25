@@ -397,13 +397,13 @@ export const getRecentActivity = createServerFn({ method: "GET" })
       supabaseAdmin.from("crypto_topups").select("id, price_amount_usd, status, created_at, user_id").order("created_at", { ascending: false }).limit(10),
       supabaseAdmin.from("reports").select("id, reason, status, created_at, listing_id").order("created_at", { ascending: false }).limit(10),
     ]);
-    type Item = { kind: string; at: string; payload: unknown };
+    type Item = { kind: string; at: string; payload: Record<string, string | number | null> };
     const items: Item[] = [];
-    (users ?? []).forEach((u) => items.push({ kind: "signup", at: u.created_at, payload: u }));
-    (listings ?? []).forEach((l) => items.push({ kind: "listing", at: l.created_at, payload: l }));
-    (payments ?? []).forEach((p) => items.push({ kind: "payment", at: p.created_at, payload: p }));
-    (topups ?? []).forEach((t) => items.push({ kind: "topup", at: t.created_at, payload: t }));
-    (reports ?? []).forEach((r) => items.push({ kind: "report", at: r.created_at, payload: r }));
+    (users ?? []).forEach((u) => items.push({ kind: "signup", at: u.created_at, payload: { id: u.id, display_name: u.display_name } }));
+    (listings ?? []).forEach((l) => items.push({ kind: "listing", at: l.created_at, payload: { id: l.id, title: l.title, user_id: l.user_id } }));
+    (payments ?? []).forEach((p) => items.push({ kind: "payment", at: p.created_at, payload: { id: p.id, amount: Number(p.amount), currency: p.currency, type: p.promotion_type, status: p.status, user_id: p.user_id } }));
+    (topups ?? []).forEach((t) => items.push({ kind: "topup", at: t.created_at, payload: { id: t.id, amount: Number(t.price_amount_usd), status: t.status, user_id: t.user_id } }));
+    (reports ?? []).forEach((r) => items.push({ kind: "report", at: r.created_at, payload: { id: r.id, reason: r.reason, status: r.status, listing_id: r.listing_id } }));
     items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
     return { items: items.slice(0, 25) };
   });
