@@ -362,13 +362,13 @@ function ListingDetail() {
         </div>
       </div>
 
-      {more && more.length > 0 && (
+      {similar && similar.length > 0 && (
         <section className="mt-12">
           <h2 className="font-display text-xl font-bold">
-            More from <span className="gradient-text">this seller</span>
+            Similar <span className="gradient-text">listings</span>
           </h2>
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {more.map((l: any) => <ListingCard key={l.id} listing={l} />)}
+            {similar.map((l: any) => <ListingCard key={l.id} listing={l} />)}
           </div>
         </section>
       )}
