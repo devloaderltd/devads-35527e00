@@ -120,6 +120,58 @@ function MyListings() {
     qc.invalidateQueries({ queryKey: ["my-listings"] });
   };
 
+  const expiringSoonList = useMemo(() => (data ?? []).filter(r => {
+    if (r.status !== "active") return false;
+    const days = (new Date(r.expires_at).getTime() - Date.now()) / 86400000;
+    return days > 0 && days <= 3;
+  }), [data]);
+
+  const bulkRenew = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    const next = new Date(Date.now() + 30 * 86400000).toISOString();
+    const { error } = await supabase.from("listings")
+      .update({ expires_at: next, status: "active", bumped_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`Renewed ${ids.length} listing${ids.length === 1 ? "" : "s"}`);
+    clearSel();
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
+  const bulkSold = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    const { error } = await supabase.from("listings").update({ status: "sold" }).in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`Marked ${ids.length} as sold`);
+    clearSel();
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} listing${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    const { error } = await supabase.from("listings").delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    clearSel();
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
+  const renewAllExpiring = async () => {
+    const ids = expiringSoonList.map(r => r.id);
+    if (!ids.length) return;
+    const next = new Date(Date.now() + 30 * 86400000).toISOString();
+    const { error } = await supabase.from("listings")
+      .update({ expires_at: next, bumped_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`Renewed ${ids.length} expiring listing${ids.length === 1 ? "" : "s"}`);
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
