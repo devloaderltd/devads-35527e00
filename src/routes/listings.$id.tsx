@@ -38,7 +38,7 @@ function ListingDetail() {
         .select(`
           *,
           categories(name, slug),
-          cities(name, region, country),
+          cities(name, region, country, slug),
           listing_images(url, sort_order)
         `)
         .eq("id", id)
