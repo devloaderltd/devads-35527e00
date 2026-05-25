@@ -247,6 +247,70 @@ function ListingDetail() {
               ))}
             </div>
           )}
+
+          {/* Description */}
+          <div className="iridescent-border mt-6 rounded-2xl border border-white/40 bg-white/65 p-5 shadow-[var(--shadow-float)] backdrop-blur-xl">
+            <h2 className="font-display text-lg font-bold">Description</h2>
+            <div className="mt-3 whitespace-pre-wrap text-[0.95rem] leading-relaxed text-foreground/90">
+              {listing.description?.trim()
+                ? listing.description
+                : "The seller hasn't added a description for this listing yet. Use the Message button to ask for more details."}
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="iridescent-border mt-4 rounded-2xl border border-white/40 bg-white/65 p-5 shadow-[var(--shadow-float)] backdrop-blur-xl">
+            <h2 className="font-display text-lg font-bold">Details</h2>
+            <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              {listing.categories && (
+                <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                  <dt className="text-muted-foreground">Category</dt>
+                  <dd className="font-medium">{listing.categories.name}</dd>
+                </div>
+              )}
+              {listing.condition && listing.condition !== "not_applicable" && (
+                <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                  <dt className="text-muted-foreground">Condition</dt>
+                  <dd className="font-medium capitalize">{String(listing.condition).replace("_", " ")}</dd>
+                </div>
+              )}
+              {listing.cities && (
+                <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                  <dt className="text-muted-foreground">Location</dt>
+                  <dd className="truncate text-right font-medium">
+                    {listing.cities.name}, {listing.cities.region}
+                  </dd>
+                </div>
+              )}
+              <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                <dt className="text-muted-foreground">Posted</dt>
+                <dd className="font-medium">
+                  {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                <dt className="text-muted-foreground">Views</dt>
+                <dd className="font-medium">{listing.view_count ?? 0}</dd>
+              </div>
+              <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                <dt className="text-muted-foreground">Listing ID</dt>
+                <dd className="font-mono text-xs font-medium text-muted-foreground">
+                  #{String(listing.id).slice(0, 8)}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          {/* Safety tips */}
+          <div className="iridescent-border mt-4 rounded-2xl border border-white/40 bg-white/65 p-5 shadow-[var(--shadow-float)] backdrop-blur-xl">
+            <h2 className="font-display text-lg font-bold">Stay safe on Marketly</h2>
+            <ul className="mt-3 space-y-2 text-sm text-foreground/90">
+              <li className="flex gap-2"><span aria-hidden>•</span> Meet in a public, well-lit place whenever possible.</li>
+              <li className="flex gap-2"><span aria-hidden>•</span> Inspect the item carefully before you pay.</li>
+              <li className="flex gap-2"><span aria-hidden>•</span> Never wire money or share verification codes.</li>
+              <li className="flex gap-2"><span aria-hidden>•</span> If something feels off, stop and report the listing.</li>
+            </ul>
+          </div>
         </div>
 
         <div>
@@ -289,9 +353,6 @@ function ListingDetail() {
             </button>
           </div>
 
-          <div className="mt-6 whitespace-pre-wrap text-[0.95rem] leading-relaxed">
-            {listing.description}
-          </div>
 
           {/* Seller card */}
           <div className="iridescent-border mt-8 rounded-2xl border border-white/40 bg-white/65 p-4 shadow-[var(--shadow-float)] backdrop-blur-xl">
