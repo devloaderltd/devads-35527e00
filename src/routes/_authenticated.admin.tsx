@@ -109,7 +109,7 @@ function OverviewTab({ isAdmin }: { isAdmin: boolean }) {
       const userCount = data.users.filter(u => startOfDay(new Date(u.created_at)).getTime() === d.getTime()).length;
       const lCount = data.listings.filter(l => startOfDay(new Date(l.created_at)).getTime() === d.getTime()).length;
       const rev = data.payments
-        .filter((p: any) => p.status === "succeeded" && startOfDay(new Date(p.created_at)).getTime() === d.getTime())
+        .filter((p: any) => p.status === "completed" && startOfDay(new Date(p.created_at)).getTime() === d.getTime())
         .reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
       days.push({ date: label, users: userCount, listings: lCount, revenue: rev });
     }
@@ -135,7 +135,7 @@ function OverviewTab({ isAdmin }: { isAdmin: boolean }) {
     return { days, byCategory, byCity, byStatus };
   }, [data]);
 
-  const totalRevenue = (data?.payments ?? []).filter((p: any) => p.status === "succeeded").reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
+  const totalRevenue = (data?.payments ?? []).filter((p: any) => p.status === "completed").reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
   const active = (data?.listings ?? []).filter(l => l.status === "active").length;
 
   return (
@@ -405,7 +405,7 @@ function PaymentsTab() {
                   <td className="px-4 py-3 font-medium">{p.currency} {Number(p.amount).toFixed(2)}</td>
                   <td className="px-4 py-3 capitalize">{p.promotion_type ?? "—"}</td>
                   <td className="px-4 py-3">{p.provider}</td>
-                  <td className="px-4 py-3"><Badge variant={p.status === "succeeded" ? "default" : "secondary"} className="capitalize">{p.status}</Badge></td>
+                  <td className="px-4 py-3"><Badge variant={p.status === "completed" ? "default" : "secondary"} className="capitalize">{p.status}</Badge></td>
                 </tr>
               ))}
               {!data?.length && <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">No payments yet.</td></tr>}
