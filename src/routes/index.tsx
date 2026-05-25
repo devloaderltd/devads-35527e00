@@ -58,7 +58,8 @@ function Home() {
   });
 
   const { data: listings, isLoading } = useQuery({
-    queryKey: ["listings", "home"],
+    queryKey: ["listings", "home", cityId],
+    enabled: !!cityId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
@@ -70,6 +71,7 @@ function Home() {
           listing_promotions(type, ends_at)
         `)
         .eq("status", "active")
+        .eq("city_id", cityId!)
         .order("bumped_at", { ascending: false })
         .limit(24);
       if (error) throw error;
