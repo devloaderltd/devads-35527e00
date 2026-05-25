@@ -453,19 +453,27 @@ export const getSiteSettings = createServerFn({ method: "GET" })
     return { settings: data };
   });
 
+const siteSettingsSchema = z.object({
+  featured_price_usd: z.number().min(0).max(9999).optional(),
+  bump_price_usd: z.number().min(0).max(9999).optional(),
+  featured_days: z.number().int().min(1).max(365).optional(),
+  bump_days: z.number().int().min(1).max(365).optional(),
+  maintenance_mode: z.boolean().optional(),
+  maintenance_message: z.string().max(500).optional(),
+  site_name: z.string().min(1).max(80).optional(),
+  support_email: z.string().email().max(120).optional().or(z.literal("")),
+});
+
 export const updateSiteSettings = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((input: {
-    featured_price_usd?: number; bump_price_usd?: number;
-    featured_days?: number; bump_days?: number;
-    maintenance_mode?: boolean; maintenance_message?: string;
-    site_name?: string; support_email?: string;
-  }) => input)
+  .inputValidator((input: unknown) => siteSettingsSchema.parse(input))
   .handler(async ({ data, context }) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["featured_price_usd", "bump_price_usd", "featured_days", "bump_days", "maintenance_mode", "maintenance_message", "site_name", "support_email"] as const) {
       if (data[k] !== undefined) patch[k] = data[k];
     }
+    if (Object.keys(patch).length === 0) return { ok: true };
+    patch.updated_at = new Date().toISOString();
     const { error } = await supabaseAdmin.from("site_settings").update(patch as never).eq("id", "global");
     if (error) throw new Error(error.message);
     await audit(context.userId, "settings.update", "site_settings", "global", patch);
@@ -474,24 +482,73 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
 
 /* ---------------- Audit ---------------- */
 
-export const getAuditLog = createServerFn({ method: "GET" })
+const AUDIT_CATEGORIES = {
+  wallet: ["wallet."],
+  roles: ["role."],
+  bans: ["user.ban", "user.unban"],
+  listings: ["listing."],
+  settings: ["settings."],
+  topups: ["topup."],
+  users: ["user.delete", "user.password_reset"],
+} as const;
+
+export const getAuditLog = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .handler(async () => {
-    const { data, error } = await supabaseAdmin
+  .inputValidator((input: { q?: string; category?: keyof typeof AUDIT_CATEGORIES | "all"; from?: string; to?: string; page?: number; perPage?: number }) => ({
+    q: (input.q ?? "").slice(0, 100).trim(),
+    category: input.category ?? "all",
+    from: input.from ?? "",
+    to: input.to ?? "",
+    page: Math.max(1, Math.floor(input.page ?? 1)),
+    perPage: Math.min(100, Math.max(10, Math.floor(input.perPage ?? 50))),
+  }))
+  .handler(async ({ data }) => {
+    let query = supabaseAdmin
       .from("audit_log")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false });
+
+    if (data.category !== "all") {
+      const prefixes = AUDIT_CATEGORIES[data.category];
+      const ors = prefixes.map((p) => (p.endsWith(".") ? `action.ilike.${p}%` : `action.eq.${p}`)).join(",");
+      query = query.or(ors);
+    }
+    if (data.q) {
+      query = query.or(`action.ilike.%${data.q}%,target_id.ilike.%${data.q}%`);
+    }
+    if (data.from) query = query.gte("created_at", data.from);
+    if (data.to) query = query.lte("created_at", data.to);
+
+    const from = (data.page - 1) * data.perPage;
+    const to = from + data.perPage - 1;
+    const { data: rows, error, count } = await query.range(from, to);
     if (error) throw new Error(error.message);
-    const actorIds = [...new Set((data ?? []).map((r) => r.actor_id).filter(Boolean) as string[])];
-    const { data: profiles } = actorIds.length
-      ? await supabaseAdmin.from("profiles").select("id, display_name").in("id", actorIds)
-      : { data: [] as { id: string; display_name: string }[] };
+
+    const actorIds = [...new Set((rows ?? []).map((r) => r.actor_id).filter(Boolean) as string[])];
+    const targetUserIds = [...new Set((rows ?? []).filter((r) => r.target_type === "user").map((r) => r.target_id).filter(Boolean) as string[])];
+    const targetListingIds = [...new Set((rows ?? []).filter((r) => r.target_type === "listing").map((r) => r.target_id).filter(Boolean) as string[])];
+    const allProfileIds = [...new Set([...actorIds, ...targetUserIds])];
+
+    const [profilesRes, listingsRes] = await Promise.all([
+      allProfileIds.length ? supabaseAdmin.from("profiles").select("id, display_name").in("id", allProfileIds) : Promise.resolve({ data: [] }),
+      targetListingIds.length ? supabaseAdmin.from("listings").select("id, title").in("id", targetListingIds) : Promise.resolve({ data: [] }),
+    ]);
+    const profiles = (profilesRes.data ?? []) as { id: string; display_name: string }[];
+    const listings = (listingsRes.data ?? []) as { id: string; title: string }[];
+
     return {
-      entries: (data ?? []).map((r) => ({
+      entries: (rows ?? []).map((r) => ({
         ...r,
-        actor_name: profiles?.find((p) => p.id === r.actor_id)?.display_name ?? null,
+        actor_name: profiles.find((p) => p.id === r.actor_id)?.display_name ?? null,
+        target_name:
+          r.target_type === "user" ? profiles.find((p) => p.id === r.target_id)?.display_name ?? null :
+          r.target_type === "listing" ? listings.find((l) => l.id === r.target_id)?.title ?? null :
+          null,
       })),
+      total: count ?? 0,
+      page: data.page,
+      perPage: data.perPage,
+      hasMore: from + (rows?.length ?? 0) < (count ?? 0),
     };
   });
 
