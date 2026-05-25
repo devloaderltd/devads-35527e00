@@ -146,19 +146,49 @@ function SearchPage() {
     navigate({ search: {} as any });
   };
 
-  const saveSearch = useMutation({
-    mutationFn: async () => {
-      const name = prompt("Name this search", search.q || "My search") ?? "";
-      if (!name.trim()) throw new Error("cancelled");
-      return saveFn({ data: {
-        name: name.trim(),
-        filters: Object.fromEntries(Object.entries(search).filter(([_, v]) => v != null && v !== "")) as Record<string, unknown>,
-        notify: true,
-      } });
-    },
-    onSuccess: () => toast.success("Search saved. You'll be notified of matches."),
-    onError: (e: Error) => { if (e.message !== "cancelled") toast.error(e.message); },
+  const currentFilters = useMemo(
+    () => Object.fromEntries(Object.entries(search).filter(([k, v]) => k !== "page" && v != null && v !== "")) as Record<string, unknown>,
+    [search],
+  );
+
+  const savedSearches = useQuery({
+    queryKey: ["saved-searches"],
+    enabled: !!user,
+    queryFn: () => listFn(),
+    staleTime: 30_000,
   });
+
+  const filtersKey = (f: Record<string, unknown>) =>
+    Object.keys(f).sort().map(k => `${k}=${String(f[k])}`).join("&");
+  const currentKey = filtersKey(currentFilters);
+  const alreadySaved = (savedSearches.data?.items ?? []).find(
+    (s: any) => filtersKey((s.filters ?? {}) as Record<string, unknown>) === currentKey,
+  );
+
+  const openSaveDialog = () => {
+    if (alreadySaved) { nav({ to: "/saved-searches" }); return; }
+    const defaultName = search.q
+      ? `"${search.q}"${search.city ? ` in ${search.city}` : ""}`
+      : search.city ? `All in ${search.city}` : search.category ? `All ${search.category}` : "My search";
+    setSaveName(defaultName);
+    setSaveNotify(true);
+    setSaveOpen(true);
+  };
+
+  const saveSearch = useMutation({
+    mutationFn: () => saveFn({
+      data: { name: saveName.trim() || "My search", filters: currentFilters, notify: saveNotify },
+    }),
+    onSuccess: () => {
+      setSaveOpen(false);
+      qc.invalidateQueries({ queryKey: ["saved-searches"] });
+      toast.success("Search saved", {
+        action: { label: "View", onClick: () => nav({ to: "/saved-searches" }) },
+      });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const listings = result?.listings ?? [];
   const totalCount = result?.count ?? 0;
