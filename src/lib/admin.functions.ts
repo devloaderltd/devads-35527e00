@@ -761,7 +761,7 @@ export const adminBroadcastNotification = createServerFn({ method: "POST" })
       recipients = (rows ?? []).map((r) => r.id);
     } else if (data.audience.startsWith("role:")) {
       const role = data.audience.split(":")[1];
-      const { data: rows, error } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", role);
+      const { data: rows, error } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", role as "admin" | "moderator" | "user");
       if (error) throw new Error(error.message);
       recipients = (rows ?? []).map((r) => r.user_id);
     } else {
