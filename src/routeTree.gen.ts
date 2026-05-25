@@ -27,6 +27,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated.messages.index'
 import { Route as ApiPublicSeedDemoRouteImport } from './routes/api/public/seed-demo'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
+import { Route as AuthenticatedDebugSessionRouteImport } from './routes/_authenticated.debug.session'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const SignupRoute = SignupRouteImport.update({
@@ -120,6 +121,12 @@ const AuthenticatedMessagesThreadIdRoute =
     path: '/$threadId',
     getParentRoute: () => AuthenticatedMessagesRoute,
   } as any)
+const AuthenticatedDebugSessionRoute =
+  AuthenticatedDebugSessionRouteImport.update({
+    id: '/debug/session',
+    path: '/debug/session',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
+  '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
@@ -161,6 +169,7 @@ export interface FileRoutesByTo {
   '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
+  '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
@@ -183,6 +192,7 @@ export interface FileRoutesById {
   '/checkout/return': typeof CheckoutReturnRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
+  '/_authenticated/debug/session': typeof AuthenticatedDebugSessionRoute
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/listings/$id'
     | '/sellers/$id'
+    | '/debug/session'
     | '/messages/$threadId'
     | '/api/public/seed-demo'
     | '/messages/'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/listings/$id'
     | '/sellers/$id'
+    | '/debug/session'
     | '/messages/$threadId'
     | '/api/public/seed-demo'
     | '/messages'
@@ -245,6 +257,7 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/listings/$id'
     | '/sellers/$id'
+    | '/_authenticated/debug/session'
     | '/_authenticated/messages/$threadId'
     | '/api/public/seed-demo'
     | '/_authenticated/messages/'
@@ -392,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMessagesThreadIdRouteImport
       parentRoute: typeof AuthenticatedMessagesRoute
     }
+    '/_authenticated/debug/session': {
+      id: '/_authenticated/debug/session'
+      path: '/debug/session'
+      fullPath: '/debug/session'
+      preLoaderRoute: typeof AuthenticatedDebugSessionRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -425,6 +445,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMyListingsRoute: typeof AuthenticatedMyListingsRoute
   AuthenticatedPostRoute: typeof AuthenticatedPostRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedDebugSessionRoute: typeof AuthenticatedDebugSessionRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -435,6 +456,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMyListingsRoute: AuthenticatedMyListingsRoute,
   AuthenticatedPostRoute: AuthenticatedPostRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedDebugSessionRoute: AuthenticatedDebugSessionRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
