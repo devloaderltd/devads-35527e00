@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Github, Mail, Sparkles } from "lucide-react";
+import { Github, Mail } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 
 const sections: Array<{
   heading: string;
@@ -40,12 +41,7 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-12">
           <div className="md:col-span-4">
             <Link to="/" className="inline-flex items-center gap-2 font-display text-xl font-bold">
-              <span
-                className="grid h-8 w-8 place-items-center rounded-lg text-white shadow-md"
-                style={{ background: "var(--gradient-primary)" }}
-              >
-                <Sparkles className="h-4 w-4" />
-              </span>
+              <img src={logoUrl} alt="CallEscort24" width={32} height={32} loading="lazy" className="h-8 w-8 rounded-lg object-contain" />
               <span className="gradient-text">CallEscort24</span>
             </Link>
             <p className="mt-3 max-w-xs text-muted-foreground">
