@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import {
   listUsersAdmin, setUserRole, banUser, unbanUser, deleteUserAdmin, sendPasswordReset,
-  getUserDetails, adminAdjustWallet,
+  adminAdjustWallet,
+  getUserSummary, getUserListingsPage, getUserWalletTxsPage, getUserPaymentsPage,
 } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/users")({ component: UsersPage });
@@ -23,11 +25,22 @@ type ListUser = {
   roles: string[]; banned: boolean; banned_until: string | null; wallet_balance: number;
 };
 
+function useDebounced<T>(v: T, ms = 300) {
+  const [out, setOut] = useState(v);
+  useEffect(() => { const t = setTimeout(() => setOut(v), ms); return () => clearTimeout(t); }, [v, ms]);
+  return out;
+}
+
 function UsersPage() {
   const qc = useQueryClient();
-  const [q, setQ] = useState("");
+  const [qInput, setQInput] = useState("");
+  const q = useDebounced(qInput, 300);
   const [filter, setFilter] = useState<"all" | "admins" | "moderators" | "banned">("all");
+  const [page, setPage] = useState(1);
+  const perPage = 25;
   const [active, setActive] = useState<ListUser | null>(null);
+
+  useEffect(() => { setPage(1); }, [q, filter]);
 
   const listFn = useServerFn(listUsersAdmin);
   const roleFn = useServerFn(setUserRole);
@@ -37,8 +50,8 @@ function UsersPage() {
   const resetFn = useServerFn(sendPasswordReset);
 
   const usersQ = useQuery({
-    queryKey: ["admin-users-list", q, filter],
-    queryFn: () => listFn({ data: { q, filter } }),
+    queryKey: ["admin-users-list", q, filter, page],
+    queryFn: () => listFn({ data: { q, filter, page, perPage } }),
   });
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-users-list"] });
@@ -54,19 +67,22 @@ function UsersPage() {
   const reset = useMutation({ mutationFn: (email: string) => resetFn({ data: { email } }), onSuccess: () => toast.success("Reset link generated"), onError: (e: Error) => toast.error(e.message) });
 
   const users = (usersQ.data?.users ?? []) as ListUser[];
+  const total = usersQ.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
 
   return (
     <div>
-      <AdminPageHeader title="Users" subtitle={`${users.length} users`} />
+      <AdminPageHeader title="Users" subtitle={`${total.toLocaleString()} match · page ${page} of ${totalPages}`} />
       <div className="mb-3 flex flex-wrap gap-2">
         {(["all", "admins", "moderators", "banned"] as const).map(f => (
           <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} className="rounded-full capitalize" onClick={() => setFilter(f)}>{f}</Button>
         ))}
-        <Input placeholder="Search name or email…" value={q} onChange={(e) => setQ(e.target.value)} className="ml-auto w-full max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
+        <Input placeholder="Search name or email…" value={qInput} onChange={(e) => setQInput(e.target.value)} className="ml-auto w-full max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
       </div>
       <Panel>
         <div className="space-y-2">
-          {users.map(u => (
+          {usersQ.isLoading && <div className="py-8 text-center text-sm text-slate-400">Loading…</div>}
+          {!usersQ.isLoading && users.map(u => (
             <div key={u.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <button onClick={() => setActive(u)} className="min-w-0 text-left">
@@ -90,29 +106,63 @@ function UsersPage() {
               </div>
             </div>
           ))}
-          {!users.length && <div className="py-10 text-center text-sm text-slate-400">No users.</div>}
+          {!usersQ.isLoading && !users.length && <div className="py-10 text-center text-sm text-slate-400">No users.</div>}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-xs text-slate-500">{usersQ.data?.scanExhausted === false ? `Scanning first ${(usersQ.data?.scannedPages ?? 0) * 200} accounts` : ""}</div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="rounded-full"><ChevronLeft className="h-4 w-4" /> Prev</Button>
+            <span className="text-xs text-slate-400">Page {page} / {totalPages}</span>
+            <Button size="sm" variant="outline" disabled={!usersQ.data?.hasMore} onClick={() => setPage(p => p + 1)} className="rounded-full">Next <ChevronRight className="h-4 w-4" /></Button>
+          </div>
         </div>
       </Panel>
 
-      <UserDetailSheet
-        user={active}
-        onClose={() => setActive(null)}
-        onChanged={refresh}
-      />
+      <UserDetailSheet user={active} onClose={() => setActive(null)} onChanged={refresh} />
     </div>
   );
 }
 
+const PAGE_SIZE = 20;
+
 function UserDetailSheet({ user, onClose, onChanged }: { user: ListUser | null; onClose: () => void; onChanged: () => void }) {
-  const detailFn = useServerFn(getUserDetails);
+  const summaryFn = useServerFn(getUserSummary);
+  const listingsFn = useServerFn(getUserListingsPage);
+  const txsFn = useServerFn(getUserWalletTxsPage);
+  const paymentsFn = useServerFn(getUserPaymentsPage);
   const adjustFn = useServerFn(adminAdjustWallet);
   const qc = useQueryClient();
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
 
-  const detail = useQuery({
-    queryKey: ["admin-user-detail", user?.id],
-    queryFn: () => detailFn({ data: { userId: user!.id } }),
+  const summary = useQuery({
+    queryKey: ["admin-user-summary", user?.id],
+    queryFn: () => summaryFn({ data: { userId: user!.id } }),
+    enabled: !!user,
+  });
+
+  const listings = useInfiniteQuery({
+    queryKey: ["admin-user-listings", user?.id],
+    queryFn: ({ pageParam }) => listingsFn({ data: { userId: user!.id, offset: pageParam, limit: PAGE_SIZE } }),
+    initialPageParam: 0,
+    getNextPageParam: (last) => (last.offset + last.items.length < last.total ? last.offset + last.items.length : undefined),
+    enabled: !!user,
+  });
+
+  const txs = useInfiniteQuery({
+    queryKey: ["admin-user-txs", user?.id],
+    queryFn: ({ pageParam }) => txsFn({ data: { userId: user!.id, offset: pageParam, limit: PAGE_SIZE } }),
+    initialPageParam: 0,
+    getNextPageParam: (last) => (last.offset + last.items.length < last.total ? last.offset + last.items.length : undefined),
+    enabled: !!user,
+  });
+
+  const payments = useInfiniteQuery({
+    queryKey: ["admin-user-payments", user?.id],
+    queryFn: ({ pageParam }) => paymentsFn({ data: { userId: user!.id, offset: pageParam, limit: PAGE_SIZE } }),
+    initialPageParam: 0,
+    getNextPageParam: (last) => (last.offset + last.items.length < last.total ? last.offset + last.items.length : undefined),
     enabled: !!user,
   });
 
@@ -122,16 +172,17 @@ function UserDetailSheet({ user, onClose, onChanged }: { user: ListUser | null; 
     onSuccess: () => {
       toast.success("Wallet adjusted");
       setAmount(""); setReason("");
-      qc.invalidateQueries({ queryKey: ["admin-user-detail", user?.id] });
+      qc.invalidateQueries({ queryKey: ["admin-user-summary", user?.id] });
+      qc.invalidateQueries({ queryKey: ["admin-user-txs", user?.id] });
       onChanged();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const d = detail.data;
-  const statusCount = (d?.listings ?? []).reduce<Record<string, number>>((acc, l) => {
-    acc[l.status] = (acc[l.status] ?? 0) + 1; return acc;
-  }, {});
+  const s = summary.data;
+  const listingItems = listings.data?.pages.flatMap(p => p.items) ?? [];
+  const txItems = txs.data?.pages.flatMap(p => p.items) ?? [];
+  const paymentItems = payments.data?.pages.flatMap(p => p.items) ?? [];
 
   return (
     <Sheet open={!!user} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -151,6 +202,8 @@ function UserDetailSheet({ user, onClose, onChanged }: { user: ListUser | null; 
                   <span>Wallet ${user.wallet_balance.toFixed(2)}</span>
                   <span>·</span>
                   <span>{user.banned ? "Banned" : "Active"}</span>
+                  <span>·</span>
+                  <span>{s?.threadsCount ?? 0} threads</span>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {user.roles.length ? user.roles.map(r => <Badge key={r} variant={r === "admin" ? "default" : "secondary"} className="capitalize">{r}</Badge>) : <Badge variant="outline">user</Badge>}
@@ -162,80 +215,97 @@ function UserDetailSheet({ user, onClose, onChanged }: { user: ListUser | null; 
                 <div className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
                   <Input type="number" step="0.01" placeholder="±$ amount" value={amount} onChange={(e) => setAmount(e.target.value)} className="bg-white/5 text-slate-100" />
                   <Input placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} className="bg-white/5 text-slate-100" />
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      const n = Number(amount);
-                      if (!n || !reason.trim()) { toast.error("Amount and reason required"); return; }
-                      adjust.mutate({ amount: n, description: reason.trim() });
-                    }}
-                    disabled={adjust.isPending}
-                  >Apply</Button>
+                  <Button size="sm" onClick={() => {
+                    const n = Number(amount);
+                    if (!n || !reason.trim()) { toast.error("Amount and reason required"); return; }
+                    adjust.mutate({ amount: n, description: reason.trim() });
+                  }} disabled={adjust.isPending}>Apply</Button>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">Positive credits, negative debits. Logged to audit trail.</p>
               </section>
 
               <Separator className="bg-white/10" />
 
-              <section>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Listings ({d?.listings.length ?? 0})</h3>
-                <div className="mb-2 flex flex-wrap gap-1.5 text-xs text-slate-300">
-                  {Object.entries(statusCount).map(([s, c]) => (
-                    <Badge key={s} variant="outline" className="border-white/20 text-slate-200">{s}: {c}</Badge>
-                  ))}
-                </div>
-                <div className="space-y-1 text-sm">
-                  {(d?.listings ?? []).slice(0, 8).map(l => (
-                    <div key={l.id} className="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5">
-                      <span className="truncate">{l.title}</span>
-                      <span className="shrink-0 text-xs text-slate-400">{l.status} · {format(new Date(l.created_at), "MMM d")}</span>
-                    </div>
-                  ))}
-                  {!d?.listings.length && <div className="text-xs text-slate-500">No listings.</div>}
-                </div>
-              </section>
+              <PaginatedSection
+                title={`Listings (${s?.listingsTotal ?? 0})`}
+                badges={Object.entries(s?.statusCounts ?? {}).map(([k, v]) => `${k}: ${v}`)}
+                items={listingItems}
+                renderItem={(l: any) => (
+                  <div key={l.id} className="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm">
+                    <span className="truncate">{l.title}</span>
+                    <span className="shrink-0 text-xs text-slate-400">{l.status} · {format(new Date(l.created_at), "MMM d")}</span>
+                  </div>
+                )}
+                hasMore={!!listings.hasNextPage}
+                loading={listings.isFetchingNextPage}
+                onLoadMore={() => listings.fetchNextPage()}
+              />
 
-              <section>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Wallet transactions</h3>
-                <div className="space-y-1 text-sm">
-                  {(d?.walletTxs ?? []).slice(0, 10).map((t: { id: string; type: string; amount_usd: number; balance_after: number; created_at: string; description: string | null }) => (
-                    <div key={t.id} className="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5">
-                      <span className="truncate">
-                        <span className="mr-2 inline-block w-16 text-xs uppercase tracking-wider text-slate-400">{t.type}</span>
-                        {t.description ?? ""}
-                      </span>
-                      <span className={`shrink-0 text-xs ${Number(t.amount_usd) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                        {Number(t.amount_usd) >= 0 ? "+" : ""}${Number(t.amount_usd).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                  {!d?.walletTxs.length && <div className="text-xs text-slate-500">No transactions.</div>}
-                </div>
-              </section>
+              <PaginatedSection
+                title={`Wallet transactions (${s?.walletTxsTotal ?? 0})`}
+                items={txItems}
+                renderItem={(t: any) => (
+                  <div key={t.id} className="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm">
+                    <span className="truncate">
+                      <span className="mr-2 inline-block w-16 text-xs uppercase tracking-wider text-slate-400">{t.type}</span>
+                      {t.description ?? ""}
+                    </span>
+                    <span className={`shrink-0 text-xs ${Number(t.amount_usd) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      {Number(t.amount_usd) >= 0 ? "+" : ""}${Number(t.amount_usd).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                hasMore={!!txs.hasNextPage}
+                loading={txs.isFetchingNextPage}
+                onLoadMore={() => txs.fetchNextPage()}
+              />
 
-              <section>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Recent payments</h3>
-                <div className="space-y-1 text-sm">
-                  {(d?.payments ?? []).slice(0, 6).map((p: { id: string; amount: number; currency: string; status: string; promotion_type: string | null; created_at: string }) => (
-                    <div key={p.id} className="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5">
-                      <span className="truncate">
-                        {p.promotion_type ?? "payment"} · <span className="text-xs text-slate-400">{p.status}</span>
-                      </span>
-                      <span className="shrink-0 text-xs text-slate-300">${Number(p.amount).toFixed(2)} {p.currency}</span>
-                    </div>
-                  ))}
-                  {!d?.payments.length && <div className="text-xs text-slate-500">No payments.</div>}
-                </div>
-              </section>
-
-              <section>
-                <Label className="text-xs uppercase tracking-wider text-slate-400">Message threads</Label>
-                <div className="text-sm text-slate-200">{d?.threadsCount ?? 0} threads</div>
-              </section>
+              <PaginatedSection
+                title={`Payments (${s?.paymentsTotal ?? 0})`}
+                items={paymentItems}
+                renderItem={(p: any) => (
+                  <div key={p.id} className="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm">
+                    <span className="truncate">{p.promotion_type ?? "payment"} · <span className="text-xs text-slate-400">{p.status}</span></span>
+                    <span className="shrink-0 text-xs text-slate-300">${Number(p.amount).toFixed(2)} {p.currency}</span>
+                  </div>
+                )}
+                hasMore={!!payments.hasNextPage}
+                loading={payments.isFetchingNextPage}
+                onLoadMore={() => payments.fetchNextPage()}
+              />
             </div>
           </>
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+function PaginatedSection<T>({ title, badges, items, renderItem, hasMore, loading, onLoadMore }: {
+  title: string; badges?: string[]; items: T[]; renderItem: (item: T) => React.ReactNode;
+  hasMore: boolean; loading: boolean; onLoadMore: () => void;
+}) {
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</h3>
+      </div>
+      {badges && badges.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5 text-xs text-slate-300">
+          {badges.map(b => <Badge key={b} variant="outline" className="border-white/20 text-slate-200">{b}</Badge>)}
+        </div>
+      )}
+      <div className="space-y-1">
+        {items.map(renderItem)}
+        {!items.length && <div className="text-xs text-slate-500">Nothing here.</div>}
+      </div>
+      {hasMore && (
+        <div className="mt-2 text-center">
+          <Button size="sm" variant="outline" className="rounded-full" onClick={onLoadMore} disabled={loading}>
+            {loading ? "Loading…" : "Load more"}
+          </Button>
+        </div>
+      )}
+    </section>
   );
 }

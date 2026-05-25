@@ -38,29 +38,41 @@ export const runDemoSeed = createServerFn({ method: "POST" })
 
 export const listUsersAdmin = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((input: { q?: string; filter?: "all" | "admins" | "moderators" | "banned" }) => ({
-    q: (input.q ?? "").slice(0, 100),
+  .inputValidator((input: { q?: string; filter?: "all" | "admins" | "moderators" | "banned"; page?: number; perPage?: number }) => ({
+    q: (input.q ?? "").slice(0, 100).trim(),
     filter: input.filter ?? "all",
+    page: Math.max(1, Math.floor(input.page ?? 1)),
+    perPage: Math.min(100, Math.max(5, Math.floor(input.perPage ?? 25))),
   }))
   .handler(async ({ data }) => {
-    // Pull auth users (page 1, perPage=200). Good enough for now.
-    const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-    if (authErr) throw new Error(authErr.message);
-    const authUsers = authData.users;
-    const ids = authUsers.map((u) => u.id);
-    if (!ids.length) return { users: [] };
+    // Scan up to N pages of auth users to support search/filter without a DB view.
+    const MAX_SCAN = 5;
+    const SCAN_PER_PAGE = 200;
+    type AuthUser = Awaited<ReturnType<typeof supabaseAdmin.auth.admin.listUsers>>["data"]["users"][number];
+    const collected: AuthUser[] = [];
+    let scannedPages = 0;
+    let exhausted = false;
+    for (let p = 1; p <= MAX_SCAN; p++) {
+      const { data: au, error } = await supabaseAdmin.auth.admin.listUsers({ page: p, perPage: SCAN_PER_PAGE });
+      if (error) throw new Error(error.message);
+      collected.push(...au.users);
+      scannedPages = p;
+      if (au.users.length < SCAN_PER_PAGE) { exhausted = true; break; }
+    }
 
-    const [{ data: profiles }, { data: roles }, { data: wallets }] = await Promise.all([
-      supabaseAdmin.from("profiles").select("id, display_name, created_at, city_id").in("id", ids),
-      supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
-      supabaseAdmin.from("wallets").select("user_id, balance_usd").in("user_id", ids),
-    ]);
+    const ids = collected.map((u) => u.id);
+    const profilesRes = ids.length ? await supabaseAdmin.from("profiles").select("id, display_name, created_at, city_id").in("id", ids) : { data: [] };
+    const rolesRes = ids.length ? await supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids) : { data: [] };
+    const walletsRes = ids.length ? await supabaseAdmin.from("wallets").select("user_id, balance_usd").in("user_id", ids) : { data: [] };
+    const profiles = profilesRes.data ?? [];
+    const roles = rolesRes.data ?? [];
+    const wallets = walletsRes.data ?? [];
 
-    let out = authUsers.map((u) => {
-      const profile = profiles?.find((p) => p.id === u.id);
-      const userRoles = (roles ?? []).filter((r) => r.user_id === u.id).map((r) => r.role as string);
+    let out = collected.map((u) => {
+      const profile = profiles.find((p) => p.id === u.id);
+      const userRoles = roles.filter((r) => r.user_id === u.id).map((r) => r.role as string);
       const banned = !!u.banned_until && new Date(u.banned_until).getTime() > Date.now();
-      const balance = Number(wallets?.find((w) => w.user_id === u.id)?.balance_usd ?? 0);
+      const balance = Number(wallets.find((w) => w.user_id === u.id)?.balance_usd ?? 0);
       return {
         id: u.id,
         email: u.email ?? "",
@@ -82,7 +94,19 @@ export const listUsersAdmin = createServerFn({ method: "POST" })
     else if (data.filter === "banned") out = out.filter((u) => u.banned);
 
     out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    return { users: out };
+
+    const total = out.length;
+    const start = (data.page - 1) * data.perPage;
+    const slice = out.slice(start, start + data.perPage);
+    return {
+      users: slice,
+      total,
+      page: data.page,
+      perPage: data.perPage,
+      hasMore: start + slice.length < total,
+      scannedPages,
+      scanExhausted: exhausted,
+    };
   });
 
 export const setUserRole = createServerFn({ method: "POST" })
@@ -160,6 +184,92 @@ export const sendPasswordReset = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const getUserSummary = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { userId: string }) => {
+    if (!uuid.safeParse(input.userId).success) throw new Error("Invalid userId");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const [statusRows, listingsCount, txCount, paymentsCount, threads] = await Promise.all([
+      supabaseAdmin.from("listings").select("status").eq("user_id", data.userId),
+      supabaseAdmin.from("listings").select("id", { count: "exact", head: true }).eq("user_id", data.userId),
+      supabaseAdmin.from("wallet_transactions").select("id", { count: "exact", head: true }).eq("user_id", data.userId),
+      supabaseAdmin.from("payments").select("id", { count: "exact", head: true }).eq("user_id", data.userId),
+      supabaseAdmin.from("message_threads").select("id", { count: "exact", head: true }).or(`buyer_id.eq.${data.userId},seller_id.eq.${data.userId}`),
+    ]);
+    const statusCounts: Record<string, number> = {};
+    for (const r of (statusRows.data ?? []) as { status: string }[]) {
+      statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1;
+    }
+    return {
+      statusCounts,
+      listingsTotal: listingsCount.count ?? 0,
+      walletTxsTotal: txCount.count ?? 0,
+      paymentsTotal: paymentsCount.count ?? 0,
+      threadsCount: threads.count ?? 0,
+    };
+  });
+
+const pageInput = (input: { userId: string; offset?: number; limit?: number }) => {
+  if (!uuid.safeParse(input.userId).success) throw new Error("Invalid userId");
+  return {
+    userId: input.userId,
+    offset: Math.max(0, Math.floor(input.offset ?? 0)),
+    limit: Math.min(100, Math.max(1, Math.floor(input.limit ?? 20))),
+  };
+};
+
+export const getUserListingsPage = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator(pageInput)
+  .handler(async ({ data }) => {
+    const from = data.offset;
+    const to = data.offset + data.limit - 1;
+    const { data: rows, error, count } = await supabaseAdmin
+      .from("listings")
+      .select("id, title, status, price, currency, created_at, view_count", { count: "exact" })
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw new Error(error.message);
+    return { items: rows ?? [], total: count ?? 0, offset: data.offset, limit: data.limit };
+  });
+
+export const getUserWalletTxsPage = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator(pageInput)
+  .handler(async ({ data }) => {
+    const from = data.offset;
+    const to = data.offset + data.limit - 1;
+    const { data: rows, error, count } = await supabaseAdmin
+      .from("wallet_transactions")
+      .select("*", { count: "exact" })
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw new Error(error.message);
+    return { items: rows ?? [], total: count ?? 0, offset: data.offset, limit: data.limit };
+  });
+
+export const getUserPaymentsPage = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator(pageInput)
+  .handler(async ({ data }) => {
+    const from = data.offset;
+    const to = data.offset + data.limit - 1;
+    const { data: rows, error, count } = await supabaseAdmin
+      .from("payments")
+      .select("*", { count: "exact" })
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw new Error(error.message);
+    return { items: rows ?? [], total: count ?? 0, offset: data.offset, limit: data.limit };
+  });
+
+// Backward-compat: keep getUserDetails as a thin wrapper around the new paginated fns
+// (some callers still import it). Returns the first page of each list.
 export const getUserDetails = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: { userId: string }) => {
@@ -343,19 +453,27 @@ export const getSiteSettings = createServerFn({ method: "GET" })
     return { settings: data };
   });
 
+const siteSettingsSchema = z.object({
+  featured_price_usd: z.number().min(0).max(9999).optional(),
+  bump_price_usd: z.number().min(0).max(9999).optional(),
+  featured_days: z.number().int().min(1).max(365).optional(),
+  bump_days: z.number().int().min(1).max(365).optional(),
+  maintenance_mode: z.boolean().optional(),
+  maintenance_message: z.string().max(500).optional(),
+  site_name: z.string().min(1).max(80).optional(),
+  support_email: z.string().email().max(120).optional().or(z.literal("")),
+});
+
 export const updateSiteSettings = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((input: {
-    featured_price_usd?: number; bump_price_usd?: number;
-    featured_days?: number; bump_days?: number;
-    maintenance_mode?: boolean; maintenance_message?: string;
-    site_name?: string; support_email?: string;
-  }) => input)
+  .inputValidator((input: unknown) => siteSettingsSchema.parse(input))
   .handler(async ({ data, context }) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["featured_price_usd", "bump_price_usd", "featured_days", "bump_days", "maintenance_mode", "maintenance_message", "site_name", "support_email"] as const) {
       if (data[k] !== undefined) patch[k] = data[k];
     }
+    if (Object.keys(patch).length === 0) return { ok: true };
+    patch.updated_at = new Date().toISOString();
     const { error } = await supabaseAdmin.from("site_settings").update(patch as never).eq("id", "global");
     if (error) throw new Error(error.message);
     await audit(context.userId, "settings.update", "site_settings", "global", patch);
@@ -364,24 +482,73 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
 
 /* ---------------- Audit ---------------- */
 
-export const getAuditLog = createServerFn({ method: "GET" })
+const AUDIT_CATEGORIES = {
+  wallet: ["wallet."],
+  roles: ["role."],
+  bans: ["user.ban", "user.unban"],
+  listings: ["listing."],
+  settings: ["settings."],
+  topups: ["topup."],
+  users: ["user.delete", "user.password_reset"],
+} as const;
+
+export const getAuditLog = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .handler(async () => {
-    const { data, error } = await supabaseAdmin
+  .inputValidator((input: { q?: string; category?: keyof typeof AUDIT_CATEGORIES | "all"; from?: string; to?: string; page?: number; perPage?: number }) => ({
+    q: (input.q ?? "").slice(0, 100).trim(),
+    category: input.category ?? "all",
+    from: input.from ?? "",
+    to: input.to ?? "",
+    page: Math.max(1, Math.floor(input.page ?? 1)),
+    perPage: Math.min(100, Math.max(10, Math.floor(input.perPage ?? 50))),
+  }))
+  .handler(async ({ data }) => {
+    let query = supabaseAdmin
       .from("audit_log")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false });
+
+    if (data.category !== "all") {
+      const prefixes = AUDIT_CATEGORIES[data.category];
+      const ors = prefixes.map((p) => (p.endsWith(".") ? `action.ilike.${p}%` : `action.eq.${p}`)).join(",");
+      query = query.or(ors);
+    }
+    if (data.q) {
+      query = query.or(`action.ilike.%${data.q}%,target_id.ilike.%${data.q}%`);
+    }
+    if (data.from) query = query.gte("created_at", data.from);
+    if (data.to) query = query.lte("created_at", data.to);
+
+    const from = (data.page - 1) * data.perPage;
+    const to = from + data.perPage - 1;
+    const { data: rows, error, count } = await query.range(from, to);
     if (error) throw new Error(error.message);
-    const actorIds = [...new Set((data ?? []).map((r) => r.actor_id).filter(Boolean) as string[])];
-    const { data: profiles } = actorIds.length
-      ? await supabaseAdmin.from("profiles").select("id, display_name").in("id", actorIds)
-      : { data: [] as { id: string; display_name: string }[] };
+
+    const actorIds = [...new Set((rows ?? []).map((r) => r.actor_id).filter(Boolean) as string[])];
+    const targetUserIds = [...new Set((rows ?? []).filter((r) => r.target_type === "user").map((r) => r.target_id).filter(Boolean) as string[])];
+    const targetListingIds = [...new Set((rows ?? []).filter((r) => r.target_type === "listing").map((r) => r.target_id).filter(Boolean) as string[])];
+    const allProfileIds = [...new Set([...actorIds, ...targetUserIds])];
+
+    const [profilesRes, listingsRes] = await Promise.all([
+      allProfileIds.length ? supabaseAdmin.from("profiles").select("id, display_name").in("id", allProfileIds) : Promise.resolve({ data: [] }),
+      targetListingIds.length ? supabaseAdmin.from("listings").select("id, title").in("id", targetListingIds) : Promise.resolve({ data: [] }),
+    ]);
+    const profiles = (profilesRes.data ?? []) as { id: string; display_name: string }[];
+    const listings = (listingsRes.data ?? []) as { id: string; title: string }[];
+
     return {
-      entries: (data ?? []).map((r) => ({
+      entries: (rows ?? []).map((r) => ({
         ...r,
-        actor_name: profiles?.find((p) => p.id === r.actor_id)?.display_name ?? null,
+        actor_name: profiles.find((p) => p.id === r.actor_id)?.display_name ?? null,
+        target_name:
+          r.target_type === "user" ? profiles.find((p) => p.id === r.target_id)?.display_name ?? null :
+          r.target_type === "listing" ? listings.find((l) => l.id === r.target_id)?.title ?? null :
+          null,
       })),
+      total: count ?? 0,
+      page: data.page,
+      perPage: data.perPage,
+      hasMore: from + (rows?.length ?? 0) < (count ?? 0),
     };
   });
 

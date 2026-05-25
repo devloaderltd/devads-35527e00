@@ -4,9 +4,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowUp, Wallet } from "lucide-react";
+import { Sparkles, ArrowUp, Wallet, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { getWallet, promoteWithWallet, getPromotionPricing } from "@/lib/wallet.functions";
+
+const DEFAULT_FEATURED = 9.99;
+const DEFAULT_BUMP = 2.99;
+const DEFAULT_FEATURED_DAYS = 7;
+const DEFAULT_BUMP_DAYS = 1;
 
 export function PromoteDialog({ listingId }: { listingId: string }) {
   const [open, setOpen] = useState(false);
@@ -15,23 +20,29 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
   const promote = useServerFn(promoteWithWallet);
   const qc = useQueryClient();
 
-  const { data: wallet } = useQuery({
+  const walletQ = useQuery({
     queryKey: ["wallet"],
     queryFn: () => fetchWallet(),
     enabled: open,
   });
 
-  const { data: pricing } = useQuery({
+  const pricingQ = useQuery({
     queryKey: ["promotion-pricing"],
     queryFn: () => fetchPricing(),
+    staleTime: 60_000,
+    retry: 1,
   });
 
-  const FEATURED = pricing?.featuredPrice ?? 9.99;
-  const BUMP = pricing?.bumpPrice ?? 2.99;
-  const FEATURED_DAYS = pricing?.featuredDays ?? 7;
-  const BUMP_DAYS = pricing?.bumpDays ?? 1;
+  const pricing = pricingQ.data;
+  const pricingFailed = pricingQ.isError;
+  const pricingLoading = pricingQ.isLoading;
 
-  const balance = wallet?.balance ?? 0;
+  const FEATURED = pricing?.featuredPrice ?? DEFAULT_FEATURED;
+  const BUMP = pricing?.bumpPrice ?? DEFAULT_BUMP;
+  const FEATURED_DAYS = pricing?.featuredDays ?? DEFAULT_FEATURED_DAYS;
+  const BUMP_DAYS = pricing?.bumpDays ?? DEFAULT_BUMP_DAYS;
+
+  const balance = walletQ.data?.balance ?? 0;
   const [busy, setBusy] = useState<null | "featured" | "bump">(null);
 
   const pay = async (type: "featured" | "bump") => {
@@ -53,6 +64,8 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
     }
   };
 
+  const buttonsDisabled = busy !== null || pricingLoading || walletQ.isLoading;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -72,35 +85,57 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
             <Wallet className="h-4 w-4 text-primary" />
             <span className="text-muted-foreground">Wallet balance</span>
           </div>
-          <div className="font-display text-lg font-bold gradient-text">${balance.toFixed(2)}</div>
+          <div className="font-display text-lg font-bold gradient-text">
+            {walletQ.isLoading ? "…" : `$${balance.toFixed(2)}`}
+          </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <PlanCard
-            icon={<Sparkles className="h-4 w-4" />}
-            title="Featured"
-            price={FEATURED}
-            gradientClass="btn-gradient"
-            description={`Pin to the top of search & homepage for ${FEATURED_DAYS} days with the iridescent Premium badge.`}
-            disabled={busy !== null}
-            loading={busy === "featured"}
-            insufficient={balance < FEATURED}
-            onClick={() => pay("featured")}
-          />
-          <PlanCard
-            icon={<ArrowUp className="h-4 w-4" />}
-            title="Bump"
-            price={BUMP}
-            gradientStyle={{ background: "var(--gradient-warm)" }}
-            description={`Bump back to the top of recent results for ${BUMP_DAYS} day${BUMP_DAYS === 1 ? "" : "s"} with a warm "Just bumped" chip.`}
-            disabled={busy !== null}
-            loading={busy === "bump"}
-            insufficient={balance < BUMP}
-            onClick={() => pay("bump")}
-          />
-        </div>
+        {pricingFailed && (
+          <div className="flex items-start gap-2 rounded-2xl border border-amber-300/60 bg-amber-50/80 p-3 text-sm text-amber-900">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium">Couldn't load latest pricing</p>
+              <p className="text-xs opacity-80">Showing default rates. Prices may differ at checkout.</p>
+            </div>
+            <Button size="sm" variant="ghost" className="h-7 gap-1 rounded-full text-amber-900 hover:bg-amber-100" onClick={() => pricingQ.refetch()}>
+              <RefreshCw className="h-3 w-3" /> Retry
+            </Button>
+          </div>
+        )}
 
-        {balance < BUMP && (
+        {pricingLoading ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PlanSkeleton />
+            <PlanSkeleton />
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PlanCard
+              icon={<Sparkles className="h-4 w-4" />}
+              title="Featured"
+              price={FEATURED}
+              gradientClass="btn-gradient"
+              description={`Pin to the top of search & homepage for ${FEATURED_DAYS} days with the iridescent Premium badge.`}
+              disabled={buttonsDisabled}
+              loading={busy === "featured"}
+              insufficient={balance < FEATURED}
+              onClick={() => pay("featured")}
+            />
+            <PlanCard
+              icon={<ArrowUp className="h-4 w-4" />}
+              title="Bump"
+              price={BUMP}
+              gradientStyle={{ background: "var(--gradient-warm)" }}
+              description={`Bump back to the top of recent results for ${BUMP_DAYS} day${BUMP_DAYS === 1 ? "" : "s"} with a warm "Just bumped" chip.`}
+              disabled={buttonsDisabled}
+              loading={busy === "bump"}
+              insufficient={balance < BUMP}
+              onClick={() => pay("bump")}
+            />
+          </div>
+        )}
+
+        {!pricingLoading && balance < BUMP && (
           <div className="rounded-2xl border border-white/50 bg-white/60 p-4 text-center text-sm">
             <p className="mb-2 text-muted-foreground">Not enough credits? Top up with crypto.</p>
             <Button asChild className="btn-gradient rounded-full border-0">
@@ -110,6 +145,17 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PlanSkeleton() {
+  return (
+    <div className="rounded-2xl border border-white/50 bg-white/40 p-5">
+      <div className="h-7 w-24 animate-pulse rounded bg-white/60" />
+      <div className="mt-3 h-9 w-20 animate-pulse rounded bg-white/60" />
+      <div className="mt-3 h-12 w-full animate-pulse rounded bg-white/60" />
+      <div className="mt-3 h-10 w-full animate-pulse rounded-full bg-white/60" />
+    </div>
   );
 }
 
