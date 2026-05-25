@@ -8,12 +8,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3, Wallet, BookmarkCheck, Search } from "lucide-react";
+import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3, Wallet, BookmarkCheck, Search, Activity, Phone } from "lucide-react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend, AreaChart, Area,
 } from "recharts";
-import { format, subDays, startOfDay } from "date-fns";
+import { format, subDays, startOfDay, formatDistanceToNow } from "date-fns";
 import { getMyListingAnalytics } from "@/lib/extras.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -194,9 +194,13 @@ function DashboardPage() {
           </ChartCard>
         </TabsContent>
 
-        <TabsContent value="performance" className="mt-4">
+        <TabsContent value="performance" className="mt-4 space-y-6">
           <PerformancePanel />
+          <RecentActivity userId={user?.id} listings={stats?.listings ?? []} />
         </TabsContent>
+
+
+
 
 
 
