@@ -6,14 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowUp, Wallet } from "lucide-react";
 import { toast } from "sonner";
-import { getWallet, promoteWithWallet } from "@/lib/wallet.functions";
-
-const FEATURED = 9.99;
-const BUMP = 2.99;
+import { getWallet, promoteWithWallet, getPromotionPricing } from "@/lib/wallet.functions";
 
 export function PromoteDialog({ listingId }: { listingId: string }) {
   const [open, setOpen] = useState(false);
   const fetchWallet = useServerFn(getWallet);
+  const fetchPricing = useServerFn(getPromotionPricing);
   const promote = useServerFn(promoteWithWallet);
   const qc = useQueryClient();
 
@@ -22,6 +20,16 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
     queryFn: () => fetchWallet(),
     enabled: open,
   });
+
+  const { data: pricing } = useQuery({
+    queryKey: ["promotion-pricing"],
+    queryFn: () => fetchPricing(),
+  });
+
+  const FEATURED = pricing?.featuredPrice ?? 9.99;
+  const BUMP = pricing?.bumpPrice ?? 2.99;
+  const FEATURED_DAYS = pricing?.featuredDays ?? 7;
+  const BUMP_DAYS = pricing?.bumpDays ?? 1;
 
   const balance = wallet?.balance ?? 0;
   const [busy, setBusy] = useState<null | "featured" | "bump">(null);
@@ -35,7 +43,7 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
     setBusy(type);
     try {
       await promote({ data: { listingId, type } });
-      toast.success(type === "featured" ? "Listing featured for 7 days!" : "Listing bumped to the top!");
+      toast.success(type === "featured" ? `Listing featured for ${FEATURED_DAYS} days!` : "Listing bumped to the top!");
       qc.invalidateQueries({ queryKey: ["wallet"] });
       setOpen(false);
     } catch (e: any) {
@@ -73,7 +81,7 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
             title="Featured"
             price={FEATURED}
             gradientClass="btn-gradient"
-            description="Pin to the top of search & homepage for 7 days with the iridescent Premium badge."
+            description={`Pin to the top of search & homepage for ${FEATURED_DAYS} days with the iridescent Premium badge.`}
             disabled={busy !== null}
             loading={busy === "featured"}
             insufficient={balance < FEATURED}
@@ -84,7 +92,7 @@ export function PromoteDialog({ listingId }: { listingId: string }) {
             title="Bump"
             price={BUMP}
             gradientStyle={{ background: "var(--gradient-warm)" }}
-            description={`Bump back to the top of recent results with a warm "Just bumped" chip.`}
+            description={`Bump back to the top of recent results for ${BUMP_DAYS} day${BUMP_DAYS === 1 ? "" : "s"} with a warm "Just bumped" chip.`}
             disabled={busy !== null}
             loading={busy === "bump"}
             insufficient={balance < BUMP}

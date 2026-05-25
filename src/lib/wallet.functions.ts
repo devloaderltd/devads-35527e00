@@ -3,8 +3,27 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createInvoice } from "./nowpayments.server";
 
-const FEATURED_USD = 9.99;
-const BUMP_USD = 2.99;
+const FEATURED_USD_DEFAULT = 9.99;
+const BUMP_USD_DEFAULT = 2.99;
+const FEATURED_DAYS_DEFAULT = 7;
+const BUMP_DAYS_DEFAULT = 1;
+
+async function loadPricing() {
+  const { data } = await supabaseAdmin
+    .from("site_settings")
+    .select("featured_price_usd, bump_price_usd, featured_days, bump_days")
+    .eq("id", "global")
+    .maybeSingle();
+  return {
+    featuredPrice: Number(data?.featured_price_usd ?? FEATURED_USD_DEFAULT),
+    bumpPrice: Number(data?.bump_price_usd ?? BUMP_USD_DEFAULT),
+    featuredDays: Number(data?.featured_days ?? FEATURED_DAYS_DEFAULT),
+    bumpDays: Number(data?.bump_days ?? BUMP_DAYS_DEFAULT),
+  };
+}
+
+export const getPromotionPricing = createServerFn({ method: "GET" })
+  .handler(async () => loadPricing());
 
 export const getWallet = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -79,7 +98,9 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const userId = context.userId;
-    const amount = data.type === "featured" ? FEATURED_USD : BUMP_USD;
+    const pricing = await loadPricing();
+    const amount = data.type === "featured" ? pricing.featuredPrice : pricing.bumpPrice;
+    const days = data.type === "featured" ? pricing.featuredDays : pricing.bumpDays;
 
     const { data: listing, error: lerr } = await supabaseAdmin
       .from("listings")
@@ -94,7 +115,7 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
       _user_id: userId,
       _amount: amount,
       _reference: data.listingId,
-      _description: data.type === "featured" ? "Featured promotion (7d)" : "Bump promotion",
+      _description: data.type === "featured" ? `Featured promotion (${days}d)` : "Bump promotion",
     });
     if (debitErr) {
       if (debitErr.message?.toLowerCase().includes("insufficient")) {
@@ -123,7 +144,7 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
       await supabaseAdmin.from("listings").update({ bumped_at: new Date().toISOString() }).eq("id", data.listingId);
     } else {
       const now = new Date();
-      const ends = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const ends = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
       await supabaseAdmin.from("listing_promotions").insert({
         listing_id: data.listingId,
         type: "featured",
@@ -135,3 +156,4 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
