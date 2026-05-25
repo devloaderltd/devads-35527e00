@@ -1,40 +1,69 @@
-## Polish full website to chosen direction: Typographic Minimalist (dark + Sunset Blaze)
+## Goal
 
-The user picked the **Typographic Minimalist** prototype: deep `#0a0a0c` / `#0f0f12` surfaces, glassmorphism layers (`bg-white/5 border-white/10`), Sunset Blaze accents (#ff6b35 / #f7931e / #e84393 / #6c5ce7), Space Grotesk display + DM Sans body, with subtle radial glows on primary buttons.
+Make the admin panel fully responsive with a mobile-tuned layout, and audit/fix the rest of the app so every page works cleanly on small viewports (≤393px) up to desktop.
 
-Scope is the **homepage + global design system** so the new look propagates to every page (search, listings, dashboard, admin, auth) via semantic tokens.
+## Scope
 
-### 1. `src/styles.css` — swap the design system to dark Sunset Blaze
-- Rewrite `:root` tokens to dark mode by default:
-  - `--background: #0a0a0c`, `--card: #0f0f12`, `--foreground: white`, `--muted-foreground: white/70`
-  - `--primary` = indigo `#6c5ce7`, `--secondary` = magenta `#e84393`, `--accent` = amber `#f7931e`, `--coral` = `#ff6b35`
-  - `--border` / `--input` use `oklch(1 0 0 / 10%)` for glass strokes
-- New gradient family using Sunset Blaze stops:
-  - `--gradient-primary`: indigo → magenta
-  - `--gradient-warm`: amber → coral → magenta
-  - `--gradient-aurora`: full sunset sweep
-  - `--gradient-page`: radial glows at four corners over the near-black background
-- `--glass-bg: white/5`, `--glass-border: white/10`, deeper shadows + stronger primary glow.
-- Collapse `.dark { … }` to just `color-scheme: dark` since the design is dark-first.
+### 1. Admin panel — mobile-first restructure
 
-### 2. `src/components/Header.tsx` — dark glass nav
-- Replace `bg-white/60` style backdrops with the new `glass-strong` (dark) variant.
-- City pill: dark glass with amber pulse dot.
-- "Post" button keeps `btn-gradient` (now indigo → magenta with primary glow).
-- Sign-in button: white pill on dark, matching prototype.
+`src/components/admin/AdminShell.tsx`
+- Replace the desktop-only header with a responsive one:
+  - Mobile: compact top bar (logo + hamburger). Hamburger opens a `Sheet` (slide-in drawer) with: admin email, nav links (Overview, Users, Listings, Payments, Reports), and Sign out.
+  - Desktop (md+): existing inline header with email + sign-out button.
+- Container padding: `px-3 sm:px-4` instead of fixed `px-4`. Vertical padding `py-4 sm:py-8`.
 
-### 3. `src/routes/index.tsx` — match prototype composition
-- Hero section: dark glass card with two corner radial glows (magenta top-right, indigo bottom-left), pulsing amber chip, gradient-text headline that fades white → 60% white, sunset CTA + ghost glass "Browse all".
-- Bento categories: full-width Electronics card with layered indigo/magenta gradient + blur, two square cards (Furniture amber, Pets coral) with icon tiles.
-- Listing rails (Featured / Trending / Latest): keep current data flow, restyle section headings and skeletons to dark glass.
-- City banner and empty-city CTA: dark glass + sunset gradient button.
+`src/routes/admin.index.tsx`
+- Page header: smaller display type on mobile (`text-2xl sm:text-3xl`), tighter spacing.
+- Tabs: make `TabsList` horizontally scrollable on mobile (`overflow-x-auto no-scrollbar`, `whitespace-nowrap`) so all 5 tabs stay reachable; keep pill look on desktop.
+- KPI grid: `grid-cols-2` on mobile (already), reduce icon/value sizes and card padding on small screens.
+- Charts grid: stays `grid-cols-1 lg:grid-cols-2`. Reduce chart `height` to ~200 on mobile via container. Hide/rotate dense axis labels on small widths (smaller font, larger `interval`).
+- Users / Listings / Payments / Reports tables: on mobile (<md) render as stacked cards (one card per row with key/value pairs and action buttons), on md+ keep the existing table. Search inputs become full-width on mobile.
+- Action button rows: wrap with `flex-wrap gap-2` and full-width on mobile.
 
-### 4. Quick polish carried by tokens (no per-file edits)
-- All shadcn components (Button, Card, Dialog, Sheet, Input, Sidebar, etc.) inherit the new dark Sunset Blaze tokens automatically.
-- `glass`, `glass-strong`, `btn-gradient`, `gradient-text`, `hover-float` utilities keep their names so existing usage across `/search`, `/listings/$id`, `/post`, `/dashboard`, `/wallet`, `/admin/*` instantly adopts the new look.
+`src/routes/admin.login.tsx`
+- Already centered; tighten padding (`p-6 sm:p-8`), ensure form inputs are 16px font (prevents iOS zoom), full-width button, safe-area aware (`pb-[max(1rem,env(safe-area-inset-bottom))]`).
 
-### Out of scope
-- No business-logic / data-fetching changes.
-- No DB migrations.
-- No rewrite of individual sub-pages — they re-skin themselves through the token swap.
-- Light mode is removed (design direction is dark-first); the existing `ThemeToggle` stays but both states render dark for now.
+### 2. Marketplace (user) app — responsive audit
+
+`src/components/Header.tsx`
+- Mobile city pill is already icon-only; verify search input row doesn't overflow at 320px.
+- Convert the user dropdown to a `Sheet` on mobile (optional polish) OR keep dropdown but ensure trigger stays tappable (44px). Will keep dropdown, just enforce min-touch sizes.
+
+Pages to audit and tighten (only what's actually broken on 393px):
+- `src/routes/index.tsx` — hero spacing, section paddings
+- `src/routes/search.tsx` — filter sidebar collapses into a `Sheet` triggered by a "Filters" button on mobile
+- `src/routes/listings.$id.tsx` — image gallery, sticky CTA on mobile, contact button width
+- `src/routes/sellers.$id.tsx` — header stack on mobile
+- `src/routes/login.tsx`, `src/routes/signup.tsx` — input zoom-prevention, full-width buttons
+- `src/routes/_authenticated.dashboard.tsx` — KPI cards 2-col on mobile
+- `src/routes/_authenticated.my-listings.tsx`, `_authenticated.favorites.tsx` — grid: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
+- `src/routes/_authenticated.messages.tsx` + `.$threadId.tsx` — on mobile, show thread list OR conversation (not both); back button in thread view
+- `src/routes/_authenticated.post.tsx`, `_authenticated.profile.tsx` — form fields full-width, sticky submit on mobile
+- `src/routes/_authenticated.debug.session.tsx` — pre/JSON blocks `overflow-x-auto break-all`
+
+Cross-cutting:
+- Add `.no-scrollbar` utility in `src/styles.css` for horizontal scroll affordances.
+- Ensure all `<input>` use `text-base` (16px) to suppress iOS zoom.
+- Ensure no fixed widths that overflow at 360px (replace with `max-w-*` + `w-full`).
+- Add `viewport-fit=cover` already present via Tanstack root; add `pb-[env(safe-area-inset-bottom)]` to bottom-sticky bars.
+
+### 3. Out of scope
+- No business logic, auth, RLS, or DB changes.
+- No new routes — admin already lives at `/admin/*`, separate from user area.
+- No design overhaul; keep existing tokens and dark admin theme.
+
+## Files touched
+
+- `src/components/admin/AdminShell.tsx` (mobile drawer header)
+- `src/routes/admin.index.tsx` (tabs scroll, responsive KPIs/charts, mobile card-tables)
+- `src/routes/admin.login.tsx` (mobile polish)
+- `src/components/Header.tsx` (touch sizes)
+- `src/routes/index.tsx`, `search.tsx`, `listings.$id.tsx`, `sellers.$id.tsx`, `login.tsx`, `signup.tsx`
+- `src/routes/_authenticated.dashboard.tsx`, `.my-listings.tsx`, `.favorites.tsx`, `.messages*.tsx`, `.post.tsx`, `.profile.tsx`, `.debug.session.tsx`
+- `src/styles.css` (`.no-scrollbar` helper)
+
+## Verification
+
+- Preview at 360, 393, 768, 1280 widths.
+- Walk through: `/`, `/search`, `/listings/:id`, `/login`, `/dashboard`, `/messages`, `/admin/login`, `/admin` (Overview, Users, Listings, Payments, Reports tabs).
+- Confirm no horizontal scroll on body, all primary actions reachable, tables convert to cards on mobile, admin nav reachable via drawer.

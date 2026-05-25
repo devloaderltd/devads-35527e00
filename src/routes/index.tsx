@@ -101,28 +101,27 @@ function Home() {
   return (
     <div className="pt-4">
       {/* Hero band */}
-      <section className="container mx-auto max-w-3xl px-4 pt-6">
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.08] to-transparent p-6 md:p-10">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-secondary opacity-25 blur-[80px]" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-primary opacity-25 blur-[80px]" />
-
-          <div className="relative z-10">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground/70 backdrop-blur">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-              Free to post · Free to browse
+      <section className="container mx-auto px-4 pt-6">
+        <div className="relative overflow-hidden rounded-[2rem] glass-strong p-6 md:p-12 shadow-[var(--shadow-float)]">
+          <div className="absolute -right-24 -bottom-24 h-80 w-80 rounded-full bg-[var(--gradient-primary)] opacity-20 blur-3xl" />
+          <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-accent/40 opacity-40 blur-3xl" />
+          <div className="relative z-10 max-w-2xl">
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground/80">
+              <Sparkles className="h-3 w-3" /> Free to post · Free to browse
             </span>
-            <h1 className="mt-5 bg-gradient-to-br from-white via-white to-white/60 bg-clip-text font-display text-4xl font-bold leading-[1.05] tracking-tight text-transparent md:text-6xl">
-              Buy &amp; sell locally — across the country.
+            <h1 className="mt-5 font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
+              Buy &amp; sell locally —{" "}
+              <span className="gradient-text">across the country.</span>
             </h1>
-            <p className="mt-4 max-w-xl pr-4 text-sm leading-relaxed text-muted-foreground md:text-base">
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
               From vintage bikes in Brooklyn to apartments in Manchester — find what's near you, or post your own in under a minute.
             </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="btn-gradient rounded-2xl border-0 px-7 py-6 text-base font-bold shadow-[var(--shadow-glow-primary)]">
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Button asChild size="lg" className="btn-gradient rounded-2xl border-0 px-7 py-6 text-base font-bold">
                 <Link to="/post">Post a listing</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="group rounded-2xl border-white/10 bg-white/5 px-7 py-6 text-base font-bold text-foreground backdrop-blur hover:bg-white/10">
-                <Link to="/search">Browse all <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
+              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/70 bg-white/60 px-7 py-6 text-base font-bold backdrop-blur hover:bg-white">
+                <Link to="/search">Browse all <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
             </div>
           </div>
@@ -130,88 +129,95 @@ function Home() {
       </section>
 
       {/* Bento Grid */}
-      <section className="container mx-auto max-w-3xl px-4 pt-6">
-        <div className="grid grid-cols-2 gap-4">
-          {/* Large featured listing — typographic, image as low-opacity texture */}
+      <section className="container mx-auto px-4 pt-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4 md:grid-rows-2 md:auto-rows-fr md:h-[560px]">
+          {/* Large featured listing */}
           {heroFeatured ? (
             <Link
               to="/listings/$id"
               params={{ id: heroFeatured.id }}
-              className="group relative col-span-2 h-48 overflow-hidden rounded-[2rem] md:h-56"
+              className="group relative col-span-1 row-span-1 overflow-hidden rounded-[2rem] glass md:col-span-2 md:row-span-2"
             >
               <img
                 src={heroImg}
                 alt={heroFeatured.title}
                 loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover opacity-60 transition duration-700 group-hover:scale-110 group-hover:opacity-70"
+                className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-secondary/30" />
-              <div className="absolute inset-0 bg-card/40 backdrop-blur-[2px]" />
-              <div className="relative z-10 flex h-full flex-col justify-between p-6">
-                <div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur">
-                    <Sparkles className="h-3 w-3" /> Featured
-                  </span>
-                  <h3 className="mt-3 font-display text-2xl font-bold text-white">{heroFeatured.title}</h3>
-                  {heroPrice && (
-                    <p className="mt-1 text-xs text-white/70">{heroPrice}{heroFeatured.cities ? ` · ${heroFeatured.cities.name}` : ""}</p>
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/10 to-transparent" />
+              <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-8">
+                <span className="self-start rounded-full btn-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+                  <Sparkles className="mr-1 inline h-3 w-3" /> Featured
+                </span>
+                <div className="text-white">
+                  <h3 className="font-display text-2xl font-bold leading-tight md:text-3xl">{heroFeatured.title}</h3>
+                  {heroFeatured.cities && (
+                    <p className="mt-1 text-sm text-white/80">
+                      {heroFeatured.cities.name}, {heroFeatured.cities.region}
+                    </p>
                   )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">View listing</span>
-                  <span className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/10 text-white transition-colors group-hover:bg-white group-hover:text-black">
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
+                  {heroPrice && (
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-base font-bold text-foreground backdrop-blur-md">
+                      {heroPrice}
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>
           ) : (
-            <Link
-              to="/search"
-              search={{ category: electronicsCat?.slug ?? "electronics" } as any}
-              className="group relative col-span-2 h-48 overflow-hidden rounded-[2rem]"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-secondary/20" />
-              <div className="absolute inset-0 bg-card/40 backdrop-blur-[2px]" />
-              <div className="relative z-10 flex h-full flex-col justify-between p-6">
-                <div>
-                  <h3 className="font-display text-2xl font-bold">{electronicsCat?.name ?? "Electronics"}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">Latest gadgets &amp; tech gear</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Explore</span>
-                  <span className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/10 text-foreground transition-colors group-hover:bg-white group-hover:text-black">
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                </div>
-              </div>
-            </Link>
+            <div className="col-span-1 row-span-1 rounded-[2rem] glass md:col-span-2 md:row-span-2" />
           )}
 
-          {/* Furniture — amber icon tile */}
+          {/* Medium gradient category — Electronics */}
+          <Link
+            to="/search"
+            search={{ category: electronicsCat?.slug ?? "electronics" } as any}
+            className="group relative col-span-1 overflow-hidden rounded-[2rem] p-6 text-white md:col-span-2 hover-float"
+            style={{ background: "var(--gradient-primary)", backgroundSize: "200% 200%" }}
+          >
+            <div className="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-white/30 blur-2xl" />
+            <div className="relative z-10 flex h-full flex-col justify-between gap-4">
+              <div>
+                <h3 className="font-display text-2xl font-bold md:text-3xl">{electronicsCat?.name ?? "Electronics"}</h3>
+                <p className="mt-1 text-sm text-white/85">Latest gadgets, phones & tech gear</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-widest text-white/80">Explore</span>
+                <span className="rounded-full bg-white/20 p-3 backdrop-blur-md transition group-hover:bg-white/30">
+                  <ChevronRight className="h-5 w-5" />
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Small colorful category — Furniture (lavender→indigo) */}
           <Link
             to="/search"
             search={{ category: furnitureCat?.slug ?? "furniture" } as any}
-            className="group flex aspect-square flex-col items-center justify-center rounded-[2rem] border border-white/10 bg-white/5 p-5 text-center transition-colors hover:bg-white/10"
+            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
+            style={{ background: "linear-gradient(135deg, var(--lavender), var(--primary))" }}
           >
-            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-accent/20">
-              <img src={catFurniture} alt="" className="h-7 w-7 rounded-lg object-cover" loading="lazy" />
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
+            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
+              <img src={catFurniture} alt="" className="h-8 w-8 rounded-lg object-cover" />
             </div>
-            <h4 className="font-display text-sm font-bold">{furnitureCat?.name ?? "Furniture"}</h4>
-            <p className="mt-1 text-[10px] text-muted-foreground">Home goods</p>
+            <span className="font-display font-bold">{furnitureCat?.name ?? "Furniture"}</span>
+            <span className="mt-1 text-xs text-white/85">Browse home goods</span>
           </Link>
 
-          {/* Pets — coral icon tile */}
+          {/* Small colorful category — Pets (amber→coral) */}
           <Link
             to="/search"
             search={{ category: petsCat?.slug ?? "pets" } as any}
-            className="group flex aspect-square flex-col items-center justify-center rounded-[2rem] border border-white/10 bg-white/5 p-5 text-center transition-colors hover:bg-white/10"
+            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
+            style={{ background: "linear-gradient(135deg, var(--amber), var(--coral))" }}
           >
-            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl" style={{ background: "color-mix(in oklab, var(--coral) 22%, transparent)" }}>
-              <img src={catPets} alt="" className="h-7 w-7 rounded-lg object-cover" loading="lazy" />
+            <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
+            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
+              <img src={catPets} alt="" className="h-8 w-8 rounded-lg object-cover" />
             </div>
-            <h4 className="font-display text-sm font-bold">{petsCat?.name ?? "Pets"}</h4>
-            <p className="mt-1 text-[10px] text-muted-foreground">Find a friend</p>
+            <span className="font-display font-bold">{petsCat?.name ?? "Pets"}</span>
+            <span className="mt-1 text-xs text-white/85">Find a new friend</span>
           </Link>
         </div>
       </section>
