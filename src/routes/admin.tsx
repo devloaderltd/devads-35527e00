@@ -8,6 +8,8 @@ import { getMyRoles } from "@/lib/admin.functions";
 import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { isUnauthorizedError } from "@/lib/auth-errors";
+import { AuthErrorFallback } from "@/components/AuthErrorFallback";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Marketly" }, { name: "robots", content: "noindex" }] }),
@@ -34,12 +36,30 @@ function Gated() {
     queryKey: ["my-roles", user?.id],
     enabled: !loading && !!user,
     staleTime: 0,
+    retry: false,
     queryFn: async () => (await fetchRoles()).roles,
   });
 
-  if (loading || !user || rolesQ.isLoading) {
+  // If the server fn returns Unauthorized (e.g. token expired mid-session),
+  // bounce to the admin login so the user doesn't get stuck on a blank screen.
+  useEffect(() => {
+    if (rolesQ.isError && isUnauthorizedError(rolesQ.error)) {
+      navigate({ to: "/admin/login", search: { redirect: "/admin" }, replace: true });
+    }
+  }, [rolesQ.isError, rolesQ.error, navigate]);
+
+  if (loading || !user || (rolesQ.isLoading && !rolesQ.isError)) {
     return <div className="grid min-h-screen place-items-center bg-slate-950 text-slate-400">Loading admin…</div>;
   }
+
+  if (rolesQ.isError) {
+    if (isUnauthorizedError(rolesQ.error)) {
+      // Redirect effect above handles this; show a brief stub.
+      return <div className="grid min-h-screen place-items-center bg-slate-950 text-slate-400">Redirecting…</div>;
+    }
+    return <AuthErrorFallback error={rolesQ.error} reset={() => rolesQ.refetch()} variant="admin" />;
+  }
+
 
   const roles = rolesQ.data ?? [];
   const isMod = roles.includes("admin") || roles.includes("moderator");
