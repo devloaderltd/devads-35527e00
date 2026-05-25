@@ -219,6 +219,7 @@ function DashboardPage() {
               </PieChart>
             </ResponsiveContainer>
           </ChartCard>
+          </div>
         </TabsContent>
 
         <TabsContent value="performance" className="mt-4 space-y-6">
