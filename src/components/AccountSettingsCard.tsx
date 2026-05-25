@@ -14,6 +14,9 @@ import {
 import { Mail, ShieldCheck, KeyRound, LogOut, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { deleteOwnAccount } from "@/lib/account.functions";
+import { TwoFactorSection } from "@/components/TwoFactorSection";
+import { ConnectedAccountsSection } from "@/components/ConnectedAccountsSection";
+import { NotificationPreferencesSection } from "@/components/NotificationPreferencesSection";
 
 export function AccountSettingsCard() {
   const { user } = useAuth();
