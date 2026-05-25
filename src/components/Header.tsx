@@ -116,9 +116,6 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link to="/saved-searches"><BookmarkCheck className="mr-2 h-4 w-4" /> Saved searches</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/debug/session"><Bug className="mr-2 h-4 w-4" /> Debug session</Link>
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut}>
                   <LogOut className="mr-2 h-4 w-4" /> Sign out
