@@ -182,7 +182,7 @@ function InspectorTab() {
     queryKey: ["admin-peek", table],
     queryFn: () => peek({ data: { table, limit: 50 } }),
   });
-  const rows = (q.data?.rows ?? []) as Record<string, unknown>[];
+  const rows = (q.data?.rows ?? []) as Array<Record<string, string | number | boolean | null>>;
   const cols = q.data?.columns ?? [];
   return (
     <Panel title="Database inspector" actions={
