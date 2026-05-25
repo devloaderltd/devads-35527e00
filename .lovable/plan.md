@@ -1,79 +1,63 @@
-# Legal & compliance polish
+## Goal
 
-## What already exists
-- **Footer**: already lists Privacy, Terms, Cookies, About, Contact (top section + slim bottom bar). No DMCA link, no sitemap link.
-- **Sitemap** (`src/routes/sitemap[.]xml.tsx`): already includes `/about`, `/contact`, `/privacy`, `/terms`, `/cookies`. Missing `/dmca`.
-- **Contact page**: has Zod validation + 3 channel cards + a contact form, but submit only opens `mailto:` and shows a toast — no in-page confirmation state.
-- **Terms** (146 lines), **Privacy** (113), **Cookies** (90): exist, but Terms needs a fuller legal structure.
-- **CookieConsent**: binary "Essential only" / "Accept all" stored as a single string in `localStorage`. No category granularity, no API for consumers to gate scripts.
+Give admins deeper control of the site and a real-time error/debug surface, all inside the existing `/admin` shell.
 
-## Changes
+## New admin pages
 
-### 1. Granular cookie consent — `src/components/CookieConsent.tsx` + new `src/lib/cookie-consent.ts`
-- New `cookie-consent.ts` module owns the consent contract:
-  - Type: `{ essential: true; analytics: boolean; marketing: boolean; updatedAt: string; version: 1 }`.
-  - `getConsent()` / `setConsent()` read/write `localStorage` (`marketly.cookie-consent.v1`).
-  - `useConsent()` hook with a `storage` event listener so script gates react to changes.
-  - `hasConsent(category)` helper for guard sites.
-  - Dispatches a `CustomEvent('marketly:consent-change')` on save.
-- `CookieConsent.tsx` rewrite:
-  - Compact banner with **Accept all**, **Reject optional**, **Customize** actions.
-  - **Customize** expands inline panel with 3 rows:
-    - Essential (always on, disabled switch).
-    - Analytics (off by default).
-    - Marketing (off by default).
-  - Reading order, copy and link to `/cookies` preserved.
-  - Re-opens automatically if stored version < 1 (forward-compat).
-- Migrate legacy `marketly.cookie-consent` value (`"accepted"` ⇒ all on, `"essential"` ⇒ only essential) once on read.
-- Document: any optional script (analytics, ad pixels) must check `hasConsent('analytics' | 'marketing')` before loading. No optional scripts are loaded in this project today, so this is the gate, not a wiring change to existing scripts.
+1. **`/admin/banners`** — manage `site_banners` (CRUD: message, variant, CTA, start/end, active toggle, preview).
+2. **`/admin/notifications`** — broadcast notifications: send to one user, a role, or all users; insert into `notifications` via a new `adminBroadcastNotification` server fn.
+3. **`/admin/reviews`** — moderate `seller_reviews` (list, filter by rating, delete abusive reviews, audit-logged).
+4. **`/admin/threads`** — read-only view of `message_threads` + last messages for abuse investigation; ability to delete a thread.
+5. **`/admin/maintenance`** — friendly toggle for `site_settings.maintenance_mode` + message, cache/version info, "clear stale topups" action, re-run demo seed.
+6. **`/admin/debug`** — Error & Debug Center (see below).
 
-### 2. DMCA page — new `src/routes/dmca.tsx`
-- Uses existing `LegalLayout`.
-- Sections: Overview, Filing a takedown notice (statutory elements per 17 U.S.C. §512(c)(3)), Designated agent contact, Counter-notification, Repeat-infringer policy, Misrepresentation warning, Effective date.
-- `head()`: title, description, og:title/description, og:url, canonical → `https://devads.lovable.app/dmca`.
+## Error & Debug Center (`/admin/debug`)
 
-### 3. Terms expansion — `src/routes/terms.tsx`
-Keep existing tone/layout but ensure full coverage. Sections in final order:
-1. Acceptance of Terms
-2. Eligibility & account registration
-3. Listings, prohibited items, and seller responsibilities
-4. Buyer responsibilities & marketplace disclaimer (Marketly is not a party to transactions)
-5. Fees, wallet credits & payments
-6. User content license
-7. Intellectual property & DMCA (link to `/dmca`)
-8. Prohibited conduct
-9. Termination & suspension
-10. Disclaimers (AS IS, no warranty)
-11. Limitation of liability
-12. Indemnification
-13. Governing law & dispute resolution (informal first, then arbitration; class-action waiver)
-14. Changes to terms
-15. Contact (link to `/contact`)
+Tabs:
+- **Live errors**: client errors captured from a new `window.onerror` / `unhandledrejection` reporter that POSTs to `/api/public/client-errors` (HMAC-signed from the app, stored in new `client_error_logs` table). List newest 200, filter by route/severity, mark resolved.
+- **Server function logs**: paginated view of a new `server_fn_logs` table populated by a `withLogging` middleware wrapping admin serverFns (records fn name, user, duration, status, error message).
+- **Audit log**: reuse existing `getAuditLog` with better filters (actor, action, date range, target).
+- **Health**: calls a new `getSystemHealth` serverFn returning DB row counts, pending topups, failed payments (last 24h), open reports, unresolved errors, last cron run. Renders status pills (OK/warn/fail).
+- **DB inspector** (admin-only, read-only): dropdown of safe tables → shows last 50 rows via a new `adminPeekTable` serverFn with a strict allow-list of table names + columns (no PII columns).
 
-### 4. Contact confirmation — `src/routes/contact.tsx`
-- Add `submitted` state. On successful Zod validation:
-  - Still trigger `mailto:` for graceful fallback.
-  - Replace the form with a **success card**: green check icon, "Message ready to send", instructs the user to confirm sending from their email client, and a **Send another message** button that resets state.
-- Form keeps inline `<p role="alert">` per field for validation errors (in addition to the toast).
+## Schema (one migration)
 
-### 5. Footer — `src/components/Footer.tsx`
-- **Legal** section: add **DMCA** link → `/dmca`.
-- New **Resources** mini-column (or append to bottom bar) with a **Sitemap** link pointing to `/sitemap.xml` (rendered as a regular `<a>` since it's a server route, not a page route).
-- Bottom slim bar: append DMCA + Sitemap to the existing Privacy / Terms / Cookies row.
+- `client_error_logs` (id, created_at, user_id null, route, message, stack, user_agent, severity, resolved bool) — RLS: admins select/update, public insert only via signed route.
+- `server_fn_logs` (id, created_at, fn_name, user_id, duration_ms, status, error) — RLS: admins select.
+- `admin_broadcasts` (id, created_at, actor_id, audience, title, body, link) — audit of what was sent.
+- Indexes on `created_at desc`, partial index on unresolved errors.
 
-### 6. Sitemap — `src/routes/sitemap[.]xml.tsx`
-- Add `/dmca` to the static URL list.
+## Server functions (added to `src/lib/admin.functions.ts`)
+
+- `listBanners`, `upsertBanner`, `deleteBanner`
+- `adminBroadcastNotification({ audience: 'all'|'role:user'|'user:<id>', title, body, link })`
+- `listReviewsAdmin`, `deleteReviewAdmin`
+- `listThreadsAdmin`, `deleteThreadAdmin`
+- `getSystemHealth`, `listClientErrors`, `resolveClientError`, `listServerFnLogs`, `adminPeekTable`
+- `withLogging` middleware applied to all mutating admin fns
+
+## Public route
+
+- `src/routes/api/public/client-errors.ts` — POST, HMAC-verified with new `CLIENT_ERROR_REPORT_SECRET`, Zod-validated, inserts into `client_error_logs`. Rate-limited via simple per-IP throttle in handler.
+
+## Client wiring
+
+- `src/lib/error-reporter.ts` — installs global listeners (guarded by env), batches + signs payloads, no PII.
+- Mount once from `src/routes/__root.tsx`.
+- New sidebar entries in `AdminSidebar.tsx` for Banners, Broadcasts, Reviews, Threads, Maintenance, Debug.
+- Reuse existing `AdminShell` styling; pages built with current `ui.tsx` primitives.
 
 ## Out of scope
-- Wiring real analytics/ads scripts (none exist today). The new consent helper is the gate that future scripts must call.
-- Backend contact mailer (already falls back to `mailto:`).
-- Translating legal copy — kept in English with a "consult your own counsel" tone.
+
+- Email/SMS broadcast delivery (notifications table only).
+- Replacing existing pages — only additions and the sidebar update.
+- Editing user PII beyond what current admin fns already allow.
+
+## Secret needed
+
+- `CLIENT_ERROR_REPORT_SECRET` (will request via `add_secret` at build time).
 
 ## Files
-- **new** `src/lib/cookie-consent.ts`
-- **new** `src/routes/dmca.tsx`
-- **edit** `src/components/CookieConsent.tsx`
-- **edit** `src/routes/contact.tsx`
-- **edit** `src/routes/terms.tsx`
-- **edit** `src/components/Footer.tsx`
-- **edit** `src/routes/sitemap[.]xml.tsx`
+
+**New**: 6 route files (`admin.banners.tsx`, `admin.broadcasts.tsx`, `admin.reviews.tsx`, `admin.threads.tsx`, `admin.maintenance.tsx`, `admin.debug.tsx`), `api/public/client-errors.ts`, `src/lib/error-reporter.ts`, 1 migration.
+**Modified**: `src/lib/admin.functions.ts`, `src/components/admin/AdminSidebar.tsx`, `src/routes/__root.tsx`.

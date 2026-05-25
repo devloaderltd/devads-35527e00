@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Flag, Package, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, FileClock, ShieldCheck,
-  ShieldAlert, Sparkles, BarChart3,
+  ShieldAlert, Sparkles, BarChart3, Megaphone, Star, MessagesSquare, Bug, Wrench, Bell,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -15,6 +15,7 @@ const groups = [
     items: [
       { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
       { title: "Insights", url: "/admin/insights", icon: BarChart3 },
+      { title: "Debug center", url: "/admin/debug", icon: Bug },
     ],
   },
   {
@@ -23,6 +24,8 @@ const groups = [
       { title: "Users", url: "/admin/users", icon: Users },
       { title: "Reports", url: "/admin/reports", icon: Flag },
       { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert },
+      { title: "Reviews", url: "/admin/reviews", icon: Star },
+      { title: "Threads", url: "/admin/threads", icon: MessagesSquare },
     ],
   },
   {
@@ -30,6 +33,7 @@ const groups = [
     items: [
       { title: "Listings", url: "/admin/listings", icon: Package },
       { title: "Homepage", url: "/admin/homepage", icon: Sparkles },
+      { title: "Banners", url: "/admin/banners", icon: Bell },
       { title: "Categories", url: "/admin/categories", icon: Tag },
       { title: "Cities", url: "/admin/cities", icon: MapPin },
     ],
@@ -46,6 +50,8 @@ const groups = [
     label: "System",
     items: [
       { title: "Settings", url: "/admin/settings", icon: Settings },
+      { title: "Maintenance", url: "/admin/maintenance", icon: Wrench },
+      { title: "Broadcasts", url: "/admin/broadcasts", icon: Megaphone },
       { title: "Audit log", url: "/admin/audit", icon: FileClock },
     ],
   },

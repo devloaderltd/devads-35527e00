@@ -671,3 +671,423 @@ export const getAdminInsights = createServerFn({ method: "POST" })
 
     return { days: data.days, current, prior, daily, funnel, revenueByPromotion };
   });
+
+/* ============================================================
+ * Banners (site_banners) — admin CRUD
+ * ============================================================ */
+
+export const listBanners = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const { data, error } = await supabaseAdmin
+      .from("site_banners")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { banners: data ?? [] };
+  });
+
+const bannerSchema = z.object({
+  id: uuid.optional(),
+  message: z.string().min(1).max(500),
+  variant: z.enum(["info", "success", "warning", "danger"]).default("info"),
+  cta_label: z.string().max(60).nullable().optional(),
+  cta_url: z.string().max(500).nullable().optional(),
+  starts_at: z.string().optional(),
+  ends_at: z.string().nullable().optional(),
+  active: z.boolean().default(true),
+});
+
+export const upsertBanner = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: z.input<typeof bannerSchema>) => bannerSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const payload = {
+      message: data.message,
+      variant: data.variant,
+      cta_label: data.cta_label || null,
+      cta_url: data.cta_url || null,
+      starts_at: data.starts_at || new Date().toISOString(),
+      ends_at: data.ends_at || null,
+      active: data.active,
+    };
+    if (data.id) {
+      const { error } = await supabaseAdmin.from("site_banners").update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      await audit(context.userId, "banner.update", "site_banner", data.id, {});
+      return { id: data.id };
+    }
+    const { data: row, error } = await supabaseAdmin.from("site_banners").insert(payload).select("id").single();
+    if (error) throw new Error(error.message);
+    await audit(context.userId, "banner.create", "site_banner", row.id, {});
+    return { id: row.id };
+  });
+
+export const deleteBanner = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { id: string }) => z.object({ id: uuid }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin.from("site_banners").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await audit(context.userId, "banner.delete", "site_banner", data.id, {});
+    return { ok: true };
+  });
+
+/* ============================================================
+ * Broadcasts (notifications)
+ * ============================================================ */
+
+const broadcastSchema = z.object({
+  audience: z.union([
+    z.literal("all"),
+    z.literal("role:user"),
+    z.literal("role:moderator"),
+    z.literal("role:admin"),
+    z.string().regex(/^user:[0-9a-f-]{36}$/),
+  ]),
+  title: z.string().min(1).max(120),
+  body: z.string().max(1000).nullable().optional(),
+  link: z.string().max(500).nullable().optional(),
+});
+
+export const adminBroadcastNotification = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: z.input<typeof broadcastSchema>) => broadcastSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    let recipients: string[] = [];
+    if (data.audience === "all") {
+      const { data: rows, error } = await supabaseAdmin.from("profiles").select("id");
+      if (error) throw new Error(error.message);
+      recipients = (rows ?? []).map((r) => r.id);
+    } else if (data.audience.startsWith("role:")) {
+      const role = data.audience.split(":")[1];
+      const { data: rows, error } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", role as "admin" | "moderator" | "user");
+      if (error) throw new Error(error.message);
+      recipients = (rows ?? []).map((r) => r.user_id);
+    } else {
+      recipients = [data.audience.split(":")[1]];
+    }
+
+    if (recipients.length === 0) {
+      throw new Error("No recipients found for this audience.");
+    }
+
+    const payload = recipients.map((uid) => ({
+      user_id: uid,
+      type: "broadcast",
+      title: data.title,
+      body: data.body || null,
+      link: data.link || null,
+      metadata: { audience: data.audience, sent_by: context.userId },
+    }));
+
+    // Insert in batches of 500 to keep payload size sane.
+    const BATCH = 500;
+    for (let i = 0; i < payload.length; i += BATCH) {
+      const { error } = await supabaseAdmin.from("notifications").insert(payload.slice(i, i + BATCH));
+      if (error) throw new Error(error.message);
+    }
+
+    const { error: bcastErr } = await supabaseAdmin.from("admin_broadcasts").insert({
+      actor_id: context.userId,
+      audience: data.audience,
+      title: data.title,
+      body: data.body || null,
+      link: data.link || null,
+      recipient_count: recipients.length,
+    });
+    if (bcastErr) throw new Error(bcastErr.message);
+
+    await audit(context.userId, "broadcast.send", "notification", data.audience, { recipients: recipients.length });
+    return { sent: recipients.length };
+  });
+
+export const listBroadcasts = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const { data, error } = await supabaseAdmin
+      .from("admin_broadcasts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return { broadcasts: data ?? [] };
+  });
+
+/* ============================================================
+ * Reviews moderation
+ * ============================================================ */
+
+export const listReviewsAdmin = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { minRating?: number; maxRating?: number; limit?: number }) =>
+    z.object({
+      minRating: z.number().min(1).max(5).optional(),
+      maxRating: z.number().min(1).max(5).optional(),
+      limit: z.number().min(1).max(200).default(100),
+    }).parse(input))
+  .handler(async ({ data }) => {
+    let q = supabaseAdmin
+      .from("seller_reviews")
+      .select("id, rating, body, created_at, reviewer_id, seller_id, listing_id")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (data.minRating) q = q.gte("rating", data.minRating);
+    if (data.maxRating) q = q.lte("rating", data.maxRating);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const ids = Array.from(new Set([
+      ...rows!.map((r) => r.reviewer_id),
+      ...rows!.map((r) => r.seller_id),
+    ]));
+    const { data: profiles } = ids.length
+      ? await supabaseAdmin.from("profiles").select("id, display_name").in("id", ids)
+      : { data: [] };
+    const name = (id: string) => profiles?.find((p) => p.id === id)?.display_name ?? id.slice(0, 8);
+    return {
+      reviews: (rows ?? []).map((r) => ({
+        ...r,
+        reviewer_name: name(r.reviewer_id),
+        seller_name: name(r.seller_id),
+      })),
+    };
+  });
+
+export const deleteReviewAdmin = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { id: string; reason?: string }) =>
+    z.object({ id: uuid, reason: z.string().max(500).optional() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin.from("seller_reviews").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await audit(context.userId, "review.delete", "seller_review", data.id, { reason: data.reason });
+    return { ok: true };
+  });
+
+/* ============================================================
+ * Threads / Messages moderation
+ * ============================================================ */
+
+export const listThreadsAdmin = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { limit?: number }) =>
+    z.object({ limit: z.number().min(1).max(200).default(100) }).parse(input))
+  .handler(async ({ data }) => {
+    const { data: threads, error } = await supabaseAdmin
+      .from("message_threads")
+      .select("id, buyer_id, seller_id, listing_id, created_at, last_message_at")
+      .order("last_message_at", { ascending: false })
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+    const ids = (threads ?? []).map((t) => t.id);
+    const userIds = Array.from(new Set([
+      ...(threads ?? []).map((t) => t.buyer_id),
+      ...(threads ?? []).map((t) => t.seller_id),
+    ]));
+    const listingIds = Array.from(new Set((threads ?? []).map((t) => t.listing_id)));
+    const [{ data: lastMessages }, { data: profiles }, { data: listings }, { data: counts }] = await Promise.all([
+      ids.length
+        ? supabaseAdmin.from("messages").select("thread_id, body, created_at, sender_id").in("thread_id", ids).order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] as { thread_id: string; body: string; created_at: string; sender_id: string }[] }),
+      userIds.length
+        ? supabaseAdmin.from("profiles").select("id, display_name").in("id", userIds)
+        : Promise.resolve({ data: [] as { id: string; display_name: string }[] }),
+      listingIds.length
+        ? supabaseAdmin.from("listings").select("id, title").in("id", listingIds)
+        : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+      ids.length
+        ? supabaseAdmin.from("messages").select("thread_id").in("thread_id", ids)
+        : Promise.resolve({ data: [] as { thread_id: string }[] }),
+    ]);
+    const lastMap = new Map<string, { body: string; created_at: string }>();
+    for (const m of lastMessages ?? []) {
+      if (!lastMap.has(m.thread_id)) lastMap.set(m.thread_id, { body: m.body, created_at: m.created_at });
+    }
+    const countMap = new Map<string, number>();
+    for (const c of counts ?? []) countMap.set(c.thread_id, (countMap.get(c.thread_id) ?? 0) + 1);
+    const name = (id: string) => profiles?.find((p) => p.id === id)?.display_name ?? id.slice(0, 8);
+    const title = (id: string) => listings?.find((l) => l.id === id)?.title ?? "—";
+    return {
+      threads: (threads ?? []).map((t) => ({
+        ...t,
+        buyer_name: name(t.buyer_id),
+        seller_name: name(t.seller_id),
+        listing_title: title(t.listing_id),
+        last_message: lastMap.get(t.id)?.body ?? null,
+        message_count: countMap.get(t.id) ?? 0,
+      })),
+    };
+  });
+
+export const deleteThreadAdmin = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { id: string }) => z.object({ id: uuid }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error: mErr } = await supabaseAdmin.from("messages").delete().eq("thread_id", data.id);
+    if (mErr) throw new Error(mErr.message);
+    const { error } = await supabaseAdmin.from("message_threads").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await audit(context.userId, "thread.delete", "message_thread", data.id, {});
+    return { ok: true };
+  });
+
+/* ============================================================
+ * Debug & Error Center
+ * ============================================================ */
+
+export const listClientErrors = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { onlyUnresolved?: boolean; limit?: number }) =>
+    z.object({
+      onlyUnresolved: z.boolean().default(false),
+      limit: z.number().min(1).max(500).default(200),
+    }).parse(input))
+  .handler(async ({ data }) => {
+    let q = supabaseAdmin
+      .from("client_error_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (data.onlyUnresolved) q = q.eq("resolved", false);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return { errors: rows ?? [] };
+  });
+
+export const resolveClientError = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { id: string; resolved: boolean }) =>
+    z.object({ id: uuid, resolved: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin
+      .from("client_error_logs")
+      .update({ resolved: data.resolved })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await audit(context.userId, data.resolved ? "error.resolve" : "error.reopen", "client_error", data.id, {});
+    return { ok: true };
+  });
+
+export const deleteResolvedClientErrors = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .handler(async ({ context }) => {
+    const { error, count } = await supabaseAdmin
+      .from("client_error_logs")
+      .delete({ count: "exact" })
+      .eq("resolved", true);
+    if (error) throw new Error(error.message);
+    await audit(context.userId, "error.cleanup", "client_error", null, { deleted: count ?? 0 });
+    return { deleted: count ?? 0 };
+  });
+
+export const listServerFnLogs = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { onlyErrors?: boolean; limit?: number }) =>
+    z.object({
+      onlyErrors: z.boolean().default(false),
+      limit: z.number().min(1).max(500).default(200),
+    }).parse(input))
+  .handler(async ({ data }) => {
+    let q = supabaseAdmin
+      .from("server_fn_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (data.onlyErrors) q = q.neq("status", "ok");
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return { logs: rows ?? [] };
+  });
+
+export const getSystemHealth = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const dayAgo = new Date(Date.now() - 86400000).toISOString();
+    const [
+      usersCount, listingsCount, activeListings, pendingTopups, failedPayments24h,
+      openReports, unresolvedErrors, serverErrors24h, walletSum, settingsRes,
+    ] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("listings").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("listings").select("id", { count: "exact", head: true }).eq("status", "active"),
+      supabaseAdmin.from("crypto_topups").select("id", { count: "exact", head: true }).in("status", ["waiting", "confirming"]),
+      supabaseAdmin.from("payments").select("id", { count: "exact", head: true }).eq("status", "failed").gte("created_at", dayAgo),
+      supabaseAdmin.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+      supabaseAdmin.from("client_error_logs").select("id", { count: "exact", head: true }).eq("resolved", false),
+      supabaseAdmin.from("server_fn_logs").select("id", { count: "exact", head: true }).neq("status", "ok").gte("created_at", dayAgo),
+      supabaseAdmin.from("wallets").select("balance_usd"),
+      supabaseAdmin.from("site_settings").select("*").eq("id", "global").maybeSingle(),
+    ]);
+    const totalWallet = (walletSum.data ?? []).reduce((s, w) => s + Number(w.balance_usd ?? 0), 0);
+    return {
+      generatedAt: new Date().toISOString(),
+      counts: {
+        users: usersCount.count ?? 0,
+        listings: listingsCount.count ?? 0,
+        activeListings: activeListings.count ?? 0,
+        pendingTopups: pendingTopups.count ?? 0,
+        failedPayments24h: failedPayments24h.count ?? 0,
+        openReports: openReports.count ?? 0,
+        unresolvedErrors: unresolvedErrors.count ?? 0,
+        serverErrors24h: serverErrors24h.count ?? 0,
+      },
+      walletsTotalUsd: totalWallet,
+      maintenanceMode: !!settingsRes.data?.maintenance_mode,
+    };
+  });
+
+/* DB inspector — strict allow-list */
+const SAFE_TABLES = {
+  listings: "id, title, status, price, created_at, user_id",
+  profiles: "id, display_name, created_at",
+  categories: "id, name, slug, sort_order",
+  cities: "id, name, slug, country",
+  payments: "id, amount, status, provider, created_at, user_id",
+  crypto_topups: "id, status, price_amount_usd, pay_currency, created_at, user_id",
+  reports: "id, reason, status, created_at, reporter_id, listing_id",
+  audit_log: "id, action, target_type, target_id, actor_id, created_at",
+  site_banners: "id, message, variant, active, starts_at, ends_at",
+  homepage_slots: "id, position, title, active, sort_order",
+  notifications: "id, type, title, created_at, user_id, read_at",
+} as const;
+type SafeTable = keyof typeof SAFE_TABLES;
+
+export const adminPeekTable = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { table: string; limit?: number }) =>
+    z.object({
+      table: z.enum(Object.keys(SAFE_TABLES) as [SafeTable, ...SafeTable[]]),
+      limit: z.number().min(1).max(100).default(50),
+    }).parse(input))
+  .handler(async ({ data }) => {
+    const cols = SAFE_TABLES[data.table as SafeTable];
+    type Cell = string | number | boolean | null;
+    type Row = Record<string, Cell>;
+    const client = supabaseAdmin as unknown as {
+      from: (t: string) => {
+        select: (s: string) => {
+          order: (c: string, o: { ascending: boolean }) => {
+            limit: (n: number) => Promise<{ data: Row[] | null; error: { message: string } | null }>;
+          };
+        };
+      };
+    };
+    const { data: rows, error } = await client
+      .from(data.table)
+      .select(cols)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+    // Stringify any non-primitive values to keep payload serializable.
+    const normalized: Row[] = (rows ?? []).map((r) => {
+      const out: Row = {};
+      for (const k of Object.keys(r)) {
+        const v = r[k];
+        out[k] = (v === null || typeof v === "string" || typeof v === "number" || typeof v === "boolean") ? v : JSON.stringify(v);
+      }
+      return out;
+    });
+    return { table: data.table, columns: cols.split(",").map((c) => c.trim()), rows: normalized };
+  });
+
+export const safeTablesList = Object.keys(SAFE_TABLES);
