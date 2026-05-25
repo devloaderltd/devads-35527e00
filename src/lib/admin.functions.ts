@@ -167,7 +167,7 @@ export const getUserDetails = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
-    const [{ data: listings }, { data: payments }, { data: txs }, { data: threads }] = await Promise.all([
+    const [{ data: listings }, { data: payments }, { data: txs }, threads] = await Promise.all([
       supabaseAdmin.from("listings").select("id, title, status, price, currency, created_at, view_count").eq("user_id", data.userId).order("created_at", { ascending: false }).limit(50),
       supabaseAdmin.from("payments").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }).limit(50),
       supabaseAdmin.from("wallet_transactions").select("*").eq("user_id", data.userId).order("created_at", { ascending: false }).limit(50),
@@ -177,7 +177,7 @@ export const getUserDetails = createServerFn({ method: "POST" })
       listings: listings ?? [],
       payments: payments ?? [],
       walletTxs: txs ?? [],
-      threadsCount: (threads as { count: number | null }).count ?? 0,
+      threadsCount: threads.count ?? 0,
     };
   });
 
