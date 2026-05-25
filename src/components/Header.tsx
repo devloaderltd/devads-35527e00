@@ -96,6 +96,9 @@ export function Header() {
                   <Link to="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link to="/wallet"><Wallet className="mr-2 h-4 w-4" /> Wallet</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" /> Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
