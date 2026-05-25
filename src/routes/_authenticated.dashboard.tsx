@@ -118,10 +118,12 @@ function DashboardPage() {
       </div>
 
       <Tabs defaultValue="analytics" className="mt-8">
-        <TabsList className="rounded-full bg-white/60 backdrop-blur dark:bg-white/10">
-          <TabsTrigger value="analytics" className="rounded-full">Analytics</TabsTrigger>
-          <TabsTrigger value="listings" className="rounded-full">My Listings</TabsTrigger>
-        </TabsList>
+        <div className="-mx-3 overflow-x-auto px-3 no-scrollbar sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-max rounded-full bg-white/60 backdrop-blur dark:bg-white/10">
+            <TabsTrigger value="analytics" className="rounded-full">Analytics</TabsTrigger>
+            <TabsTrigger value="listings" className="rounded-full">My Listings</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="analytics" className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <ChartCard title="Listings created (last 30 days)">
