@@ -146,6 +146,28 @@ function PostListing() {
       <p className="mt-1 text-sm text-muted-foreground">Reach buyers across the country in seconds.</p>
 
       <form onSubmit={submit} className="mt-6 space-y-5 rounded-3xl border border-white/40 bg-white/60 p-6 shadow-[var(--shadow-float)] backdrop-blur-xl">
+        <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 p-4">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Sparkles className="h-4 w-4 text-primary" /> AI listing writer
+          </div>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Add a quick hint (and optionally a photo above) and we'll draft a title + description for you.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={aiHint}
+              onChange={(e) => setAiHint(e.target.value)}
+              maxLength={400}
+              placeholder='e.g. "Sony WH-1000XM4 headphones, used 6 months, all accessories"'
+              className="bg-white/80"
+            />
+            <Button type="button" onClick={runAi} disabled={aiLoading} className="btn-gradient shrink-0">
+              {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
+              {aiLoading ? "Writing…" : "Generate"}
+            </Button>
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
           <Input id="title" required maxLength={140} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. 2019 Trek Marlin 7 — Like new" className="bg-white/70" />
