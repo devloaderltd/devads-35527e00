@@ -25,7 +25,7 @@ function PostListing() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState("USD");
-  const [condition, setCondition] = useState("not_applicable");
+  
   const [categoryId, setCategoryId] = useState("");
   const [country, setCountry] = useState<"US" | "UK" | "CA" | "">("");
   const [cityId, setCityId] = useState("");
