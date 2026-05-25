@@ -25,6 +25,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SellersIdRouteImport } from './routes/sellers.$id'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTopupsRouteImport } from './routes/admin.topups'
@@ -140,6 +141,11 @@ const SellersIdRoute = SellersIdRouteImport.update({
 const ListingsIdRoute = ListingsIdRouteImport.update({
   id: '/listings/$id',
   path: '/listings/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminWalletsRoute = AdminWalletsRouteImport.update({
@@ -377,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/admin/topups': typeof AdminTopupsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/admin/topups': typeof AdminTopupsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
   '/admin': typeof AdminIndexRoute
@@ -485,6 +493,7 @@ export interface FileRoutesById {
   '/admin/topups': typeof AdminTopupsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/listings/$id': typeof ListingsIdRoute
   '/sellers/$id': typeof SellersIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -541,6 +550,7 @@ export interface FileRouteTypes {
     | '/admin/topups'
     | '/admin/users'
     | '/admin/wallets'
+    | '/auth/callback'
     | '/listings/$id'
     | '/sellers/$id'
     | '/admin/'
@@ -593,6 +603,7 @@ export interface FileRouteTypes {
     | '/admin/topups'
     | '/admin/users'
     | '/admin/wallets'
+    | '/auth/callback'
     | '/listings/$id'
     | '/sellers/$id'
     | '/admin'
@@ -648,6 +659,7 @@ export interface FileRouteTypes {
     | '/admin/topups'
     | '/admin/users'
     | '/admin/wallets'
+    | '/auth/callback'
     | '/listings/$id'
     | '/sellers/$id'
     | '/admin/'
@@ -675,6 +687,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   ListingsIdRoute: typeof ListingsIdRoute
   SellersIdRoute: typeof SellersIdRoute
   ApiPublicClientErrorsRoute: typeof ApiPublicClientErrorsRoute
@@ -796,6 +809,13 @@ declare module '@tanstack/react-router' {
       path: '/listings/$id'
       fullPath: '/listings/$id'
       preLoaderRoute: typeof ListingsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/wallets': {
@@ -1169,6 +1189,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   ListingsIdRoute: ListingsIdRoute,
   SellersIdRoute: SellersIdRoute,
   ApiPublicClientErrorsRoute: ApiPublicClientErrorsRoute,
