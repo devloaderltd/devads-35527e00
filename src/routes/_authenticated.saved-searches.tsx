@@ -67,7 +67,7 @@ function Page() {
         {items.map((s) => (
           <SavedSearchCard
             key={s.id}
-            search={s}
+            search={s as unknown as SavedSearch}
             onToggleNotify={(notify) => tog.mutate({ id: s.id, notify })}
             onRename={(name) => ren.mutate({ id: s.id, name })}
             onDelete={() => { if (confirm("Delete this saved search?")) del.mutate(s.id); }}
