@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3 } from "lucide-react";
+import { Package, Eye, Heart, MessageSquare, TrendingUp, Plus, BarChart3, Wallet, BookmarkCheck, Search } from "lucide-react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend, AreaChart, Area,
@@ -25,6 +25,15 @@ const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8"
 
 function DashboardPage() {
   const { user } = useAuth();
+
+  const { data: wallet } = useQuery({
+    queryKey: ["wallet-balance", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("wallets").select("balance_usd").eq("user_id", user!.id).maybeSingle();
+      return data?.balance_usd ?? 0;
+    },
+  });
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats", user?.id],
@@ -109,6 +118,13 @@ function DashboardPage() {
         <Button asChild className="btn-gradient rounded-full border-0">
           <Link to="/post"><Plus className="mr-1 h-4 w-4" /> New listing</Link>
         </Button>
+      </div>
+
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <QuickAction to="/post" icon={<Plus className="h-4 w-4" />} label="New listing" accent />
+        <QuickAction to="/saved-searches" icon={<BookmarkCheck className="h-4 w-4" />} label="Saved searches" />
+        <QuickAction to="/messages" icon={<MessageSquare className="h-4 w-4" />} label="Messages" />
+        <QuickAction to="/wallet" icon={<Wallet className="h-4 w-4" />} label={`Wallet · $${Number(wallet ?? 0).toFixed(2)}`} />
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-5">
@@ -239,6 +255,22 @@ function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string;
         <div className="mt-2 font-display text-2xl font-bold">{value}</div>
       </CardContent>
     </Card>
+  );
+}
+
+function QuickAction({ to, icon, label, accent }: { to: string; icon: React.ReactNode; label: string; accent?: boolean }) {
+  return (
+    <Link
+      to={to as never}
+      className={`flex items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-medium transition hover:bg-white/90 ${
+        accent
+          ? "border-0 bg-gradient-to-r from-primary to-purple-500 text-white hover:opacity-95"
+          : "border-white/40 bg-white/70 text-foreground backdrop-blur dark:bg-white/5"
+      }`}
+    >
+      <span className={accent ? "text-white" : "text-primary"}>{icon}</span>
+      <span className="truncate">{label}</span>
+    </Link>
   );
 }
 

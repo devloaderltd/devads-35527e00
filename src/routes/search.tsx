@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate as useNav } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,17 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Bookmark, X, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Bookmark, BookmarkCheck, X, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { createSavedSearch } from "@/lib/extras.functions";
+import { createSavedSearch, listSavedSearches } from "@/lib/extras.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
+
 
 const PAGE_SIZE = 24;
 
@@ -61,12 +67,19 @@ export const Route = createFileRoute("/search")({
 function SearchPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+  const nav = useNav();
   const { user } = useAuth();
+  const qc = useQueryClient();
   const saveFn = useServerFn(createSavedSearch);
+  const listFn = useServerFn(listSavedSearches);
   const page = search.page ?? 1;
   const sort = search.sort ?? "recent";
 
   const [qInput, setQInput] = useState(search.q ?? "");
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saveNotify, setSaveNotify] = useState(true);
+
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -133,19 +146,49 @@ function SearchPage() {
     navigate({ search: {} as any });
   };
 
-  const saveSearch = useMutation({
-    mutationFn: async () => {
-      const name = prompt("Name this search", search.q || "My search") ?? "";
-      if (!name.trim()) throw new Error("cancelled");
-      return saveFn({ data: {
-        name: name.trim(),
-        filters: Object.fromEntries(Object.entries(search).filter(([_, v]) => v != null && v !== "")) as Record<string, unknown>,
-        notify: true,
-      } });
-    },
-    onSuccess: () => toast.success("Search saved. You'll be notified of matches."),
-    onError: (e: Error) => { if (e.message !== "cancelled") toast.error(e.message); },
+  const currentFilters = useMemo(
+    () => Object.fromEntries(Object.entries(search).filter(([k, v]) => k !== "page" && v != null && v !== "")) as Record<string, unknown>,
+    [search],
+  );
+
+  const savedSearches = useQuery({
+    queryKey: ["saved-searches"],
+    enabled: !!user,
+    queryFn: () => listFn(),
+    staleTime: 30_000,
   });
+
+  const filtersKey = (f: Record<string, unknown>) =>
+    Object.keys(f).sort().map(k => `${k}=${String(f[k])}`).join("&");
+  const currentKey = filtersKey(currentFilters);
+  const alreadySaved = (savedSearches.data?.items ?? []).find(
+    (s: any) => filtersKey((s.filters ?? {}) as Record<string, unknown>) === currentKey,
+  );
+
+  const openSaveDialog = () => {
+    if (alreadySaved) { nav({ to: "/saved-searches" }); return; }
+    const defaultName = search.q
+      ? `"${search.q}"${search.city ? ` in ${search.city}` : ""}`
+      : search.city ? `All in ${search.city}` : search.category ? `All ${search.category}` : "My search";
+    setSaveName(defaultName);
+    setSaveNotify(true);
+    setSaveOpen(true);
+  };
+
+  const saveSearch = useMutation({
+    mutationFn: () => saveFn({
+      data: { name: saveName.trim() || "My search", filters: currentFilters, notify: saveNotify },
+    }),
+    onSuccess: () => {
+      setSaveOpen(false);
+      qc.invalidateQueries({ queryKey: ["saved-searches"] });
+      toast.success("Search saved", {
+        action: { label: "View", onClick: () => nav({ to: "/saved-searches" }) },
+      });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const listings = result?.listings ?? [];
   const totalCount = result?.count ?? 0;
@@ -182,10 +225,17 @@ function SearchPage() {
             </SelectContent>
           </Select>
           {user && (
-            <Button variant="outline" className="gap-2 rounded-full bg-white/70" onClick={() => saveSearch.mutate()} disabled={saveSearch.isPending}>
-              <Bookmark className="h-4 w-4" /> Save search
-            </Button>
+            alreadySaved ? (
+              <Button asChild variant="outline" className="gap-2 rounded-full bg-white/70">
+                <Link to="/saved-searches"><BookmarkCheck className="h-4 w-4 text-primary" /> Saved</Link>
+              </Button>
+            ) : (
+              <Button variant="outline" className="gap-2 rounded-full bg-white/70" onClick={openSaveDialog}>
+                <Bookmark className="h-4 w-4" /> Save search
+              </Button>
+            )
           )}
+
         </div>
       </div>
 
@@ -282,6 +332,41 @@ function SearchPage() {
           )}
         </>
       )}
+
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save this search</DialogTitle>
+            <DialogDescription>Give it a name and choose whether to be alerted of new matches.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="saved-search-name" className="text-xs uppercase tracking-wide text-muted-foreground">Name</Label>
+              <Input id="saved-search-name" value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder="e.g. iPhones in Birmingham" className="mt-1.5 bg-white/70" autoFocus />
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-white/40 bg-white/55 p-3">
+              <div>
+                <div className="text-sm font-medium">Notify me of new matches</div>
+                <div className="text-xs text-muted-foreground">We'll send a notification when a new listing matches.</div>
+              </div>
+              <Switch checked={saveNotify} onCheckedChange={setSaveNotify} />
+            </div>
+            {activeFilters.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {activeFilters.map(f => (
+                  <Badge key={f.key} variant="secondary" className="rounded-full bg-white/70">{f.label}</Badge>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaveOpen(false)}>Cancel</Button>
+            <Button onClick={() => saveSearch.mutate()} disabled={saveSearch.isPending || !saveName.trim()} className="btn-gradient border-0">
+              {saveSearch.isPending ? "Saving…" : "Save search"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -120,6 +120,21 @@ export const toggleSavedSearchAlert = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const renameSavedSearch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; name: string }) => {
+    if (!uuid.safeParse(input.id).success) throw new Error("Invalid id");
+    const name = String(input.name ?? "").slice(0, 80).trim();
+    if (!name) throw new Error("Name is required");
+    return { id: input.id, name };
+  })
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("saved_searches").update({ name: data.name }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 /* ============== Notifications ============== */
 
 export const listMyNotifications = createServerFn({ method: "POST" })
