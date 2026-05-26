@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet, BookmarkCheck, Star, BadgeCheck } from "lucide-react";
+import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet, BookmarkCheck, Star, BadgeCheck, Command as CommandIcon } from "lucide-react";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCity } from "@/lib/city-context";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
