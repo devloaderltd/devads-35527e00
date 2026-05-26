@@ -1155,7 +1155,7 @@ export const getAdminBadges = createServerFn({ method: "GET" })
       supabaseAdmin.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
       supabaseAdmin.from("crypto_topups").select("id", { count: "exact", head: true }).in("status", ["waiting", "confirming"]),
       supabaseAdmin.from("admin_broadcasts").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 86400000).toISOString()),
-      supabaseAdmin.from("listings").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabaseAdmin.from("listings").select("id", { count: "exact", head: true }).eq("status", "draft"),
     ]);
     return {
       kyc: kyc.count ?? 0,
