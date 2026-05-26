@@ -569,6 +569,7 @@ export type Database = {
           id: string
           is_negotiable: boolean
           item_age: string
+          listing_group_id: string | null
           phone: string | null
           price: number | null
           search_tsv: unknown
@@ -593,6 +594,7 @@ export type Database = {
           id?: string
           is_negotiable?: boolean
           item_age?: string
+          listing_group_id?: string | null
           phone?: string | null
           price?: number | null
           search_tsv?: unknown
@@ -617,6 +619,7 @@ export type Database = {
           id?: string
           is_negotiable?: boolean
           item_age?: string
+          listing_group_id?: string | null
           phone?: string | null
           price?: number | null
           search_tsv?: unknown

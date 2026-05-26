@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { BrandLoader } from "@/components/BrandLoader";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -19,11 +20,11 @@ function AuthenticatedLayout() {
   }, [loading, session, navigate, redirectTarget, location.pathname]);
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
+    return <BrandLoader variant="page" label="Loading your account" />;
   }
 
   if (!session) {
-    return <div className="container mx-auto px-4 py-10 text-muted-foreground">Redirecting…</div>;
+    return <BrandLoader variant="page" label="Redirecting to sign in" />;
   }
 
   return <Outlet />;

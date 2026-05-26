@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { BrandLoader } from "@/components/BrandLoader";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -18,13 +19,20 @@ import {
 } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { ImagePlus, X, Sparkles, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { ImagePlus, X, Sparkles, Loader2, Check, ChevronsUpDown, Star, GripVertical } from "lucide-react";
 import { aiWriteListing } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
+import {
+  DndContext, PointerSensor, TouchSensor, KeyboardSensor,
+  useSensor, useSensors, closestCenter, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, arrayMove, useSortable, rectSortingStrategy,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-const postSearchSchema = z.object({
-  edit: z.string().uuid().optional(),
-});
+const postSearchSchema = z.object({ edit: z.string().uuid().optional() });
 
 export const Route = createFileRoute("/_authenticated/post")({
   head: () => ({ meta: [{ title: "Post a listing — CallEscort24" }] }),
@@ -34,7 +42,16 @@ export const Route = createFileRoute("/_authenticated/post")({
 
 const PHONE_RE = /^[+\d][\d\s\-().]{5,31}$/;
 
-type ExistingImage = { url: string; sort_order: number };
+type ImgItem =
+  | { kind: "existing"; key: string; id: string; url: string }
+  | { kind: "new"; key: string; file: File; previewUrl: string };
+
+type Errors = Partial<Record<
+  "title" | "description" | "itemAge" | "phone" | "whatsapp" | "category" | "city" | "photos",
+  string
+>>;
+
+const stripHtml = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
 
 function PostListing() {
   const navigate = useNavigate();
@@ -52,48 +69,79 @@ function PostListing() {
   const [categoryId, setCategoryId] = useState("");
   const [country, setCountry] = useState<"US" | "UK" | "CA" | "">("");
   const [cityIds, setCityIds] = useState<string[]>([]);
+  const [originalCityIds, setOriginalCityIds] = useState<string[]>([]);
+  // Map city_id -> sibling listing id (only in edit mode)
+  const [siblingByCity, setSiblingByCity] = useState<Record<string, string>>({});
+  const [groupId, setGroupId] = useState<string | null>(null);
+
   const [cityOpen, setCityOpen] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
+  const [images, setImages] = useState<ImgItem[]>([]);
+  const [imagesDirty, setImagesDirty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
   const [aiHint, setAiHint] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const writeListingFn = useServerFn(aiWriteListing);
 
-  // Load existing listing when editing
+  const formRef = useRef<HTMLFormElement>(null);
+  const newKeyRef = useRef(0);
+  const nextKey = () => `new-${++newKeyRef.current}-${Date.now()}`;
+
+  // Load existing listing + siblings when editing
   const { data: existing, isLoading: loadingExisting } = useQuery({
     queryKey: ["edit-listing", editId],
     enabled: isEdit && !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: base, error } = await supabase
         .from("listings")
         .select(`id, user_id, title, description, item_age, phone, whatsapp,
-          category_id, city_id,
-          cities(country),
-          listing_images(url, sort_order)`)
+          category_id, city_id, listing_group_id, cities(country)`)
         .eq("id", editId!)
         .maybeSingle();
       if (error) throw error;
-      if (!data) throw new Error("Listing not found");
-      if (data.user_id !== user!.id) throw new Error("Not your listing");
-      return data;
+      if (!base) throw new Error("Listing not found");
+      if (base.user_id !== user!.id) throw new Error("Not your listing");
+
+      const gid = (base as any).listing_group_id ?? base.id;
+      const { data: siblings } = await supabase
+        .from("listings")
+        .select("id, city_id")
+        .eq("listing_group_id", gid)
+        .eq("user_id", user!.id);
+
+      const { data: imgs } = await supabase
+        .from("listing_images")
+        .select("id, url, sort_order")
+        .eq("listing_id", editId!)
+        .order("sort_order");
+
+      return { base, siblings: siblings ?? [], imgs: imgs ?? [], groupId: gid };
     },
   });
 
   useEffect(() => {
     if (!existing) return;
-    setTitle(existing.title ?? "");
-    setDescription(existing.description ?? "");
-    setItemAge(existing.item_age ?? "");
-    setPhone(existing.phone ?? "");
-    setWhatsapp(existing.whatsapp ?? "");
-    setWaSame((existing.whatsapp ?? "") === (existing.phone ?? "") || !existing.whatsapp);
-    setCategoryId(existing.category_id ?? "");
-    const c = (existing as any).cities?.country as "US" | "UK" | "CA" | undefined;
-    if (c) setCountry(c);
-    if (existing.city_id) setCityIds([existing.city_id]);
-    const imgs = ((existing as any).listing_images ?? []) as ExistingImage[];
-    setExistingImages([...imgs].sort((a, b) => a.sort_order - b.sort_order));
+    const b = existing.base as any;
+    setTitle(b.title ?? "");
+    setDescription(b.description ?? "");
+    setItemAge(b.item_age ?? "");
+    setPhone(b.phone ?? "");
+    setWhatsapp(b.whatsapp ?? "");
+    setWaSame((b.whatsapp ?? "") === (b.phone ?? "") || !b.whatsapp);
+    setCategoryId(b.category_id ?? "");
+    if (b.cities?.country) setCountry(b.cities.country);
+    setGroupId(existing.groupId);
+    const sMap: Record<string, string> = {};
+    existing.siblings.forEach((s: any) => { sMap[s.city_id] = s.id; });
+    setSiblingByCity(sMap);
+    const ids = existing.siblings.map((s: any) => s.city_id);
+    setCityIds(ids);
+    setOriginalCityIds(ids);
+    setImages(
+      (existing.imgs as any[]).map((r) => ({
+        kind: "existing" as const, key: `ex-${r.id}`, id: r.id, url: r.url,
+      })),
+    );
   }, [existing]);
 
   const fileToDataUrl = (f: File) =>
@@ -103,26 +151,6 @@ function PostListing() {
       r.onerror = reject;
       r.readAsDataURL(f);
     });
-
-  const runAi = async () => {
-    if (!aiHint.trim()) return toast.error("Add a short hint first");
-    setAiLoading(true);
-    try {
-      const categoryName = categories?.find((c) => c.id === categoryId)?.name;
-      let imageDataUrl: string | undefined;
-      if (files[0] && files[0].size < 2_000_000) {
-        imageDataUrl = await fileToDataUrl(files[0]);
-      }
-      const out = await writeListingFn({ data: { hint: aiHint.trim(), category: categoryName, imageDataUrl } });
-      if (out.title) setTitle(out.title.slice(0, 140));
-      if (out.description) setDescription(out.description);
-      toast.success("Draft generated — edit before posting");
-    } catch (e: any) {
-      toast.error(e?.message ?? "AI failed");
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -148,93 +176,243 @@ function PostListing() {
     [cities, cityIds],
   );
 
-  const toggleCity = (id: string) => {
-    if (isEdit) {
-      // single-city when editing
-      setCityIds([id]);
-      setCityOpen(false);
-    } else {
-      setCityIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const runAi = async () => {
+    if (!aiHint.trim()) return toast.error("Add a short hint first");
+    setAiLoading(true);
+    try {
+      const categoryName = categories?.find((c) => c.id === categoryId)?.name;
+      let imageDataUrl: string | undefined;
+      const firstNew = images.find((i) => i.kind === "new") as Extract<ImgItem, { kind: "new" }> | undefined;
+      if (firstNew && firstNew.file.size < 2_000_000) {
+        imageDataUrl = await fileToDataUrl(firstNew.file);
+      }
+      const out = await writeListingFn({ data: { hint: aiHint.trim(), category: categoryName, imageDataUrl } });
+      if (out.title) setTitle(out.title.slice(0, 140));
+      if (out.description) setDescription(out.description);
+      toast.success("Draft generated — edit before posting");
+    } catch (e: any) {
+      toast.error(e?.message ?? "AI failed");
+    } finally {
+      setAiLoading(false);
     }
   };
 
+  const toggleCity = (id: string) =>
+    setCityIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
   const MAX_PHOTOS = 5;
-  const totalPhotos = files.length + existingImages.length;
+  const totalPhotos = images.length;
   const onFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const list = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS - totalPhotos);
-    setFiles((prev) => [...prev, ...list].slice(0, MAX_PHOTOS - existingImages.length));
+    const list = Array.from(e.target.files ?? []);
+    const remaining = MAX_PHOTOS - totalPhotos;
+    if (remaining <= 0) {
+      e.target.value = "";
+      return;
+    }
+    const added = list.slice(0, remaining).map<ImgItem>((f) => ({
+      kind: "new", key: nextKey(), file: f, previewUrl: URL.createObjectURL(f),
+    }));
+    setImages((prev) => [...prev, ...added]);
+    setImagesDirty(true);
+    e.target.value = "";
+  };
+
+  const removeImage = (key: string) => {
+    setImages((prev) => {
+      const removed = prev.find((p) => p.key === key);
+      if (removed?.kind === "new") URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((p) => p.key !== key);
+    });
+    setImagesDirty(true);
+  };
+
+  const setAsCover = (key: string) => {
+    setImages((prev) => {
+      const idx = prev.findIndex((p) => p.key === key);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      const [item] = next.splice(idx, 1);
+      next.unshift(item);
+      return next;
+    });
+    setImagesDirty(true);
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    setImages((prev) => {
+      const oldIdx = prev.findIndex((p) => p.key === active.id);
+      const newIdx = prev.findIndex((p) => p.key === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+      return arrayMove(prev, oldIdx, newIdx);
+    });
+    setImagesDirty(true);
+  };
+
+  const validate = (): Errors => {
+    const e: Errors = {};
+    const t = title.trim();
+    if (t.length < 3) e.title = "Title must be at least 3 characters";
+    else if (t.length > 140) e.title = "Title must be 140 characters or less";
+    const descText = stripHtml(description);
+    if (descText.length < 10) e.description = "Description must be at least 10 characters";
+    const age = itemAge.trim();
+    if (!age) e.itemAge = "Age is required";
+    else if (age.length > 60) e.itemAge = "Age must be 60 characters or less";
+    const ph = phone.trim();
+    if (!PHONE_RE.test(ph)) e.phone = "Enter a valid phone number (e.g. +1 555 123 4567)";
+    if (!waSame) {
+      const w = whatsapp.trim();
+      if (w && !PHONE_RE.test(w)) e.whatsapp = "Enter a valid WhatsApp number";
+    }
+    if (!categoryId) e.category = "Pick a category";
+    if (cityIds.length === 0) e.city = "Pick at least one city";
+    const oversize = images.find((i) => i.kind === "new" && i.file.size > 5_000_000);
+    if (oversize) e.photos = "One or more photos exceed 5MB";
+    return e;
+  };
+
+  const scrollToFirstError = () => {
+    const node = formRef.current?.querySelector<HTMLElement>("[data-error='true']");
+    node?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return toast.error("Sign in first");
-    if (!categoryId) return toast.error("Pick a category");
-    if (cityIds.length === 0) return toast.error("Pick at least one city");
-    const ageTrimmed = itemAge.trim();
-    if (!ageTrimmed) return toast.error("Age is required");
-    if (ageTrimmed.length > 60) return toast.error("Age must be 60 characters or less");
+
+    const eMap = validate();
+    setErrors(eMap);
+    if (Object.keys(eMap).length > 0) {
+      toast.error("Please fix the highlighted fields");
+      setTimeout(scrollToFirstError, 50);
+      return;
+    }
+
     const phoneTrim = phone.trim();
-    if (!PHONE_RE.test(phoneTrim)) return toast.error("Enter a valid phone number");
-    const waTrim = (waSame ? phoneTrim : whatsapp.trim());
-    if (waTrim && !PHONE_RE.test(waTrim)) return toast.error("Enter a valid WhatsApp number");
+    const waTrim = waSame ? phoneTrim : whatsapp.trim();
 
     setSubmitting(true);
     try {
-      // Upload any new images
-      const uploaded: { url: string; sort_order: number }[] = [];
+      // Upload new files once → URL list (shared across siblings)
       const stamp = Date.now();
-      const startOrder = existingImages.length;
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        const ext = f.name.split(".").pop();
+      const newImageUrls = new Map<string, string>(); // key -> public url
+      const newItems = images.filter((i) => i.kind === "new") as Extract<ImgItem, { kind: "new" }>[];
+      for (let i = 0; i < newItems.length; i++) {
+        const item = newItems[i];
+        const ext = item.file.name.split(".").pop() || "jpg";
         const path = `${user.id}/shared/${stamp}-${i}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("listing-images").upload(path, f, { upsert: false });
+        const { error: upErr } = await supabase.storage
+          .from("listing-images").upload(path, item.file, { upsert: false });
         if (upErr) { console.error(upErr); continue; }
         const { data: pub } = supabase.storage.from("listing-images").getPublicUrl(path);
-        uploaded.push({ url: pub.publicUrl, sort_order: startOrder + i });
+        newImageUrls.set(item.key, pub.publicUrl);
       }
 
-      if (isEdit && editId) {
-        // UPDATE path
-        const { error: updErr } = await supabase
-          .from("listings")
-          .update({
-            title: title.trim(),
-            description: description.trim(),
-            item_age: ageTrimmed,
-            category_id: categoryId,
-            city_id: cityIds[0],
-            phone: phoneTrim,
-            whatsapp: waTrim || null,
-          } as any)
-          .eq("id", editId);
-        if (updErr) throw updErr;
+      // Build the ordered URL list (final image set, sorted)
+      const orderedUrls: string[] = images.map((img) =>
+        img.kind === "existing" ? img.url : (newImageUrls.get(img.key) ?? ""),
+      ).filter(Boolean);
 
-        if (uploaded.length) {
-          await supabase.from("listing_images").insert(
-            uploaded.map((u) => ({ listing_id: editId, url: u.url, sort_order: u.sort_order })),
-          );
+      const baseFields = {
+        title: title.trim(),
+        description: description.trim(),
+        item_age: itemAge.trim(),
+        category_id: categoryId,
+        phone: phoneTrim,
+        whatsapp: waTrim || null,
+      };
+
+      if (isEdit && editId) {
+        const gid = groupId ?? editId;
+        const keptCityIds = cityIds.filter((c) => originalCityIds.includes(c));
+        const addedCityIds = cityIds.filter((c) => !originalCityIds.includes(c));
+        const removedCityIds = originalCityIds.filter((c) => !cityIds.includes(c));
+
+        // 1) Update existing kept siblings
+        for (const cId of keptCityIds) {
+          const sid = siblingByCity[cId];
+          if (!sid) continue;
+          const { error } = await supabase
+            .from("listings")
+            .update({ ...baseFields, city_id: cId } as any)
+            .eq("id", sid);
+          if (error) throw error;
         }
 
-        toast.success("Listing updated");
+        // 2) Insert new siblings for added cities, sharing group id
+        const createdSiblings: { id: string; city_id: string }[] = [];
+        for (const cId of addedCityIds) {
+          const { data: ins, error } = await supabase
+            .from("listings")
+            .insert({
+              ...baseFields,
+              user_id: user.id,
+              city_id: cId,
+              listing_group_id: gid,
+              slug: "",
+            } as any)
+            .select("id, city_id")
+            .single();
+          if (error) throw error;
+          createdSiblings.push(ins as any);
+        }
+
+        // 3) Delete removed siblings
+        if (removedCityIds.length) {
+          const idsToDelete = removedCityIds.map((c) => siblingByCity[c]).filter(Boolean);
+          if (idsToDelete.length) {
+            const { error } = await supabase.from("listings").delete().in("id", idsToDelete);
+            if (error) throw error;
+          }
+        }
+
+        // 4) Sync images across all current siblings (only if dirty OR new cities added)
+        const allSiblingIds = [
+          ...keptCityIds.map((c) => siblingByCity[c]).filter(Boolean),
+          ...createdSiblings.map((s) => s.id),
+        ];
+
+        if (imagesDirty || addedCityIds.length > 0) {
+          // Delete then insert fresh ordered rows per sibling
+          if (allSiblingIds.length) {
+            await supabase.from("listing_images").delete().in("listing_id", allSiblingIds);
+          }
+          if (orderedUrls.length && allSiblingIds.length) {
+            const rows = allSiblingIds.flatMap((lid) =>
+              orderedUrls.map((url, idx) => ({
+                listing_id: lid, url, sort_order: idx,
+              })),
+            );
+            await supabase.from("listing_images").insert(rows);
+          }
+        }
+
+        toast.success(
+          cityIds.length === 1 ? "Listing updated" : `Updated across ${cityIds.length} cities`,
+        );
         navigate({ to: "/listings/$id", params: { id: editId } });
         return;
       }
 
-      // CREATE path (one per city)
+      // CREATE path — generate group id so we can edit as one later
+      const groupUuid = crypto.randomUUID();
       const created: { id: string; slug: string | null }[] = [];
       for (const cId of cityIds) {
         const { data: listing, error } = await supabase
           .from("listings")
           .insert({
+            ...baseFields,
             user_id: user.id,
-            title: title.trim(),
-            description: description.trim(),
-            item_age: ageTrimmed,
-            category_id: categoryId,
             city_id: cId,
-            phone: phoneTrim,
-            whatsapp: waTrim || null,
+            listing_group_id: groupUuid,
             slug: "",
           } as any)
           .select("id, slug")
@@ -242,17 +420,17 @@ function PostListing() {
         if (error) throw error;
         created.push(listing as any);
 
-        if (uploaded.length) {
+        if (orderedUrls.length) {
           await supabase.from("listing_images").insert(
-            uploaded.map((u) => ({ listing_id: (listing as any).id, url: u.url, sort_order: u.sort_order })),
+            orderedUrls.map((url, idx) => ({
+              listing_id: (listing as any).id, url, sort_order: idx,
+            })),
           );
         }
       }
 
       toast.success(
-        cityIds.length === 1
-          ? "Listing posted!"
-          : `Posted to ${cityIds.length} cities!`,
+        cityIds.length === 1 ? "Listing posted!" : `Posted to ${cityIds.length} cities!`,
       );
       const first = created[0];
       navigate({ to: "/listings/$id", params: { id: (first as any).slug ?? first.id } });
@@ -263,25 +441,15 @@ function PostListing() {
     }
   };
 
-  const removeExisting = async (url: string) => {
-    if (!editId) return;
-    if (!confirm("Remove this photo?")) return;
-    const { error } = await supabase
-      .from("listing_images")
-      .delete()
-      .eq("listing_id", editId)
-      .eq("url", url);
-    if (error) { toast.error(error.message); return; }
-    setExistingImages((prev) => prev.filter((p) => p.url !== url));
-  };
-
   if (isEdit && loadingExisting) {
     return (
-      <div className="container mx-auto max-w-2xl px-4 py-10 text-sm text-muted-foreground">
-        Loading listing…
+      <div className="container mx-auto max-w-2xl px-4 py-10">
+        <BrandLoader variant="block" label="Loading listing" />
       </div>
     );
   }
+
+  const errCls = (k: keyof Errors) => errors[k] ? "border-destructive ring-1 ring-destructive/30" : "";
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
@@ -289,10 +457,14 @@ function PostListing() {
         {isEdit ? <>Edit <span className="gradient-text">listing</span></> : <>Post a <span className="gradient-text">listing</span></>}
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        {isEdit ? "Update the details below and save your changes." : "Reach buyers across the country in seconds."}
+        {isEdit
+          ? originalCityIds.length > 1
+            ? `This listing is published in ${originalCityIds.length} cities. Changes apply to all of them.`
+            : "Update the details below and save your changes."
+          : "Reach buyers across the country in seconds."}
       </p>
 
-      <form onSubmit={submit} className="mt-6 space-y-5 rounded-3xl border border-white/40 bg-white/60 p-6 shadow-[var(--shadow-float)] backdrop-blur-xl">
+      <form ref={formRef} onSubmit={submit} className="mt-6 space-y-5 rounded-3xl border border-white/40 bg-white/60 p-6 shadow-[var(--shadow-float)] backdrop-blur-xl">
         {!isEdit && (
           <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 p-4">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -317,84 +489,84 @@ function PostListing() {
           </div>
         )}
 
-        <div className="space-y-2">
+        <div className="space-y-2" data-error={!!errors.title}>
           <Label htmlFor="title">Title</Label>
-          <Input id="title" required maxLength={140} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. 2019 Trek Marlin 7 — Like new" className="bg-white/70" />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="desc">Description</Label>
-          <RichTextEditor
-            value={description}
-            onChange={setDescription}
-            maxLength={4000}
-            placeholder="Condition, size, history, why you're selling…"
+          <Input
+            id="title" maxLength={140} value={title}
+            onChange={(e) => { setTitle(e.target.value); if (errors.title) setErrors((p) => ({ ...p, title: undefined })); }}
+            placeholder="e.g. 2019 Trek Marlin 7 — Like new"
+            className={cn("bg-white/70", errCls("title"))}
           />
+          {errors.title && <p className="text-xs font-medium text-destructive">{errors.title}</p>}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2" data-error={!!errors.description}>
+          <Label htmlFor="desc">Description</Label>
+          <div className={errors.description ? "rounded-lg ring-1 ring-destructive/40" : ""}>
+            <RichTextEditor
+              value={description}
+              onChange={(v) => { setDescription(v); if (errors.description) setErrors((p) => ({ ...p, description: undefined })); }}
+              maxLength={4000}
+              placeholder="Condition, size, history, why you're selling…"
+            />
+          </div>
+          {errors.description && <p className="text-xs font-medium text-destructive">{errors.description}</p>}
+        </div>
+
+        <div className="space-y-2" data-error={!!errors.itemAge}>
           <Label htmlFor="item-age">Age</Label>
           <Input
-            id="item-age"
-            required
-            maxLength={60}
-            value={itemAge}
-            onChange={(e) => setItemAge(e.target.value)}
+            id="item-age" maxLength={60} value={itemAge}
+            onChange={(e) => { setItemAge(e.target.value); if (errors.itemAge) setErrors((p) => ({ ...p, itemAge: undefined })); }}
             placeholder="e.g. 2 years, 6 months, brand new"
-            className="bg-white/70"
+            className={cn("bg-white/70", errCls("itemAge"))}
           />
+          {errors.itemAge && <p className="text-xs font-medium text-destructive">{errors.itemAge}</p>}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="space-y-2" data-error={!!errors.phone}>
             <Label htmlFor="phone">Phone number</Label>
             <Input
-              id="phone"
-              required
-              inputMode="tel"
-              maxLength={32}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              id="phone" inputMode="tel" maxLength={32} value={phone}
+              onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors((p) => ({ ...p, phone: undefined })); }}
               placeholder="+1 555 123 4567"
-              className="bg-white/70"
+              className={cn("bg-white/70", errCls("phone"))}
             />
+            {errors.phone && <p className="text-xs font-medium text-destructive">{errors.phone}</p>}
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2" data-error={!!errors.whatsapp}>
             <Label htmlFor="whatsapp">WhatsApp number</Label>
             <Input
-              id="whatsapp"
-              inputMode="tel"
-              maxLength={32}
-              value={waSame ? phone : whatsapp}
-              disabled={waSame}
-              onChange={(e) => setWhatsapp(e.target.value)}
+              id="whatsapp" inputMode="tel" maxLength={32}
+              value={waSame ? phone : whatsapp} disabled={waSame}
+              onChange={(e) => { setWhatsapp(e.target.value); if (errors.whatsapp) setErrors((p) => ({ ...p, whatsapp: undefined })); }}
               placeholder="+1 555 123 4567"
-              className="bg-white/70"
+              className={cn("bg-white/70", errCls("whatsapp"))}
             />
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={waSame}
-                onCheckedChange={(v) => setWaSame(v === true)}
-              />
+              <Checkbox checked={waSame} onCheckedChange={(v) => setWaSame(v === true)} />
               Same as phone number
             </label>
+            {errors.whatsapp && <p className="text-xs font-medium text-destructive">{errors.whatsapp}</p>}
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2" data-error={!!errors.category}>
           <Label>Category</Label>
-          <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger className="bg-white/70"><SelectValue placeholder="Pick a category" /></SelectTrigger>
+          <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); if (errors.category) setErrors((p) => ({ ...p, category: undefined })); }}>
+            <SelectTrigger className={cn("bg-white/70", errCls("category"))}><SelectValue placeholder="Pick a category" /></SelectTrigger>
             <SelectContent>
               {categories?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          {errors.category && <p className="text-xs font-medium text-destructive">{errors.category}</p>}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Country</Label>
-            <Select value={country} onValueChange={(v) => { setCountry(v as any); setCityIds([]); }}>
+            <Select value={country} onValueChange={(v) => { setCountry(v as any); if (!isEdit) setCityIds([]); }}>
               <SelectTrigger className="bg-white/70"><SelectValue placeholder="Pick country" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="US">United States</SelectItem>
@@ -403,23 +575,18 @@ function PostListing() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>{isEdit ? "City" : "Cities (select one or more)"}</Label>
+          <div className="space-y-2" data-error={!!errors.city}>
+            <Label>Cities (select one or more)</Label>
             <Popover open={cityOpen} onOpenChange={setCityOpen}>
               <PopoverTrigger asChild>
                 <Button
-                  type="button"
-                  variant="outline"
-                  role="combobox"
-                  disabled={!country}
-                  className="w-full justify-between bg-white/70 font-normal"
+                  type="button" variant="outline" role="combobox" disabled={!country}
+                  className={cn("w-full justify-between bg-white/70 font-normal", errCls("city"))}
                 >
                   <span className="truncate">
                     {cityIds.length === 0
                       ? (country ? "Search & pick" : "Select country first")
-                      : isEdit
-                        ? (selectedCities[0]?.name ?? "1 selected")
-                        : `${cityIds.length} selected`}
+                      : `${cityIds.length} selected`}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -436,7 +603,7 @@ function PostListing() {
                           <CommandItem
                             key={c.id}
                             value={`${c.name} ${c.region}`}
-                            onSelect={() => toggleCity(c.id)}
+                            onSelect={() => { toggleCity(c.id); if (errors.city) setErrors((p) => ({ ...p, city: undefined })); }}
                           >
                             <Check className={cn("mr-2 h-4 w-4", checked ? "opacity-100" : "opacity-0")} />
                             <span className="truncate">{c.name}, {c.region}</span>
@@ -448,81 +615,165 @@ function PostListing() {
                 </Command>
               </PopoverContent>
             </Popover>
-            {!isEdit && selectedCities.length > 0 && (
+            {selectedCities.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {selectedCities.map((c) => (
-                  <span
-                    key={c.id}
-                    className="inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/80 px-2.5 py-1 text-xs font-medium"
-                  >
-                    {c.name}
-                    <button
-                      type="button"
-                      onClick={() => toggleCity(c.id)}
-                      className="rounded-full hover:bg-black/5"
-                      aria-label={`Remove ${c.name}`}
+                {selectedCities.map((c) => {
+                  const isOriginal = originalCityIds.includes(c.id);
+                  const isNew = isEdit && !isOriginal;
+                  return (
+                    <span
+                      key={c.id}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium",
+                        isNew ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-white/60 bg-white/80",
+                      )}
                     >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
+                      {c.name}
+                      {isNew && <span className="text-[10px] font-bold">NEW</span>}
+                      <button
+                        type="button" onClick={() => toggleCity(c.id)}
+                        className="rounded-full hover:bg-black/5"
+                        aria-label={`Remove ${c.name}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
               </div>
+            )}
+            {isEdit && originalCityIds.some((c) => !cityIds.includes(c)) && (
+              <p className="text-xs font-medium text-amber-700">
+                Saving will remove this listing from {originalCityIds.filter((c) => !cityIds.includes(c)).length} city(ies).
+              </p>
             )}
             {!isEdit && cityIds.length > 1 && (
               <p className="text-xs text-muted-foreground">
                 We'll post a copy of this listing in each selected city.
               </p>
             )}
+            {errors.city && <p className="text-xs font-medium text-destructive">{errors.city}</p>}
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2" data-error={!!errors.photos}>
           <Label>Photos (up to {MAX_PHOTOS})</Label>
-          <p className="text-xs text-muted-foreground">First photo is the cover. {totalPhotos}/{MAX_PHOTOS} added.</p>
-          <div className="flex flex-wrap gap-2">
-            {existingImages.map((img, i) => (
-              <div key={img.url} className="relative h-20 w-20 overflow-hidden rounded-xl border ring-1 ring-white/40 shadow-[var(--shadow-float)]">
-                <img src={img.url} alt="" className="h-full w-full object-cover" />
-                {i === 0 && (
-                  <span className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 text-center text-[10px] font-semibold text-white">
-                    Cover
-                  </span>
+          <p className="text-xs text-muted-foreground">
+            {isEdit
+              ? `Drag to reorder. First photo is the cover. ${totalPhotos}/${MAX_PHOTOS} added.`
+              : `First photo is the cover. ${totalPhotos}/${MAX_PHOTOS} added.`}
+          </p>
+
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={images.map((i) => i.key)} strategy={rectSortingStrategy}>
+              <div className="flex flex-wrap gap-2">
+                {images.map((img, idx) => (
+                  <SortableTile
+                    key={img.key}
+                    img={img}
+                    isCover={idx === 0}
+                    onSetCover={() => setAsCover(img.key)}
+                    onRemove={() => removeImage(img.key)}
+                    draggable={isEdit}
+                  />
+                ))}
+                {totalPhotos < MAX_PHOTOS && (
+                  <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border border-dashed bg-white/50 text-muted-foreground transition hover:border-primary hover:text-primary">
+                    <ImagePlus className="h-5 w-5" />
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={onFiles} />
+                  </label>
                 )}
-                <button type="button" onClick={() => removeExisting(img.url)} className="absolute right-0 top-0 rounded-bl bg-black/60 p-0.5 text-white" aria-label="Remove">
-                  <X className="h-3 w-3" />
-                </button>
               </div>
-            ))}
-            {files.map((f, i) => (
-              <div key={i} className="relative h-20 w-20 overflow-hidden rounded-xl border ring-1 ring-white/40 shadow-[var(--shadow-float)]">
-                <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
-                {existingImages.length === 0 && i === 0 && (
-                  <span className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 text-center text-[10px] font-semibold text-white">
-                    Cover
-                  </span>
-                )}
-                <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} className="absolute right-0 top-0 rounded-bl bg-black/60 p-0.5 text-white">
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-            {totalPhotos < MAX_PHOTOS && (
-              <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border border-dashed bg-white/50 text-muted-foreground transition hover:border-primary hover:text-primary">
-                <ImagePlus className="h-5 w-5" />
-                <input type="file" accept="image/*" multiple className="hidden" onChange={onFiles} />
-              </label>
-            )}
-          </div>
+            </SortableContext>
+          </DndContext>
+          {errors.photos && <p className="text-xs font-medium text-destructive">{errors.photos}</p>}
         </div>
 
         <Button type="submit" size="lg" className="btn-gradient w-full" disabled={submitting}>
           {submitting
             ? (isEdit ? "Saving…" : "Posting…")
             : isEdit
-              ? "Save changes"
+              ? cityIds.length > 1 ? `Save across ${cityIds.length} cities` : "Save changes"
               : cityIds.length > 1 ? `Post to ${cityIds.length} cities` : "Post listing"}
         </Button>
       </form>
+    </div>
+  );
+}
+
+function SortableTile({
+  img, isCover, onSetCover, onRemove, draggable,
+}: {
+  img: ImgItem;
+  isCover: boolean;
+  onSetCover: () => void;
+  onRemove: () => void;
+  draggable: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: img.key, disabled: !draggable });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    touchAction: draggable ? "none" : undefined,
+  };
+
+  const src = img.kind === "existing" ? img.url : img.previewUrl;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group relative h-20 w-20 overflow-hidden rounded-xl border ring-1 ring-white/40 shadow-[var(--shadow-float)]",
+        isCover && "ring-2 ring-primary",
+      )}
+    >
+      <img src={src} alt="" className="h-full w-full object-cover" />
+
+      {isCover && (
+        <span className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-1 py-0.5 text-center text-[10px] font-bold text-white">
+          COVER
+        </span>
+      )}
+
+      {/* Drag handle (edit only) */}
+      {draggable && (
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="absolute left-0 top-0 cursor-grab rounded-br bg-black/60 p-0.5 text-white opacity-80 active:cursor-grabbing"
+          aria-label="Drag to reorder"
+        >
+          <GripVertical className="h-3 w-3" />
+        </button>
+      )}
+
+      {/* Set as cover */}
+      {!isCover && (
+        <button
+          type="button"
+          onClick={onSetCover}
+          className="absolute bottom-0 left-0 rounded-tr bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+          aria-label="Set as cover"
+          title="Set as cover"
+        >
+          <Star className="h-3 w-3" />
+        </button>
+      )}
+
+      {/* Remove */}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute right-0 top-0 rounded-bl bg-black/60 p-0.5 text-white"
+        aria-label="Remove"
+      >
+        <X className="h-3 w-3" />
+      </button>
     </div>
   );
 }

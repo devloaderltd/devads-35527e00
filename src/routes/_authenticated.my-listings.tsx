@@ -16,6 +16,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ListingSparkline } from "@/components/ThreadSparkline";
 import { BulkActionBar } from "@/components/BulkActionBar";
 import { PanelShell } from "@/components/PanelShell";
+import { ListingsSkeleton } from "@/components/ListingsSkeleton";
 
 export const Route = createFileRoute("/_authenticated/my-listings")({
   head: () => ({ meta: [{ title: "My listings — CallEscort24" }] }),
@@ -247,7 +248,7 @@ function MyListings() {
       </div>
 
       {isLoading ? (
-        <div className="text-muted-foreground">Loading…</div>
+        <ListingsSkeleton count={4} />
       ) : !visible.length ? (
         <div className="rounded-2xl glass p-10 text-center text-muted-foreground">
           {filter === "all"
