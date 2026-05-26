@@ -1196,7 +1196,8 @@ export const getAdminActivityFeed = createServerFn({ method: "POST" })
     const before = data.before ? new Date(data.before).toISOString() : new Date().toISOString();
     const want = (k: string) => data.types.length === 0 || data.types.includes(k);
     const N = data.limit;
-    const tasks: Promise<{ data: Record<string, unknown>[] | null }>[] = [];
+    type Row = Record<string, string | number | boolean | null>;
+    const tasks: Promise<{ data: Row[] | null }>[] = [];
     const keys: string[] = [];
     if (want("signup")) { keys.push("signup"); tasks.push(supabaseAdmin.from("profiles").select("id, display_name, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
     if (want("listing")) { keys.push("listing"); tasks.push(supabaseAdmin.from("listings").select("id, title, slug, user_id, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
