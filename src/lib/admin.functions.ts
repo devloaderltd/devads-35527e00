@@ -16,11 +16,11 @@ async function emailListingDecision(
 ) {
   try {
     const { data: listing } = await supabaseAdmin
-      .from("listings").select("id, title, owner_id, slug").eq("id", listingId).maybeSingle();
-    if (!listing?.owner_id) return;
-    const email = await getUserEmail(listing.owner_id);
+      .from("listings").select("id, title, user_id, slug").eq("id", listingId).maybeSingle();
+    if (!listing?.user_id) return;
+    const email = await getUserEmail(listing.user_id);
     if (!email) return;
-    const name = await getUserDisplayName(listing.owner_id);
+    const name = await getUserDisplayName(listing.user_id);
     await enqueueTransactionalEmail({
       templateName: decision === "approved" ? "listing-approved" : "listing-rejected",
       recipientEmail: email,
