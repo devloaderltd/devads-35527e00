@@ -16,12 +16,12 @@ export const getSellerContact = createServerFn({ method: "POST" })
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.listingId);
     const { data: listing, error: lerr } = await supabaseAdmin
       .from("listings")
-      .select("user_id, status")
+      .select("user_id, status, phone, whatsapp")
       .eq(isUuid ? "id" : "slug", data.listingId)
       .maybeSingle();
     if (lerr) throw new Error(lerr.message);
     if (!listing || listing.status !== "active") {
-      return { email: null, phone: null };
+      return { email: null, phone: null, whatsapp: null };
     }
 
     const { data: profile } = await supabaseAdmin
@@ -36,6 +36,7 @@ export const getSellerContact = createServerFn({ method: "POST" })
 
     return {
       email: userInfo?.user?.email ?? null,
-      phone: profile?.phone ?? null,
+      phone: listing.phone ?? profile?.phone ?? null,
+      whatsapp: listing.whatsapp ?? null,
     };
   });
