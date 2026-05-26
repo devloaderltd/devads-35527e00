@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, Search, MoreVertical, Archive, ArchiveRestore, Bell, BellOff } from "lucide-react";
+import { MessageSquare, Search, MoreVertical, Archive, ArchiveRestore, Bell, BellOff, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -17,18 +17,20 @@ export const Route = createFileRoute("/_authenticated/messages")({
 
 type ThreadRow = {
   id: string; buyer_id: string; seller_id: string; listing_id: string; last_message_at: string;
-  archived_by: string[] | null; muted_by: string[] | null;
+  archived_by: string[] | null; muted_by: string[] | null; starred_by: string[] | null;
   listing?: { id: string; title: string; listing_images?: { url: string; sort_order: number }[] } | null;
   other?: { id: string; display_name: string; avatar_url: string | null } | null;
   unread?: number;
 };
+
+type TabKey = "inbox" | "unread" | "starred" | "archived";
 
 function MessagesLayout() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const location = useLocation();
   const [filter, setFilter] = useState("");
-  const [tab, setTab] = useState<"inbox" | "archived">("inbox");
+  const [tab, setTab] = useState<TabKey>("inbox");
 
   const { data: threads, refetch } = useQuery({
     queryKey: ["threads", user?.id],
@@ -36,7 +38,7 @@ function MessagesLayout() {
     queryFn: async (): Promise<ThreadRow[]> => {
       const { data: t } = await supabase
         .from("message_threads")
-        .select("id, buyer_id, seller_id, listing_id, last_message_at, archived_by, muted_by")
+        .select("id, buyer_id, seller_id, listing_id, last_message_at, archived_by, muted_by, starred_by")
         .or(`buyer_id.eq.${user!.id},seller_id.eq.${user!.id}`)
         .order("last_message_at", { ascending: false });
       if (!t || t.length === 0) return [];
@@ -101,9 +103,27 @@ function MessagesLayout() {
     qc.invalidateQueries({ queryKey: ["threads"] });
   };
 
-  const inboxThreads = (threads ?? []).filter(t => !(t.archived_by ?? []).includes(user?.id ?? ""));
-  const archivedThreads = (threads ?? []).filter(t => (t.archived_by ?? []).includes(user?.id ?? ""));
-  const list = tab === "inbox" ? inboxThreads : archivedThreads;
+  const toggleStar = async (t: ThreadRow) => {
+    if (!user) return;
+    const arr = new Set(t.starred_by ?? []);
+    arr.has(user.id) ? arr.delete(user.id) : arr.add(user.id);
+    const { error } = await supabase.from("message_threads").update({ starred_by: Array.from(arr) }).eq("id", t.id);
+    if (error) return toast.error(error.message);
+    toast.success(arr.has(user.id) ? "Added to favorites" : "Removed from favorites");
+    qc.invalidateQueries({ queryKey: ["threads"] });
+  };
+
+  const uid = user?.id ?? "";
+  const allInbox = (threads ?? []).filter(t => !(t.archived_by ?? []).includes(uid));
+  const archivedThreads = (threads ?? []).filter(t => (t.archived_by ?? []).includes(uid));
+  const unreadThreads = allInbox.filter(t => (t.unread ?? 0) > 0);
+  const starredThreads = (threads ?? []).filter(t => (t.starred_by ?? []).includes(uid) && !(t.archived_by ?? []).includes(uid));
+
+  const list =
+    tab === "inbox" ? allInbox :
+    tab === "unread" ? unreadThreads :
+    tab === "starred" ? starredThreads :
+    archivedThreads;
 
   const filtered = list.filter(t => {
     if (!filter) return true;
@@ -112,7 +132,14 @@ function MessagesLayout() {
       || (t.listing?.title ?? "").toLowerCase().includes(q);
   });
 
-  const totalUnread = inboxThreads.reduce((n, t) => n + (t.unread ?? 0), 0);
+  const totalUnread = allInbox.reduce((n, t) => n + (t.unread ?? 0), 0);
+  const counts: Record<TabKey, number> = {
+    inbox: allInbox.length,
+    unread: unreadThreads.length,
+    starred: starredThreads.length,
+    archived: archivedThreads.length,
+  };
+  const tabLabel: Record<TabKey, string> = { inbox: "Inbox", unread: "Unread", starred: "Favorites", archived: "Archived" };
 
   return (
     <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
@@ -126,17 +153,18 @@ function MessagesLayout() {
       </h1>
       <div className="grid gap-4 md:grid-cols-[340px_1fr]">
         <aside className={`overflow-hidden rounded-2xl glass ${hasActive ? "hidden md:block" : "block"}`}>
-          <div className="flex gap-1 border-b border-white/40 p-2">
-            {(["inbox", "archived"] as const).map((t) => (
+          <div className="flex gap-1 overflow-x-auto border-b border-white/40 p-2">
+            {(["inbox", "unread", "starred", "archived"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 rounded-full px-3 py-1.5 text-xs font-medium capitalize transition ${
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   tab === t ? "bg-primary text-primary-foreground" : "bg-white/40 text-muted-foreground hover:bg-white/70"
                 }`}
               >
-                {t} {t === "inbox" && totalUnread > 0 && <span className="ml-1">({totalUnread})</span>}
-                {t === "archived" && archivedThreads.length > 0 && <span className="ml-1">({archivedThreads.length})</span>}
+                {t === "starred" && <Star className="mr-1 inline h-3 w-3" />}
+                {tabLabel[t]}
+                {counts[t] > 0 && <span className="ml-1 opacity-80">({counts[t]})</span>}
               </button>
             ))}
           </div>
@@ -164,6 +192,7 @@ function MessagesLayout() {
               const isActive = activeId === t.id;
               const muted = (t.muted_by ?? []).includes(user?.id ?? "");
               const archived = (t.archived_by ?? []).includes(user?.id ?? "");
+              const starred = (t.starred_by ?? []).includes(user?.id ?? "");
               return (
                 <li key={t.id} className="group relative">
                   <Link
@@ -181,6 +210,7 @@ function MessagesLayout() {
                         <div className={`min-w-0 flex-1 truncate text-sm ${unread && !isActive ? "font-bold" : "font-medium"}`}>
                           {t.other?.display_name ?? "User"}
                         </div>
+                        {starred && <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />}
                         {muted && <BellOff className="h-3 w-3 shrink-0 text-muted-foreground" />}
                         {unread && !isActive && (
                           <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
@@ -206,6 +236,10 @@ function MessagesLayout() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-xl">
+                        <DropdownMenuItem onClick={() => toggleStar(t)}>
+                          <Star className={`mr-2 h-4 w-4 ${starred ? "fill-amber-400 text-amber-400" : ""}`} />
+                          {starred ? "Unfavorite" : "Add to favorites"}
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => toggleMute(t)}>
                           {muted ? <Bell className="mr-2 h-4 w-4" /> : <BellOff className="mr-2 h-4 w-4" />}
                           {muted ? "Unmute" : "Mute"}

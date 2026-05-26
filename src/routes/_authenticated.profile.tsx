@@ -335,7 +335,9 @@ function ProfileEdit() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_400px]">
         <AccountSettingsCard />
-        <QuickRepliesManager />
+        <div id="quick-replies" className="scroll-mt-24">
+          <QuickRepliesManager />
+        </div>
       </div>
     </PanelShell>
   );
