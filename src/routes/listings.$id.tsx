@@ -504,7 +504,7 @@ function ListingDetail() {
                   className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm text-muted-foreground hover:bg-white"
                 >
                   <Lock className="h-4 w-4" />
-                  Sign in to see phone & email
+                  Sign in to see contact info
                 </Link>
               ) : (
                 <div className="space-y-1.5">
