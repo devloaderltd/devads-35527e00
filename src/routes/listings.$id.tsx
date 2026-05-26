@@ -20,6 +20,10 @@ import { ShareSheet } from "@/components/ShareSheet";
 import DOMPurify from "dompurify";
 
 function sanitizeDescription(html: string): string {
+  if (typeof window === "undefined") {
+    // SSR: strip all HTML tags conservatively; client will rehydrate with full sanitized markup
+    return html.replace(/<[^>]*>/g, "");
+  }
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "s", "h2", "h3", "ul", "ol", "li", "blockquote", "code", "a"],
     ALLOWED_ATTR: ["href", "target", "rel"],
