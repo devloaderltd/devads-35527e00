@@ -16,6 +16,15 @@ const sections: Array<{
     ],
   },
   {
+    heading: "Resources",
+    links: [
+      { label: "How it works", to: "/about" },
+      { label: "Safety tips", to: "/cookies" },
+      { label: "Pricing & promotions", to: "/wallet" },
+      { label: "Help center", to: "/contact" },
+    ],
+  },
+  {
     heading: "Company",
     links: [
       { label: "About", to: "/about" },

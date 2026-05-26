@@ -20,6 +20,7 @@ import { CompareBar } from "@/components/CompareBar";
 import { CompareProvider } from "@/lib/compare-context";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { RouteProgress } from "@/components/RouteProgress";
+import { CommandPalette } from "@/components/CommandPalette";
 
 
 import { CityProvider } from "@/lib/city-context";
@@ -164,6 +165,7 @@ function RootComponent() {
                   <MobileTabBar />
                   <CompareBar />
                   <OnboardingTour />
+                  <CommandPalette />
                 </MaintenanceGate>
               </div>
             )}

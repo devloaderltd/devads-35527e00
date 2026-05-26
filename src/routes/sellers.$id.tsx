@@ -13,6 +13,7 @@ import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 import { SellerFollowButton } from "@/components/SellerFollowButton";
 import { ShareSheet } from "@/components/ShareSheet";
 import { RatingDistribution } from "@/components/seller/RatingDistribution";
+import { BrandLoader } from "@/components/BrandLoader";
 
 
 
@@ -118,7 +119,7 @@ function SellerPage() {
 
 
   if (isLoading) {
-    return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
+    return <div className="container mx-auto px-4 py-10"><BrandLoader variant="block" /></div>;
   }
   if (!profile) {
     return <div className="container mx-auto px-4 py-10">Seller not found.</div>;

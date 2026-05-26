@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet, BookmarkCheck, Star, BadgeCheck } from "lucide-react";
+import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet, BookmarkCheck, Star, BadgeCheck, Command as CommandIcon } from "lucide-react";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCity } from "@/lib/city-context";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,10 +25,20 @@ export function Header() {
   const { cityName, openPicker } = useCity();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate({ to: "/search", search: { q: q || undefined } as any });
+    const term = q.trim();
+    if (term && typeof window !== "undefined") {
+      try {
+        const prev: string[] = JSON.parse(localStorage.getItem("recent_searches") || "[]");
+        const next = [term, ...prev.filter((x) => x !== term)].slice(0, 6);
+        localStorage.setItem("recent_searches", JSON.stringify(next));
+      } catch {}
+    }
+    setMobileSearchOpen(false);
+    navigate({ to: "/search", search: { q: term || undefined } as any });
   };
 
   const signOut = async () => {
@@ -50,9 +61,47 @@ export function Header() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search listings…"
-            className="rounded-full border-white/60 bg-white/60 pl-9 focus-visible:bg-white"
+            className="rounded-full border-white/60 bg-white/60 pl-9 pr-16 focus-visible:bg-white"
           />
+          <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-white/60 bg-white/70 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground lg:inline-flex">
+            <CommandIcon className="h-3 w-3" /> K
+          </kbd>
         </form>
+
+        <Sheet open={mobileSearchOpen} onOpenChange={setMobileSearchOpen}>
+          <SheetTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="md:hidden rounded-full bg-white/60 backdrop-blur"
+              title="Search"
+            >
+              <Search className="h-4 w-4 text-primary" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="top" className="rounded-b-3xl border-white/40 bg-white/90 backdrop-blur-2xl">
+            <SheetHeader>
+              <SheetTitle>Search listings</SheetTitle>
+            </SheetHeader>
+            <form onSubmit={onSearch} className="mt-4 flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="What are you looking for?"
+                  className="rounded-full border-white/60 bg-white pl-9"
+                />
+              </div>
+              <Button type="submit" size="sm" className="btn-gradient rounded-full border-0">
+                Go
+              </Button>
+            </form>
+          </SheetContent>
+        </Sheet>
+
 
         <div className="ml-auto flex items-center gap-2">
           <Button
