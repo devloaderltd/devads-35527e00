@@ -10,9 +10,16 @@ import { AdminBreadcrumbs } from "./Breadcrumbs";
 import { NotificationsBell } from "./NotificationsBell";
 import { AdminCommandPalette } from "./AdminCommandPalette";
 
+function readSidebarCookie(): boolean {
+  if (typeof document === "undefined") return true;
+  const m = document.cookie.match(/(?:^|;\s*)sidebar:state=([^;]+)/);
+  return m ? m[1] !== "false" : true;
+}
+
 export function AdminShell({ children, email }: { children: React.ReactNode; email?: string | null }) {
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(readSidebarCookie);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -34,7 +41,7 @@ export function AdminShell({ children, email }: { children: React.ReactNode; ema
   const env = typeof window !== "undefined" && window.location.host.includes("lovable") ? "Preview" : "Live";
 
   return (
-    <SidebarProvider>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <div className="flex min-h-screen w-full bg-slate-950 text-slate-100">
         <AdminSidebar />
         <SidebarInset className="bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
