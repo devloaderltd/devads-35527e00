@@ -538,13 +538,24 @@ function ListingDetail() {
             >
               <Share2 className="h-4 w-4" />
             </button>
-            {contact?.phone && (
+            {((listing as any).phone || contact?.phone) && (
               <a
-                href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
+                href={`tel:${String((listing as any).phone || contact?.phone).replace(/[^\d+]/g, "")}`}
                 aria-label="Call seller"
                 className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/60 bg-white/70 hover:bg-white"
               >
                 <Phone className="h-4 w-4 text-primary" />
+              </a>
+            )}
+            {(listing as any).whatsapp && (
+              <a
+                href={`https://wa.me/${String((listing as any).whatsapp).replace(/[^\d]/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp seller"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/60 bg-white/70 hover:bg-white"
+              >
+                <MessageCircle className="h-4 w-4 text-[#25D366]" />
               </a>
             )}
             <Button onClick={startThread} disabled={contacting} className="btn-gradient h-10 flex-1 gap-2 rounded-full border-0">
