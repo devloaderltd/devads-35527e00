@@ -18,6 +18,7 @@ const groups = [
     label: "Overview",
     items: [
       { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
+      { title: "Activity", url: "/admin/activity", icon: FileClock },
       { title: "Insights", url: "/admin/insights", icon: BarChart3 },
       { title: "Debug center", url: "/admin/debug", icon: Bug },
     ],

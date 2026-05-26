@@ -53,6 +53,7 @@ import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminBroadcastsRouteImport } from './routes/admin.broadcasts'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated.wallet'
 import { Route as AuthenticatedVerifyRouteImport } from './routes/_authenticated.verify'
 import { Route as AuthenticatedSavedSearchesRouteImport } from './routes/_authenticated.saved-searches'
@@ -298,6 +299,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminActivityRoute = AdminActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -463,6 +469,7 @@ export interface FileRoutesByFullPath {
   '/saved-searches': typeof AuthenticatedSavedSearchesRoute
   '/verify': typeof AuthenticatedVerifyRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/admin/activity': typeof AdminActivityRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
@@ -531,6 +538,7 @@ export interface FileRoutesByTo {
   '/saved-searches': typeof AuthenticatedSavedSearchesRoute
   '/verify': typeof AuthenticatedVerifyRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/admin/activity': typeof AdminActivityRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
@@ -603,6 +611,7 @@ export interface FileRoutesById {
   '/_authenticated/saved-searches': typeof AuthenticatedSavedSearchesRoute
   '/_authenticated/verify': typeof AuthenticatedVerifyRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
+  '/admin/activity': typeof AdminActivityRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
@@ -675,6 +684,7 @@ export interface FileRouteTypes {
     | '/saved-searches'
     | '/verify'
     | '/wallet'
+    | '/admin/activity'
     | '/admin/audit'
     | '/admin/banners'
     | '/admin/broadcasts'
@@ -743,6 +753,7 @@ export interface FileRouteTypes {
     | '/saved-searches'
     | '/verify'
     | '/wallet'
+    | '/admin/activity'
     | '/admin/audit'
     | '/admin/banners'
     | '/admin/broadcasts'
@@ -814,6 +825,7 @@ export interface FileRouteTypes {
     | '/_authenticated/saved-searches'
     | '/_authenticated/verify'
     | '/_authenticated/wallet'
+    | '/admin/activity'
     | '/admin/audit'
     | '/admin/banners'
     | '/admin/broadcasts'
@@ -1204,6 +1216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/activity': {
+      id: '/admin/activity'
+      path: '/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AdminActivityRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_authenticated/wallet': {
       id: '/_authenticated/wallet'
       path: '/wallet'
@@ -1430,6 +1449,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminActivityRoute: typeof AdminActivityRoute
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminBroadcastsRoute: typeof AdminBroadcastsRoute
@@ -1455,6 +1475,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminActivityRoute: AdminActivityRoute,
   AdminAuditRoute: AdminAuditRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminBroadcastsRoute: AdminBroadcastsRoute,
