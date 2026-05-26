@@ -515,6 +515,8 @@ const siteSettingsSchema = z.object({
   maintenance_message: z.string().max(500).optional(),
   site_name: z.string().min(1).max(80).optional(),
   support_email: z.string().email().max(120).optional().or(z.literal("")),
+  logo_url: z.string().max(500).url().optional().or(z.literal("")),
+  favicon_url: z.string().max(500).url().optional().or(z.literal("")),
 });
 
 export const updateSiteSettings = createServerFn({ method: "POST" })
@@ -522,7 +524,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => siteSettingsSchema.parse(input))
   .handler(async ({ data, context }) => {
     const patch: Record<string, unknown> = {};
-    for (const k of ["featured_price_usd", "bump_price_usd", "featured_days", "bump_days", "maintenance_mode", "maintenance_message", "site_name", "support_email"] as const) {
+    for (const k of ["featured_price_usd", "bump_price_usd", "featured_days", "bump_days", "maintenance_mode", "maintenance_message", "site_name", "support_email", "logo_url", "favicon_url"] as const) {
       if (data[k] !== undefined) patch[k] = data[k];
     }
     if (Object.keys(patch).length === 0) return { ok: true };
