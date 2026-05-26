@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput,
   CommandItem, CommandList, CommandSeparator,
@@ -9,9 +11,10 @@ import {
   LayoutDashboard, BarChart3, Users, BadgeCheck, Flag, ShieldAlert,
   Star, MessagesSquare, Package, Sparkles, Bell, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, Wrench, Megaphone, FileClock,
-  Bug, Activity, Search,
+  Bug, Activity, Search, RefreshCw,
 } from "lucide-react";
 import { searchAdmin } from "@/lib/admin.functions";
+import { ADMIN_BADGES_QUERY_KEY } from "@/lib/admin-badges";
 
 const NAV = [
   { icon: LayoutDashboard, label: "Dashboard", url: "/admin" },

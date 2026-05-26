@@ -1,19 +1,37 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import type { ComponentType } from "react";
 import {
   LayoutDashboard, Users, Flag, Package, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, FileClock, ShieldCheck,
   ShieldAlert, Sparkles, BarChart3, Megaphone, Star, MessagesSquare, Bug, Wrench, Bell, BadgeCheck,
+  RefreshCw, AlertCircle,
 } from "lucide-react";
 
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getAdminBadges } from "@/lib/admin.functions";
+import {
+  ADMIN_BADGES_QUERY_KEY,
+  EMPTY_BADGES,
+  type AdminBadges,
+  type BadgeKey,
+} from "@/lib/admin-badges";
 
-const groups = [
+type Item = {
+  title: string;
+  url: string;
+  icon: ComponentType<{ className?: string }>;
+  exact?: boolean;
+  badgeKey?: BadgeKey;
+};
+type Group = { label: string; items: ReadonlyArray<Item> };
+
+const groups: ReadonlyArray<Group> = [
   {
     label: "Overview",
     items: [
@@ -27,14 +45,13 @@ const groups = [
     label: "People",
     items: [
       { title: "Users", url: "/admin/users", icon: Users },
-      { title: "KYC verification", url: "/admin/kyc", icon: BadgeCheck, badgeKey: "kyc" as const },
-      { title: "Reports", url: "/admin/reports", icon: Flag, badgeKey: "reports" as const },
-      { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert, badgeKey: "moderation" as const },
+      { title: "KYC verification", url: "/admin/kyc", icon: BadgeCheck, badgeKey: "kyc" },
+      { title: "Reports", url: "/admin/reports", icon: Flag, badgeKey: "reports" },
+      { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert, badgeKey: "moderation" },
       { title: "Reviews", url: "/admin/reviews", icon: Star },
       { title: "Threads", url: "/admin/threads", icon: MessagesSquare },
     ],
   },
-
   {
     label: "Content",
     items: [
@@ -49,7 +66,7 @@ const groups = [
     label: "Finance",
     items: [
       { title: "Payments", url: "/admin/payments", icon: CreditCard },
-      { title: "Crypto top-ups", url: "/admin/topups", icon: Bitcoin },
+      { title: "Crypto top-ups", url: "/admin/topups", icon: Bitcoin, badgeKey: "topups" },
       { title: "Wallets", url: "/admin/wallets", icon: Wallet },
     ],
   },
@@ -58,11 +75,11 @@ const groups = [
     items: [
       { title: "Settings", url: "/admin/settings", icon: Settings },
       { title: "Maintenance", url: "/admin/maintenance", icon: Wrench },
-      { title: "Broadcasts", url: "/admin/broadcasts", icon: Megaphone },
+      { title: "Broadcasts", url: "/admin/broadcasts", icon: Megaphone, badgeKey: "broadcasts" },
       { title: "Audit log", url: "/admin/audit", icon: FileClock },
     ],
   },
-] as const;
+];
 
 export function AdminSidebar() {
   const { state } = useSidebar();
@@ -71,27 +88,58 @@ export function AdminSidebar() {
   const isActive = (url: string, exact?: boolean) => (exact ? path === url : path === url || path.startsWith(url + "/"));
 
   const badgesFn = useServerFn(getAdminBadges);
-  const { data: badgesData } = useQuery({
-    queryKey: ["admin-badges"],
+  const { data: badgesData, isLoading, isError, isFetching, refetch } = useQuery({
+    queryKey: ADMIN_BADGES_QUERY_KEY,
     queryFn: () => badgesFn(),
     staleTime: 60_000,
     refetchInterval: 60_000,
   });
-  const badges: Record<string, number> = {
-    kyc: badgesData?.kyc ?? 0,
-    reports: badgesData?.reports ?? 0,
-    moderation: badgesData?.moderation ?? 0,
-  };
+  const badges: AdminBadges = badgesData ?? EMPTY_BADGES;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-white/10 bg-slate-950">
       <SidebarHeader className="border-b border-white/10 bg-slate-950 px-3 py-3">
-        <Link to="/admin" className="flex items-center gap-2 font-display text-base font-bold tracking-tight text-slate-100">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-inner">
-            <ShieldCheck className="h-4 w-4" />
-          </span>
-          {!collapsed && <span className="truncate">CallEscort24 <span className="text-slate-400">Admin</span></span>}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to="/admin" className="flex min-w-0 flex-1 items-center gap-2 font-display text-base font-bold tracking-tight text-slate-100">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-inner">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
+            {!collapsed && <span className="truncate">CallEscort24 <span className="text-slate-400">Admin</span></span>}
+          </Link>
+          {!collapsed && (
+            <TooltipProvider delayDuration={200}>
+              {isError && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => refetch()}
+                      className="grid h-7 w-7 place-items-center rounded-md text-rose-400 hover:bg-white/5"
+                      aria-label="Badge counts unavailable, click to retry"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Counts unavailable — click to retry</TooltipContent>
+                </Tooltip>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                    className="grid h-7 w-7 place-items-center rounded-md text-slate-400 hover:bg-white/5 hover:text-slate-100 disabled:opacity-60"
+                    aria-label="Refresh counts"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Refresh counts</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
       </SidebarHeader>
       <SidebarContent className="bg-slate-950">
         {groups.map((g) => (
@@ -100,19 +148,22 @@ export function AdminSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {g.items.map((it) => {
-                  const badgeCount = "badgeKey" in it && it.badgeKey ? badges[it.badgeKey] ?? 0 : 0;
+                  const badgeCount = it.badgeKey ? badges[it.badgeKey] : 0;
+                  const showSkeleton = it.badgeKey && isLoading;
                   return (
                     <SidebarMenuItem key={it.url}>
                       <SidebarMenuButton
                         asChild
-                        isActive={isActive(it.url, "exact" in it ? it.exact : false)}
+                        isActive={isActive(it.url, it.exact)}
                         tooltip={it.title}
                         className="data-[active=true]:bg-white/10 data-[active=true]:text-white hover:bg-white/5"
                       >
                         <Link to={it.url} className="flex w-full items-center gap-2 text-slate-300">
                           <it.icon className="h-4 w-4" />
                           {!collapsed && <span className="flex-1 truncate">{it.title}</span>}
-                          {badgeCount > 0 && (
+                          {showSkeleton ? (
+                            !collapsed && <span className="h-4 w-6 animate-pulse rounded-full bg-white/10" aria-label="Loading count" />
+                          ) : badgeCount > 0 ? (
                             <span
                               className={`inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold leading-5 text-white shadow-sm ${
                                 collapsed ? "absolute right-1 top-1 h-4 min-w-[1rem] px-1 text-[9px] leading-4" : ""
@@ -121,7 +172,7 @@ export function AdminSidebar() {
                             >
                               {badgeCount > 99 ? "99+" : badgeCount}
                             </span>
-                          )}
+                          ) : null}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
