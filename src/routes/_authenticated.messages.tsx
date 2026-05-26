@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, Search, MoreVertical, Archive, ArchiveRestore, Bell, BellOff } from "lucide-react";
+import { MessageSquare, Search, MoreVertical, Archive, ArchiveRestore, Bell, BellOff, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -17,18 +17,20 @@ export const Route = createFileRoute("/_authenticated/messages")({
 
 type ThreadRow = {
   id: string; buyer_id: string; seller_id: string; listing_id: string; last_message_at: string;
-  archived_by: string[] | null; muted_by: string[] | null;
+  archived_by: string[] | null; muted_by: string[] | null; starred_by: string[] | null;
   listing?: { id: string; title: string; listing_images?: { url: string; sort_order: number }[] } | null;
   other?: { id: string; display_name: string; avatar_url: string | null } | null;
   unread?: number;
 };
+
+type TabKey = "inbox" | "unread" | "starred" | "archived";
 
 function MessagesLayout() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const location = useLocation();
   const [filter, setFilter] = useState("");
-  const [tab, setTab] = useState<"inbox" | "archived">("inbox");
+  const [tab, setTab] = useState<TabKey>("inbox");
 
   const { data: threads, refetch } = useQuery({
     queryKey: ["threads", user?.id],
@@ -36,7 +38,7 @@ function MessagesLayout() {
     queryFn: async (): Promise<ThreadRow[]> => {
       const { data: t } = await supabase
         .from("message_threads")
-        .select("id, buyer_id, seller_id, listing_id, last_message_at, archived_by, muted_by")
+        .select("id, buyer_id, seller_id, listing_id, last_message_at, archived_by, muted_by, starred_by")
         .or(`buyer_id.eq.${user!.id},seller_id.eq.${user!.id}`)
         .order("last_message_at", { ascending: false });
       if (!t || t.length === 0) return [];
@@ -101,9 +103,27 @@ function MessagesLayout() {
     qc.invalidateQueries({ queryKey: ["threads"] });
   };
 
-  const inboxThreads = (threads ?? []).filter(t => !(t.archived_by ?? []).includes(user?.id ?? ""));
-  const archivedThreads = (threads ?? []).filter(t => (t.archived_by ?? []).includes(user?.id ?? ""));
-  const list = tab === "inbox" ? inboxThreads : archivedThreads;
+  const toggleStar = async (t: ThreadRow) => {
+    if (!user) return;
+    const arr = new Set(t.starred_by ?? []);
+    arr.has(user.id) ? arr.delete(user.id) : arr.add(user.id);
+    const { error } = await supabase.from("message_threads").update({ starred_by: Array.from(arr) }).eq("id", t.id);
+    if (error) return toast.error(error.message);
+    toast.success(arr.has(user.id) ? "Added to favorites" : "Removed from favorites");
+    qc.invalidateQueries({ queryKey: ["threads"] });
+  };
+
+  const uid = user?.id ?? "";
+  const allInbox = (threads ?? []).filter(t => !(t.archived_by ?? []).includes(uid));
+  const archivedThreads = (threads ?? []).filter(t => (t.archived_by ?? []).includes(uid));
+  const unreadThreads = allInbox.filter(t => (t.unread ?? 0) > 0);
+  const starredThreads = (threads ?? []).filter(t => (t.starred_by ?? []).includes(uid) && !(t.archived_by ?? []).includes(uid));
+
+  const list =
+    tab === "inbox" ? allInbox :
+    tab === "unread" ? unreadThreads :
+    tab === "starred" ? starredThreads :
+    archivedThreads;
 
   const filtered = list.filter(t => {
     if (!filter) return true;
@@ -112,7 +132,14 @@ function MessagesLayout() {
       || (t.listing?.title ?? "").toLowerCase().includes(q);
   });
 
-  const totalUnread = inboxThreads.reduce((n, t) => n + (t.unread ?? 0), 0);
+  const totalUnread = allInbox.reduce((n, t) => n + (t.unread ?? 0), 0);
+  const counts: Record<TabKey, number> = {
+    inbox: allInbox.length,
+    unread: unreadThreads.length,
+    starred: starredThreads.length,
+    archived: archivedThreads.length,
+  };
+  const tabLabel: Record<TabKey, string> = { inbox: "Inbox", unread: "Unread", starred: "Favorites", archived: "Archived" };
 
   return (
     <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
