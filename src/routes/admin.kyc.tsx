@@ -139,7 +139,7 @@ function AdminKycPage() {
           </Card>
         ))}
       </div>
-    </AdminShell>
+    </div>
   );
 }
 
