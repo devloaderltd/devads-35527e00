@@ -149,7 +149,7 @@ function SearchPage() {
       let q = supabase
         .from("listings")
         .select(`
-          id, slug, title, description, created_at, bumped_at, condition, view_count, price, verified_at,
+          id, slug, title, description, created_at, bumped_at, condition, view_count, price, verified_at, item_age, expires_at,
           categories!inner(name, slug),
           cities!inner(name, region, country, slug),
           listing_images(url, sort_order),
