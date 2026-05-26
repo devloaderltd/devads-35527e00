@@ -122,7 +122,13 @@ function AdminKycPage() {
         onExportCsv={exportCsv}
       />
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {isLoading && <RowSkeleton rows={5} />}
+      {kycQ.isError && (
+        <ErrorFallback
+          message={(kycQ.error as Error | undefined)?.message ?? "Could not load submissions."}
+          onRetry={() => kycQ.refetch()}
+        />
+      )}
 
       {!isLoading && filtered.length === 0 && (
         <EmptyState
