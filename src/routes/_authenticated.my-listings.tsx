@@ -55,7 +55,7 @@ function MyListings() {
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("listings")
-        .select(`id, title, status, created_at, expires_at, view_count, bumped_at,
+        .select(`id, title, status, created_at, expires_at, view_count, bumped_at, auto_renew,
           cities(name, region, country),
           listing_images(url, sort_order)`)
         .eq("user_id", user!.id)
