@@ -275,13 +275,6 @@ function SearchPage() {
             {cities?.map((c) => <SelectItem key={c.id} value={c.slug}>{c.name}, {c.region}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={search.condition ?? "all"} onValueChange={(v) => update({ condition: v === "all" ? undefined : v })}>
-          <SelectTrigger className="bg-white/70"><SelectValue placeholder="Condition" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Any condition</SelectItem>
-            {CONDITIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
       </div>
 
       {activeFilters.length > 0 && (
