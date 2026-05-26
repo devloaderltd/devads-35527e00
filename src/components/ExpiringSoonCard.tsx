@@ -14,7 +14,7 @@ export function ExpiringSoonCard({ userId }: { userId: string | undefined }) {
       const cutoff = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data } = await supabase
         .from("listings")
-        .select("id, title, expires_at, status")
+        .select("id, slug, title, expires_at, status")
         .eq("user_id", userId!)
         .eq("status", "active")
         .lt("expires_at", cutoff)
