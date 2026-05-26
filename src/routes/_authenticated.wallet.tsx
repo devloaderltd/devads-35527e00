@@ -22,6 +22,7 @@ function WalletPage() {
   const fetchWallet = useServerFn(getWallet);
   const topupFn = useServerFn(createTopupInvoice);
   const qc = useQueryClient();
+  const { user } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ["wallet"],
