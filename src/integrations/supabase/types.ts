@@ -569,6 +569,7 @@ export type Database = {
           id: string
           is_negotiable: boolean
           item_age: string
+          phone: string | null
           price: number | null
           search_tsv: unknown
           slug: string
@@ -578,6 +579,7 @@ export type Database = {
           user_id: string
           verified_at: string | null
           view_count: number
+          whatsapp: string | null
         }
         Insert: {
           auto_renew?: boolean
@@ -591,6 +593,7 @@ export type Database = {
           id?: string
           is_negotiable?: boolean
           item_age?: string
+          phone?: string | null
           price?: number | null
           search_tsv?: unknown
           slug?: string
@@ -600,6 +603,7 @@ export type Database = {
           user_id: string
           verified_at?: string | null
           view_count?: number
+          whatsapp?: string | null
         }
         Update: {
           auto_renew?: boolean
@@ -613,6 +617,7 @@ export type Database = {
           id?: string
           is_negotiable?: boolean
           item_age?: string
+          phone?: string | null
           price?: number | null
           search_tsv?: unknown
           slug?: string
@@ -622,6 +627,7 @@ export type Database = {
           user_id?: string
           verified_at?: string | null
           view_count?: number
+          whatsapp?: string | null
         }
         Relationships: [
           {
