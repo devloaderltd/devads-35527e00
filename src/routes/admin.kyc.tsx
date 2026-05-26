@@ -48,7 +48,7 @@ function AdminKycPage() {
   }>;
 
   return (
-    <AdminShell>
+    <div>
       <div className="mb-4">
         <h1 className="font-display text-2xl font-bold text-white">KYC verification</h1>
         <p className="text-sm text-slate-400">Review identity submissions and credit $5 bonus on approval.</p>
