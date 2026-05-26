@@ -1209,7 +1209,7 @@ export const getAdminActivityFeed = createServerFn({ method: "POST" })
     if (want("audit")) { keys.push("audit"); tasks.push(supabaseAdmin.from("audit_log").select("id, action, target_type, target_id, actor_id, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
 
     const results = await Promise.all(tasks);
-    type Item = { kind: string; at: string; id: string; payload: Record<string, unknown> };
+    type Item = { kind: string; at: string; id: string; payload: Row };
     const items: Item[] = [];
     results.forEach((res, i) => {
       const kind = keys[i];
