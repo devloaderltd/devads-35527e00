@@ -97,7 +97,7 @@ function TopupsPage() {
               </div>
             </div>
           ))}
-          {!filtered.length && (
+          {!q.isLoading && !q.isError && !filtered.length && (
             <EmptyState
               icon={Wallet}
               title={text || status !== "all" ? "No top-ups match" : "No top-ups yet"}
