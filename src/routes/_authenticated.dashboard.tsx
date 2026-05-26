@@ -72,7 +72,7 @@ function DashboardPage() {
     queryFn: async () => {
       const uid = user!.id;
       const listingsRes = await supabase.from("listings")
-        .select("id, title, status, view_count, created_at, bumped_at, category_id, city_id")
+        .select("id, slug, title, status, view_count, created_at, bumped_at, category_id, city_id")
         .eq("user_id", uid);
       const listings = listingsRes.data ?? [];
       const ids = listings.map(l => l.id);
