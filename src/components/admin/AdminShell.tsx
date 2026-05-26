@@ -41,7 +41,7 @@ export function AdminShell({ children, email }: { children: React.ReactNode; ema
   const env = typeof window !== "undefined" && window.location.host.includes("lovable") ? "Preview" : "Live";
 
   return (
-    <SidebarProvider>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <div className="flex min-h-screen w-full bg-slate-950 text-slate-100">
         <AdminSidebar />
         <SidebarInset className="bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
