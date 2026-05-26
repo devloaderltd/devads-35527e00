@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -215,7 +215,12 @@ function PostListing() {
 
         <div className="space-y-2">
           <Label htmlFor="desc">Description</Label>
-          <Textarea id="desc" required rows={6} maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Condition, size, history, why you're selling…" className="bg-white/70" />
+          <RichTextEditor
+            value={description}
+            onChange={setDescription}
+            maxLength={4000}
+            placeholder="Condition, size, history, why you're selling…"
+          />
         </div>
 
         <div className="space-y-2">

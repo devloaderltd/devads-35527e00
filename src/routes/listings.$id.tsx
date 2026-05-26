@@ -17,6 +17,19 @@ import { ListingCard } from "@/components/ListingCard";
 import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 import { SellerReviews } from "@/components/SellerReviews";
 import { ShareSheet } from "@/components/ShareSheet";
+import DOMPurify from "dompurify";
+
+function sanitizeDescription(html: string): string {
+  if (typeof window === "undefined") {
+    // SSR: strip all HTML tags conservatively; client will rehydrate with full sanitized markup
+    return html.replace(/<[^>]*>/g, "");
+  }
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "s", "h2", "h3", "ul", "ol", "li", "blockquote", "code", "a"],
+    ALLOWED_ATTR: ["href", "target", "rel"],
+    ADD_ATTR: ["target", "rel"],
+  });
+}
 
 import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
@@ -246,11 +259,16 @@ function ListingDetail() {
           {/* Description */}
           <div className="iridescent-border mt-6 rounded-2xl border border-white/40 bg-white/65 p-5 shadow-[var(--shadow-float)] backdrop-blur-xl">
             <h2 className="font-display text-lg font-bold">Description</h2>
-            <div className="mt-3 whitespace-pre-wrap text-[0.95rem] leading-relaxed text-foreground/90">
-              {listing.description?.trim()
-                ? listing.description
-                : "The seller hasn't added a description for this listing yet. Use the Message button to ask for more details."}
-            </div>
+            {listing.description?.trim() ? (
+              <div
+                className="rte-content mt-3 text-[0.95rem] leading-relaxed text-foreground/90"
+                dangerouslySetInnerHTML={{ __html: sanitizeDescription(listing.description) }}
+              />
+            ) : (
+              <div className="mt-3 text-[0.95rem] leading-relaxed text-foreground/90">
+                The seller hasn't added a description for this listing yet. Use the Message button to ask for more details.
+              </div>
+            )}
           </div>
 
           {/* Details */}

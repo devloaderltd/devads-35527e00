@@ -1,43 +1,44 @@
+## Add WYSIWYG editor with emoji support to listing description
 
-## Goal
+Replace the plain `Textarea` for the description field on the post-listing page with a lightweight rich-text editor that supports basic formatting and emoji insertion. Render the resulting HTML safely on the listing details page.
 
-On the Post listing page:
-1. Add **Phone number** and **WhatsApp number** inputs.
-2. Replace the city `Select` with a **searchable combobox** that supports **multi-select** (one listing is duplicated per selected city).
-3. Show both numbers on the **listing details** page.
+### 1. Editor choice
+Use **TipTap** (`@tiptap/react` + `@tiptap/starter-kit`) — small, headless, React-first, works with Tailwind, and easy to style with our design tokens. Add **`emoji-picker-react`** for the emoji panel (clean, no extra peer deps, supports native emoji insertion).
 
-## 1. Database (migration)
+Packages to install:
+- `@tiptap/react`
+- `@tiptap/starter-kit`
+- `@tiptap/extension-link`
+- `@tiptap/extension-placeholder`
+- `emoji-picker-react`
+- `dompurify` (sanitize HTML on render)
 
-Add two nullable text columns to `listings`:
-- `phone text`
-- `whatsapp text`
+### 2. New component: `src/components/RichTextEditor.tsx`
+- TipTap editor with StarterKit (bold, italic, lists, headings H2/H3, blockquote, code), Link, Placeholder.
+- Compact toolbar: **B**, *I*, H2, H3, • list, 1. list, link, clear formatting, and an 😀 emoji button that opens `EmojiPicker` in a `Popover`. Clicking an emoji inserts at cursor.
+- Props: `value: string`, `onChange: (html: string) => void`, `placeholder?: string`, `maxLength?: number`.
+- Enforce `maxLength` via the editor's character count (using plain text length); show counter under editor.
+- Styled with our existing tokens — rounded-2xl, `bg-white/70 backdrop-blur`, focus ring matching current inputs. ProseMirror content gets `prose prose-sm` styling.
 
-Both validated client-side (E.164-ish, max 32 chars). No RLS changes needed (existing listing policies cover them).
+### 3. Wire into `src/routes/_authenticated.post.tsx`
+- Replace the description `<Textarea>` with `<RichTextEditor value={description} onChange={setDescription} maxLength={4000} placeholder="…" />`.
+- Submission already passes `description` string straight to DB — now it stores HTML (no schema change; `description` is text). AI-generated description (plain text) is still assigned to the same state; TipTap will render it fine.
 
-## 2. Post listing page (`src/routes/_authenticated.post.tsx`)
+### 4. Render HTML safely on `src/routes/listings.$id.tsx`
+- Where description currently renders as plain text/whitespace-pre-wrap, switch to a `<div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(listing.description) }} />`.
+- DOMPurify config: allow basic tags (`p, br, strong, em, u, s, h2, h3, ul, ol, li, blockquote, code, a`) and only `href`, `target`, `rel` on links; force `rel="noopener noreferrer nofollow"` and `target="_blank"` on `<a>`.
 
-- New inputs: **Phone number** (required) and **WhatsApp number** (optional, with a "Same as phone" checkbox to copy).
-- Light validation: digits / `+`, spaces, dashes; 6–32 chars.
-- Replace the City `Select` with a searchable **Command** combobox (shadcn `Command` + `Popover`), filtered by typed text. Supports **multiple** selections, shown as removable chips above the input. Country select stays.
-- Submit flow: loop over selected city IDs and insert one listing per city (sharing title/description/photos). Photos are uploaded once per listing (re-upload per city is fine since storage cost is negligible; or we can upload once and reuse the same URLs for all duplicates — we'll reuse URLs to save bandwidth). Toast shows "Posted to N cities". Navigate to the first created listing.
+### 5. Backward compatibility
+Existing plain-text descriptions render correctly inside the `prose` div (text nodes). No migration required.
 
-## 3. Listing details page (`src/routes/listings.$id.tsx`)
+### Technical notes
+- Keep `Textarea` import removed only if unused elsewhere in the file.
+- Character limit counts editor's plain text (`editor.storage.characterCount` via `@tiptap/extension-character-count` — add this too) to match the existing 4000 cap.
+- Emoji picker mounted inside a `Popover` so it doesn't blow up layout on mobile (393px viewport).
+- No backend / RLS / server function changes.
 
-- Fetch `phone` and `whatsapp` along with the listing.
-- In the contact section, render two action buttons when present:
-  - **Call** → `tel:+<phone>`
-  - **WhatsApp** → `https://wa.me/<digits>`
-- Keep existing seller email reveal as-is.
-
-## 4. Technical notes
-
-- Combobox: use existing `@/components/ui/command` + `@/components/ui/popover`. No new deps.
-- Cities query already fetches up to 1000 per country — fine for client-side filtering.
-- Numbers stored on listing (per user's choice), independent of profile phone.
-- Types regenerate automatically after the migration.
-
-## Files
-
-- Migration: add `phone`, `whatsapp` columns to `listings`.
-- Edit `src/routes/_authenticated.post.tsx`: new fields + multi-city combobox + duplicate-insert loop.
-- Edit `src/routes/listings.$id.tsx`: select the new columns + render Call / WhatsApp buttons.
+### Files touched
+- add: `src/components/RichTextEditor.tsx`
+- edit: `src/routes/_authenticated.post.tsx` (swap Textarea → RichTextEditor)
+- edit: `src/routes/listings.$id.tsx` (sanitized HTML render)
+- install: tiptap packages, emoji-picker-react, dompurify
