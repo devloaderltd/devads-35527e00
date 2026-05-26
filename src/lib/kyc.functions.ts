@@ -126,8 +126,9 @@ export const adminReviewKyc = createServerFn({ method: "POST" })
     if (data.action === "approve") {
       const { error } = await supabaseAdmin.rpc("approve_kyc", {
         _submission_id: data.submissionId,
-        _note: data.note ?? null,
+        ...(data.note ? { _note: data.note } : {}),
       });
+
       if (error) throw new Error(error.message);
     } else {
       const { error } = await supabaseAdmin.rpc("reject_kyc", {
