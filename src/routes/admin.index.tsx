@@ -37,6 +37,7 @@ function DashboardPage() {
   const activityFn = useServerFn(getRecentActivity);
   const sparklinesFn = useServerFn(getDashboardSparklines);
   const funnelFn = useServerFn(getFunnelStats);
+  const overviewFn = useServerFn(getDashboardOverview);
 
   const [range, setRange] = useState<RangeDays>(30);
   useEffect(() => {
@@ -48,25 +49,9 @@ function DashboardPage() {
   }, [range]);
 
   const overview = useQuery({
-    queryKey: ["admin-overview"],
-    queryFn: async () => {
-      const [usersRes, listingsRes, paymentsRes, openReportsRes, catsRes, citiesRes] = await Promise.all([
-        supabase.from("profiles").select("id, created_at"),
-        supabase.from("listings").select("id, status, created_at, category_id, city_id"),
-        supabase.from("payments").select("amount, status, created_at, promotion_type"),
-        supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
-        supabase.from("categories").select("id, name"),
-        supabase.from("cities").select("id, name"),
-      ]);
-      return {
-        users: usersRes.data ?? [],
-        listings: listingsRes.data ?? [],
-        payments: paymentsRes.data ?? [],
-        openReports: openReportsRes.count ?? 0,
-        categories: catsRes.data ?? [],
-        cities: citiesRes.data ?? [],
-      };
-    },
+    queryKey: ["admin-overview", range],
+    queryFn: () => overviewFn({ data: { days: range } }),
+    staleTime: 60_000,
   });
 
   const quick = useQuery({ queryKey: ["admin-quick-stats"], queryFn: () => quickStatsFn() });
@@ -82,39 +67,26 @@ function DashboardPage() {
     staleTime: 60_000,
   });
 
-  const data = overview.data;
+  const charts = overview.data
+    ? {
+        days: overview.data.days.map((d) => ({
+          ...d,
+          date: format(parseISO(d.date), "MMM d"),
+        })),
+        byCategory: overview.data.byCategory,
+        byStatus: overview.data.byStatus,
+      }
+    : null;
 
-  const charts = useMemo(() => {
-    if (!data) return null;
-    const days: { date: string; users: number; listings: number; revenue: number }[] = [];
-    for (let i = range - 1; i >= 0; i--) {
-      const d = startOfDay(subDays(new Date(), i));
-      const t = d.getTime();
-      days.push({
-        date: format(d, "MMM d"),
-        users: data.users.filter(u => startOfDay(new Date(u.created_at)).getTime() === t).length,
-        listings: data.listings.filter(l => startOfDay(new Date(l.created_at)).getTime() === t).length,
-        revenue: data.payments.filter(p => p.status === "completed" && startOfDay(new Date(p.created_at)).getTime() === t).reduce((s, p) => s + Number(p.amount ?? 0), 0),
-      });
-    }
-    const catMap = new Map<string, number>();
-    data.listings.forEach(l => { const n = data.categories.find(c => c.id === l.category_id)?.name ?? "Other"; catMap.set(n, (catMap.get(n) ?? 0) + 1); });
-    const statusMap = new Map<string, number>();
-    data.listings.forEach(l => statusMap.set(l.status, (statusMap.get(l.status) ?? 0) + 1));
-    return {
-      days,
-      byCategory: [...catMap.entries()].map(([name, value]) => ({ name, value })),
-      byStatus: [...statusMap.entries()].map(([name, value]) => ({ name, value })),
-    };
-  }, [data, range]);
-
-  const totalRevenue = (data?.payments ?? []).filter(p => p.status === "completed").reduce((s, p) => s + Number(p.amount ?? 0), 0);
-  const active = (data?.listings ?? []).filter(l => l.status === "active").length;
-  const newUsers7d = (data?.users ?? []).filter(u => new Date(u.created_at).getTime() > Date.now() - 7 * 86400000).length;
+  const totals = overview.data?.totals;
+  const totalRevenue = totals?.totalRevenue ?? 0;
+  const active = totals?.activeListings ?? 0;
+  const newUsers7d = totals?.newUsers7d ?? 0;
 
   const s = sparks.data;
   const fn = funnel.data;
   const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
+
 
   return (
     <div>
