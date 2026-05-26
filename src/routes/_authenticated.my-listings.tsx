@@ -347,6 +347,6 @@ function MyListings() {
         onDelete={bulkDelete}
         onClear={clearSel}
       />
-    </div>
+    </PanelShell>
   );
 }
