@@ -12,6 +12,7 @@ import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
 import { BulkActionBar } from "@/components/admin/BulkActionBar";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 import { bulkUpdateListings, grantPromotion } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/listings")({ component: ListingsPage });
@@ -24,15 +25,17 @@ function ListingsPage() {
   const bulkFn = useServerFn(bulkUpdateListings);
   const promoFn = useServerFn(grantPromotion);
 
-  const { data } = useQuery({
+  const listingsQ = useQuery({
     queryKey: ["admin-listings", statusFilter],
     queryFn: async () => {
       let qy = supabase.from("listings").select("id, title, status, view_count, created_at, user_id").order("created_at", { ascending: false }).limit(500);
       if (statusFilter !== "all") qy = qy.eq("status", statusFilter as "active" | "sold" | "removed" | "expired");
-      const { data } = await qy;
+      const { data, error } = await qy;
+      if (error) throw new Error(error.message);
       return data ?? [];
     },
   });
+  const data = listingsQ.data;
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -96,7 +99,14 @@ function ListingsPage() {
           </label>
         )}
         <div className="space-y-2">
-          {filtered.map(l => (
+          {listingsQ.isLoading && <RowSkeleton rows={6} />}
+          {listingsQ.isError && (
+            <ErrorFallback
+              message={(listingsQ.error as Error | undefined)?.message ?? "Could not load listings."}
+              onRetry={() => listingsQ.refetch()}
+            />
+          )}
+          {!listingsQ.isLoading && !listingsQ.isError && filtered.map(l => (
             <div key={l.id} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition hover:border-white/20 sm:flex-row sm:items-start">
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggle(l.id)} className="mt-1 h-4 w-4 shrink-0" />
@@ -115,7 +125,7 @@ function ListingsPage() {
               </div>
             </div>
           ))}
-          {!filtered.length && (
+          {!listingsQ.isLoading && !listingsQ.isError && !filtered.length && (
             <EmptyState
               icon={Package}
               title={q || statusFilter !== "all" ? "No listings match" : "No listings yet"}

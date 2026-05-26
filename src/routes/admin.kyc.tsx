@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { BulkActionBar } from "@/components/admin/BulkActionBar";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 
 export const Route = createFileRoute("/admin/kyc")({
   head: () => ({ meta: [{ title: "KYC review — Admin" }, { name: "robots", content: "noindex" }] }),
@@ -39,10 +40,11 @@ function AdminKycPage() {
   const review = useServerFn(adminReviewKyc);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
-  const { data, isLoading } = useQuery({
+  const kycQ = useQuery({
     queryKey: ["admin-kyc", status],
     queryFn: () => list({ data: { status } }),
   });
+  const { data, isLoading } = kycQ;
 
   const reviewMut = useMutation({
     mutationFn: async (v: { id: string; action: "approve" | "reject"; note?: string }) =>
@@ -120,7 +122,13 @@ function AdminKycPage() {
         onExportCsv={exportCsv}
       />
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {isLoading && <RowSkeleton rows={5} />}
+      {kycQ.isError && (
+        <ErrorFallback
+          message={(kycQ.error as Error | undefined)?.message ?? "Could not load submissions."}
+          onRetry={() => kycQ.refetch()}
+        />
+      )}
 
       {!isLoading && filtered.length === 0 && (
         <EmptyState

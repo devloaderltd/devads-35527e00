@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { Wallet as WalletIcon } from "lucide-react";
 import { listWalletsAdmin, adminAdjustWallet } from "@/lib/admin.functions";
 import { useState } from "react";
 
@@ -35,7 +38,14 @@ function WalletsPage() {
       </div>
       <Panel>
         <div className="space-y-2">
-          {wallets.map(w => (
+          {walletsQ.isLoading && <RowSkeleton rows={6} />}
+          {walletsQ.isError && (
+            <ErrorFallback
+              message={(walletsQ.error as Error | undefined)?.message ?? "Could not load wallets."}
+              onRetry={() => walletsQ.refetch()}
+            />
+          )}
+          {!walletsQ.isLoading && !walletsQ.isError && wallets.map(w => (
             <div key={w.user_id} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
               <div className="min-w-0 flex-1">
                 <div className="font-medium text-slate-100">{w.display_name}</div>
@@ -53,7 +63,13 @@ function WalletsPage() {
               </div>
             </div>
           ))}
-          {!wallets.length && <div className="py-10 text-center text-sm text-slate-400">No wallets.</div>}
+          {!walletsQ.isLoading && !walletsQ.isError && !wallets.length && (
+            <EmptyState
+              icon={WalletIcon}
+              title={q ? "No wallets match" : "No wallets yet"}
+              description={q ? "Try clearing the search." : "User wallets will appear here as they get funded."}
+            />
+          )}
         </div>
       </Panel>
     </div>

@@ -8,17 +8,20 @@ import { CreditCard } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 
 export const Route = createFileRoute("/admin/payments")({ component: PaymentsPage });
 
 function PaymentsPage() {
-  const { data } = useQuery({
+  const paymentsQ = useQuery({
     queryKey: ["admin-payments"],
     queryFn: async () => {
-      const { data } = await supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(500);
+      const { data, error } = await supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(500);
+      if (error) throw new Error(error.message);
       return data ?? [];
     },
   });
+  const data = paymentsQ.data;
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
@@ -85,7 +88,14 @@ function PaymentsPage() {
       />
       <Panel>
         <div className="space-y-2">
-          {filtered.map(p => (
+          {paymentsQ.isLoading && <RowSkeleton rows={6} />}
+          {paymentsQ.isError && (
+            <ErrorFallback
+              message={(paymentsQ.error as Error | undefined)?.message ?? "Could not load payments."}
+              onRetry={() => paymentsQ.refetch()}
+            />
+          )}
+          {!paymentsQ.isLoading && !paymentsQ.isError && filtered.map(p => (
             <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -97,7 +107,7 @@ function PaymentsPage() {
               </div>
             </div>
           ))}
-          {!filtered.length && (
+          {!paymentsQ.isLoading && !paymentsQ.isError && !filtered.length && (
             <EmptyState
               icon={CreditCard}
               title={q || status !== "all" || type !== "all" ? "No payments match" : "No payments yet"}

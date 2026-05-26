@@ -10,13 +10,14 @@ import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
-import { Users, Package, DollarSign, Flag, Wallet, Bitcoin, TrendingUp, AlertCircle } from "lucide-react";
+import { Users, Package, DollarSign, Flag, Wallet, Bitcoin, TrendingUp, AlertCircle, Activity, ShieldAlert, Wrench, ServerCrash } from "lucide-react";
 
 import { SeedDemoButton } from "@/components/admin/SeedDemoButton";
 import { panelCls, AdminPageHeader } from "@/components/admin/ui";
 import { KpiTile } from "@/components/admin/KpiTile";
+import { ErrorFallback, CardGridSkeleton } from "@/components/admin/Skeletons";
 import {
-  getQuickStats, getRecentActivity, getDashboardSparklines, getFunnelStats, getDashboardOverview,
+  getQuickStats, getRecentActivity, getDashboardSparklines, getFunnelStats, getDashboardOverview, getSystemHealth,
 } from "@/lib/admin.functions";
 
 
@@ -38,6 +39,7 @@ function DashboardPage() {
   const sparklinesFn = useServerFn(getDashboardSparklines);
   const funnelFn = useServerFn(getFunnelStats);
   const overviewFn = useServerFn(getDashboardOverview);
+  const healthFn = useServerFn(getSystemHealth);
 
   const [range, setRange] = useState<RangeDays>(30);
   useEffect(() => {
@@ -65,6 +67,12 @@ function DashboardPage() {
     queryKey: ["admin-funnel", range],
     queryFn: () => funnelFn({ data: { days: range } }),
     staleTime: 60_000,
+  });
+  const health = useQuery({
+    queryKey: ["admin-system-health"],
+    queryFn: () => healthFn(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   const charts = overview.data
@@ -101,7 +109,16 @@ function DashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {/* Hero health strip */}
+      <HealthStrip
+        loading={health.isLoading}
+        error={health.isError ? (health.error as Error)?.message : undefined}
+        onRetry={() => health.refetch()}
+        data={health.data}
+      />
+
+      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+
         <KpiTile icon={<Users className="h-4 w-4" />} label={`Users (${range}d)`} value={s?.users.current ?? "—"} delta={s?.users} spark={s?.users.spark} accent="#7c5cff" loading={sparks.isLoading} />
         <KpiTile icon={<Package className="h-4 w-4" />} label={`Listings (${range}d)`} value={s?.listings.current ?? "—"} delta={s?.listings} spark={s?.listings.spark} accent="#22c1c3" loading={sparks.isLoading} />
         <KpiTile icon={<DollarSign className="h-4 w-4" />} label={`Revenue (${range}d)`} value={`$${(s?.revenue.current ?? 0).toFixed(2)}`} delta={s?.revenue} spark={s?.revenue.spark} accent="#ff7a59" loading={sparks.isLoading} />
@@ -141,38 +158,60 @@ function DashboardPage() {
 
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard title="Signups & listings (30 days)">
+        <ChartCard title="Signups & listings">
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={charts?.days ?? []}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <defs>
+                <linearGradient id="gradUsers" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#7c5cff" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#7c5cff" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradListings" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c1c3" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#22c1c3" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
-              <Legend />
-              <Line type="monotone" dataKey="users" stroke="#7c5cff" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="listings" stroke="#22c1c3" strokeWidth={2} dot={false} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey="users" stroke="#7c5cff" strokeWidth={2.5} dot={false} fill="url(#gradUsers)" />
+              <Line type="monotone" dataKey="listings" stroke="#22c1c3" strokeWidth={2.5} dot={false} fill="url(#gradListings)" />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
-        <ChartCard title="Revenue per day (30 days)">
+        <ChartCard title="Revenue per day">
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={charts?.days ?? []}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <defs>
+                <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ff7a59" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#ff7a59" stopOpacity={0.3} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
               <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
-              <Bar dataKey="revenue" fill="#ff7a59" radius={[6, 6, 0, 0]} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
+              <Bar dataKey="revenue" fill="url(#gradRevenue)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
         <ChartCard title="Listings by category">
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={charts?.byCategory ?? []}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <defs>
+                <linearGradient id="gradCat" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#36c172" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#36c172" stopOpacity={0.3} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
               <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} interval={0} angle={-20} textAnchor="end" height={60} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
-              <Bar dataKey="value" fill="#36c172" radius={[6, 6, 0, 0]} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
+              <Bar dataKey="value" fill="url(#gradCat)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -261,3 +300,81 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
     </Card>
   );
 }
+
+type HealthData = {
+  counts: {
+    users: number;
+    listings: number;
+    activeListings: number;
+    pendingTopups: number;
+    failedPayments24h: number;
+    openReports: number;
+    unresolvedErrors: number;
+    serverErrors24h: number;
+  };
+  walletsTotalUsd: number;
+  maintenanceMode: boolean;
+};
+
+function HealthStrip({
+  loading,
+  error,
+  onRetry,
+  data,
+}: {
+  loading: boolean;
+  error?: string;
+  onRetry: () => void;
+  data?: HealthData;
+}) {
+  if (loading) return <div className="mb-1"><CardGridSkeleton tiles={4} /></div>;
+  if (error) return <div className="mb-1"><ErrorFallback message={error} onRetry={onRetry} /></div>;
+  if (!data) return null;
+  const c = data.counts;
+  const errorsTotal = c.serverErrors24h + c.unresolvedErrors;
+  const items: Array<{
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    value: number | string;
+    tone: "ok" | "warn" | "bad";
+  }> = [
+    { icon: Wrench, label: "Maintenance", value: data.maintenanceMode ? "ON" : "off", tone: data.maintenanceMode ? "warn" : "ok" },
+    { icon: ServerCrash, label: "Errors (24h)", value: errorsTotal, tone: errorsTotal === 0 ? "ok" : errorsTotal < 10 ? "warn" : "bad" },
+    { icon: ShieldAlert, label: "Failed payments (24h)", value: c.failedPayments24h, tone: c.failedPayments24h === 0 ? "ok" : c.failedPayments24h < 5 ? "warn" : "bad" },
+    { icon: Activity, label: "Pending top-ups", value: c.pendingTopups, tone: c.pendingTopups === 0 ? "ok" : c.pendingTopups < 10 ? "warn" : "bad" },
+  ];
+  const toneRing: Record<"ok" | "warn" | "bad", string> = {
+    ok: "ring-emerald-400/20 bg-emerald-500/[0.06] text-emerald-200",
+    warn: "ring-amber-400/30 bg-amber-500/[0.08] text-amber-200",
+    bad: "ring-rose-400/40 bg-rose-500/[0.1] text-rose-200",
+  };
+  const toneDot: Record<"ok" | "warn" | "bad", string> = {
+    ok: "bg-emerald-400",
+    warn: "bg-amber-400",
+    bad: "bg-rose-400 animate-pulse",
+  };
+  return (
+    <div className="mb-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {items.map((it) => (
+        <div
+          key={it.label}
+          className={`group flex items-center gap-2.5 rounded-xl border border-white/10 px-3 py-2.5 ring-1 ring-inset transition-all hover:-translate-y-0.5 ${toneRing[it.tone]}`}
+        >
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5">
+            <it.icon className="h-3.5 w-3.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide opacity-80">
+              <span className={`h-1.5 w-1.5 rounded-full ${toneDot[it.tone]}`} />
+              <span className="truncate">{it.label}</span>
+            </div>
+            <div className="mt-0.5 font-display text-base font-bold leading-tight text-slate-100 sm:text-lg">
+              {it.value}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
