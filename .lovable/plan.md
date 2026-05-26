@@ -1,43 +1,66 @@
-## Goal
-Remove Vercel Cron config so deployment passes on the Hobby plan, and switch the two cron endpoints to URL-based triggers protected by a shared secret token so a third-party cron service (cron-job.org, EasyCron, etc.) can invoke them safely.
+## Migrate deployment from Cloudflare to Vercel
 
-## Changes
+### Context
 
-### 1. `vercel.json` — drop the `crons` block
-Remove the `crons` array entirely. Keep `buildCommand`, `outputDirectory`, `framework`, `regions`. After this, Vercel deploy stops complaining about the 15-minute schedule.
+Today the app is built by `@cloudflare/vite-plugin` (auto-loaded by `@lovable.dev/vite-tanstack-config`) which produces a Cloudflare Worker bundle in `dist/`. Vercel doesn't know how to serve that, which is why every route 404s.
 
-### 2. Add a shared secret
-Add a new secret `CRON_TRIGGER_SECRET` (random 32+ char string) via the secrets tool. This becomes the auth token the third-party cron service sends.
+The server entry (`src/server.ts`) already exports a standard `fetch(request, env, ctx)` handler — Web-standard, runtime-agnostic. We just need to package it for Vercel instead of Cloudflare.
 
-### 3. Protect both cron endpoints with the secret
-Files:
-- `src/routes/api/public/cron/auto-promote.ts`
-- `src/routes/api/public/cron/match-saved-searches.ts`
+Important caveat: Lovable's own preview/published pipeline still expects the Cloudflare build. To keep Lovable previews working **and** deploy to Vercel, we'll keep the default Vite build for Lovable and add a **separate** Vercel build path. If you don't need Lovable preview anymore, we can drop the dual setup.
 
-Wrap the existing `run` handler so it first checks the incoming request for a matching token. Accept the token in either:
-- header: `x-cron-secret: <token>`, OR
-- query string: `?token=<token>` (useful for cron services that only support GET URLs with no custom headers)
+### Approach
 
-If neither matches `process.env.CRON_TRIGGER_SECRET`, return `401 Unauthorized`. Otherwise run the existing logic. Keep both `GET` and `POST` handlers so any cron provider works.
+Vercel uses the **Build Output API** (`.vercel/output/` directory). We'll generate it with a post-build script that:
 
-Also fix the stale parse-error symptom on `auto-promote.ts` by rewriting the file cleanly (current indentation is salvageable but I'll normalize it while editing).
+1. Runs Vite in a Vercel-targeted mode (Cloudflare plugin disabled).
+2. Outputs client assets to `.vercel/output/static/`.
+3. Wraps the server `fetch` handler as a Vercel **Edge Function** at `.vercel/output/functions/_ssr.func/` (Edge runtime matches the fetch-handler shape we already have — no Node rewrites needed for server functions).
+4. Writes `.vercel/output/config.json` routing all non-static requests to the SSR function.
 
-### 4. (Optional cleanup) Disable the existing `pg_cron` jobs
-If `pg_cron` is currently scheduling these same endpoints, the third-party cron + pg_cron would double-fire. Plan: leave pg_cron as-is for now; user can run `SELECT cron.unschedule('<job-name>')` later from the SQL panel once the third-party trigger is verified. I'll note the exact commands in the final message but not run them automatically.
+### Steps
 
-## Third-party setup (post-deploy instructions you'll get in the final message)
-For each endpoint, create a job in your third-party cron service:
+1. **Add Vercel build script**
+   - New file `scripts/build-vercel.mjs` that:
+     - Sets an env flag (e.g. `BUILD_TARGET=vercel`).
+     - Runs `vite build`.
+     - Copies `dist/client/*` → `.vercel/output/static/`.
+     - Copies `dist/server/*` → `.vercel/output/functions/_ssr.func/`.
+     - Writes `.vc-config.json` inside the function dir declaring Edge runtime + entrypoint.
+     - Writes `.vercel/output/config.json` with `{ version: 3, routes: [{ handle: "filesystem" }, { src: "/.*", dest: "/_ssr" }] }`.
+   - Add `package.json` script: `"build:vercel": "node scripts/build-vercel.mjs"`.
 
-- **auto-promote** — daily, e.g. `15 3 * * *`
-  URL: `https://<your-domain>/api/public/cron/auto-promote?token=<CRON_TRIGGER_SECRET>`
-  Method: GET
+2. **Conditionally disable Cloudflare plugin for Vercel builds**
+   - Update `vite.config.ts` to pass `cloudflare: process.env.BUILD_TARGET === "vercel" ? false : undefined` so Lovable's build keeps working unchanged.
 
-- **match-saved-searches** — every 15 minutes, `*/15 * * * *`
-  URL: `https://<your-domain>/api/public/cron/match-saved-searches?token=<CRON_TRIGGER_SECRET>`
-  Method: GET
+3. **Recreate `vercel.json`**
+   - Minimal config:
+     ```json
+     { "buildCommand": "bun run build:vercel", "framework": null, "regions": ["iad1"] }
+     ```
 
-Header-based alternative: send `x-cron-secret: <CRON_TRIGGER_SECRET>` instead of the query token.
+4. **Document required Vercel env vars** (you'll need to add these in Vercel dashboard):
+   - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`
+   - `LOVABLE_API_KEY` (for AI features — note: this is provisioned by Lovable; if you leave Lovable hosting you may lose access to the gateway)
+   - `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET`
+   - `CRON_TRIGGER_SECRET`
 
-## Out of scope
-- No business-logic changes inside the two cron handlers.
-- No changes to other routes or UI.
+5. **Verify locally**
+   - Run `bun run build:vercel`, inspect `.vercel/output/` structure.
+   - Push and let Vercel deploy.
+
+### Risks / things to know
+
+- **`LOVABLE_API_KEY` won't work outside Lovable.** Your AI features (`src/lib/ai.functions.ts`) depend on the Lovable AI Gateway. On Vercel you'll need to switch to a direct provider (OpenAI/Gemini/etc.) with your own API key, or keep AI calls on the Lovable URL.
+- **Edge runtime constraints** match Cloudflare Workers, so most code will port cleanly. If any server function uses Node-only APIs they'd need rewriting.
+- **Cron**: After deploy, point your third-party cron service at the new Vercel URL's `/api/public/cron/*` routes (or keep using the Lovable URL — either works once both are live).
+- **Cost/complexity**: You'll be maintaining two deployment targets unless you fully cut over from Lovable hosting.
+
+### Files to be created/modified
+
+- `scripts/build-vercel.mjs` (new)
+- `vite.config.ts` (modified — conditional cloudflare disable)
+- `vercel.json` (new)
+- `package.json` (new script)

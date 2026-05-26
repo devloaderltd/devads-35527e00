@@ -4,4 +4,5 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  cloudflare: process.env.BUILD_TARGET === "vercel" ? false : undefined,
 });
