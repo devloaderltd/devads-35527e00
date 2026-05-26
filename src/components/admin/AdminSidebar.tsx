@@ -11,7 +11,7 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
-import { getKycPendingCount } from "@/lib/kyc.functions";
+import { getAdminBadges } from "@/lib/admin.functions";
 
 const groups = [
   {
