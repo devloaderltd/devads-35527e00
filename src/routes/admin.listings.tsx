@@ -12,6 +12,7 @@ import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
 import { BulkActionBar } from "@/components/admin/BulkActionBar";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 import { bulkUpdateListings, grantPromotion } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/listings")({ component: ListingsPage });
