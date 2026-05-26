@@ -1,32 +1,43 @@
+
 ## Goal
-Now that auth emails are branded and wired up, set up **app emails** (transactional) so CallEscort24 can send branded notifications from `notify.callescort.devloader.com` for in-app events.
 
-## Scope
-Scaffold the transactional email infrastructure on top of the existing email setup, plus a minimal first template + trigger so the system is provably working end-to-end.
+On the Post listing page:
+1. Add **Phone number** and **WhatsApp number** inputs.
+2. Replace the city `Select` with a **searchable combobox** that supports **multi-select** (one listing is duplicated per selected city).
+3. Show both numbers on the **listing details** page.
 
-### Steps
-1. **Scaffold transactional email infra** — creates:
-   - `src/routes/lovable/email/transactional/send.ts` (authenticated sender)
-   - `src/routes/lovable/email/transactional/preview.ts` (dashboard preview)
-   - `src/routes/email/unsubscribe.ts` (public token API)
-   - `src/routes/lovable/email/suppression.ts` (bounce/complaint webhook)
-   - `src/lib/email-templates/registry.ts` + sample template
-2. **Brand the sample template** to match CallEscort24 (reuse `EmailShell` from `_layout.tsx` — gradient header, white body, primary `#6E5BE8`, accent `#2BB6DC`, footer).
-3. **Create initial app email templates** for the likely high-value triggers on this listings/marketplace app:
-   - `new-message` — buyer/seller receives a new chat message
-   - `listing-approved` — seller's listing was approved by moderation
-   - `listing-rejected` — seller's listing was rejected (with reason)
-   - `review-received` — seller received a new review
-   - `kyc-status` — KYC approved / rejected
-   - `topup-confirmed` — wallet top-up confirmed
-   *(Register all in `registry.ts`. Each one stays React-escaped, no unsubscribe text — system appends it.)*
-4. **Create `src/lib/email/send.ts`** — thin `sendTransactionalEmail()` helper that POSTs to `/lovable/email/transactional/send` with the user's JWT.
-5. **Build `/unsubscribe` page** (`src/routes/unsubscribe.tsx`) — branded confirm/success/error states calling the public unsubscribe API.
-6. **Verify** — check preview builds, confirm queue + cron still active, log a test enqueue.
+## 1. Database (migration)
 
-### Not in scope (do separately if you want)
-- Wiring every trigger into the existing app flows (messages, moderation, reviews, KYC, wallet) — I'll list the exact call sites after scaffolding so we can wire them in a follow-up turn, or do it now if you confirm.
-- Editing copy beyond a clean first draft.
+Add two nullable text columns to `listings`:
+- `phone text`
+- `whatsapp text`
 
-## Question
-Do you want me to also **wire the triggers into the existing flows** in this same pass (insert `sendTransactionalEmail(...)` calls in the message-send, moderation, review, KYC, and wallet code paths), or just scaffold the templates + helper and stop there?
+Both validated client-side (E.164-ish, max 32 chars). No RLS changes needed (existing listing policies cover them).
+
+## 2. Post listing page (`src/routes/_authenticated.post.tsx`)
+
+- New inputs: **Phone number** (required) and **WhatsApp number** (optional, with a "Same as phone" checkbox to copy).
+- Light validation: digits / `+`, spaces, dashes; 6–32 chars.
+- Replace the City `Select` with a searchable **Command** combobox (shadcn `Command` + `Popover`), filtered by typed text. Supports **multiple** selections, shown as removable chips above the input. Country select stays.
+- Submit flow: loop over selected city IDs and insert one listing per city (sharing title/description/photos). Photos are uploaded once per listing (re-upload per city is fine since storage cost is negligible; or we can upload once and reuse the same URLs for all duplicates — we'll reuse URLs to save bandwidth). Toast shows "Posted to N cities". Navigate to the first created listing.
+
+## 3. Listing details page (`src/routes/listings.$id.tsx`)
+
+- Fetch `phone` and `whatsapp` along with the listing.
+- In the contact section, render two action buttons when present:
+  - **Call** → `tel:+<phone>`
+  - **WhatsApp** → `https://wa.me/<digits>`
+- Keep existing seller email reveal as-is.
+
+## 4. Technical notes
+
+- Combobox: use existing `@/components/ui/command` + `@/components/ui/popover`. No new deps.
+- Cities query already fetches up to 1000 per country — fine for client-side filtering.
+- Numbers stored on listing (per user's choice), independent of profile phone.
+- Types regenerate automatically after the migration.
+
+## Files
+
+- Migration: add `phone`, `whatsapp` columns to `listings`.
+- Edit `src/routes/_authenticated.post.tsx`: new fields + multi-city combobox + duplicate-insert loop.
+- Edit `src/routes/listings.$id.tsx`: select the new columns + render Call / WhatsApp buttons.

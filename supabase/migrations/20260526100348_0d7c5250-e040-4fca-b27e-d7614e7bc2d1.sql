@@ -1,0 +1,1 @@
+ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS phone text, ADD COLUMN IF NOT EXISTS whatsapp text;
