@@ -34,7 +34,12 @@ export const Route = createFileRoute("/sellers/$id")({
 
 function SellerPage() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [shareOpen, setShareOpen] = useState(false);
+  const [contacting, setContacting] = useState(false);
+
+
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["seller", id],
