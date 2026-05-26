@@ -38,8 +38,8 @@ export function Footer() {
   return (
     <footer className="mt-16 border-t border-white/40 bg-white/40 backdrop-blur-md text-sm dark:border-white/10 dark:bg-white/5">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-10 md:grid-cols-12">
-          <div className="md:col-span-4">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-12 md:gap-10">
+          <div className="col-span-2 md:col-span-4">
             <Link to="/" className="inline-flex items-center gap-2 font-display text-xl font-bold">
               <img src={logoUrl} alt="CallEscort24" width={32} height={32} loading="lazy" className="h-8 w-8 rounded-lg object-contain" />
               <span className="gradient-text">CallEscort24</span>
@@ -90,7 +90,7 @@ export function Footer() {
             </div>
           ))}
 
-          <div className="md:col-span-2">
+          <div className="col-span-2 md:col-span-2">
             <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Stay in touch
             </div>
