@@ -22,6 +22,7 @@ function DebugPage() {
   return (
     <div>
       <AdminPageHeader title="Debug & error center" subtitle="Live errors, server logs, health checks, and database inspector" />
+      <HealthStrip />
       <Tabs defaultValue="errors" className="w-full">
         <TabsList className="bg-white/5">
           <TabsTrigger value="errors"><Bug className="mr-1 h-4 w-4" />Client errors</TabsTrigger>
@@ -34,6 +35,47 @@ function DebugPage() {
         <TabsContent value="health" className="mt-4"><HealthTab /></TabsContent>
         <TabsContent value="inspector" className="mt-4"><InspectorTab /></TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function HealthStrip() {
+  const get = useServerFn(getSystemHealth);
+  const q = useQuery({ queryKey: ["admin-health-strip"], queryFn: () => get(), refetchInterval: 60_000 });
+  const c = q.data?.counts;
+  const tiles = [
+    { label: "Open reports", value: c?.openReports ?? "—", warn: (c?.openReports ?? 0) >= 10 },
+    { label: "Pending top-ups", value: c?.pendingTopups ?? "—", warn: (c?.pendingTopups ?? 0) >= 10 },
+    { label: "Failed payments 24h", value: c?.failedPayments24h ?? "—", warn: (c?.failedPayments24h ?? 0) > 0 },
+    { label: "Unresolved errors", value: c?.unresolvedErrors ?? "—", warn: (c?.unresolvedErrors ?? 0) > 0 },
+  ];
+  const anyWarn = tiles.some((t) => t.warn);
+  return (
+    <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-400">
+          <Activity className="h-3.5 w-3.5" /> System health
+          {anyWarn
+            ? <Badge variant="destructive" className="ml-1">Attention</Badge>
+            : q.data && <Badge className="ml-1 bg-emerald-600">Healthy</Badge>}
+        </div>
+        <Button size="sm" variant="ghost" className="h-7 rounded-full text-xs text-slate-400 hover:text-slate-100" onClick={() => q.refetch()}>
+          <RefreshCw className="h-3 w-3" />
+        </Button>
+      </div>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        {tiles.map((t) => (
+          <div key={t.label} className={`rounded-xl border p-3 ${t.warn ? "border-amber-500/40 bg-amber-500/5" : "border-white/10 bg-white/5"}`}>
+            <div className="flex items-center justify-between text-[11px] text-slate-400">
+              <span>{t.label}</span>
+              {t.warn
+                ? <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+                : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
+            </div>
+            <div className="mt-1 font-display text-xl font-bold text-slate-100">{t.value}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
