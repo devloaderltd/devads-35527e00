@@ -289,6 +289,18 @@ function Home() {
         </section>
       )}
 
+      {/* Trust stats card */}
+      <section className="container mx-auto px-4 pt-6">
+        <div className="rounded-[2rem] glass p-6 md:p-8 shadow-[var(--shadow-float)]">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
+            <TrustTile icon={<Sparkles className="h-5 w-5" />} value={siteStats?.listings ?? "—"} label="Active listings" />
+            <TrustTile icon={<Users className="h-5 w-5" />} value={siteStats?.sellers ?? "—"} label="Trusted sellers" />
+            <TrustTile icon={<MapPin className="h-5 w-5" />} value={siteStats?.cities ?? "—"} label="Cities covered" />
+            <TrustTile icon={<ShieldCheck className="h-5 w-5" />} value="100%" label="Free to post" />
+          </div>
+        </div>
+      </section>
+
       {cityId && (<>
       <RecentlyViewedRail />
       <TrendingInCityRail cityId={cityId} cityName={cityName} />
