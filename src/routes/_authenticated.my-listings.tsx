@@ -174,14 +174,12 @@ function MyListings() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">
-            My <span className="gradient-text">listings</span>
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{counts.all} total · {counts.active} active</p>
-        </div>
+    <PanelShell
+      title="My"
+      highlight="listings"
+      subtitle={`${counts.all} total · ${counts.active} active`}
+      size="lg"
+      action={
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -194,7 +192,8 @@ function MyListings() {
             <Link to="/post"><Plus className="mr-1 h-4 w-4" /> New listing</Link>
           </Button>
         </div>
-      </div>
+      }
+    >
 
       {expiringSoonList.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 backdrop-blur">
