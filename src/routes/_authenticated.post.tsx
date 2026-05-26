@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -11,14 +11,22 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { ImagePlus, X, Sparkles, Loader2 } from "lucide-react";
+import { ImagePlus, X, Sparkles, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { aiWriteListing } from "@/lib/ai.functions";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/post")({
   head: () => ({ meta: [{ title: "Post a listing — CallEscort24" }] }),
   component: PostListing,
 });
+
+const PHONE_RE = /^[+\d][\d\s\-().]{5,31}$/;
 
 function PostListing() {
   const navigate = useNavigate();
@@ -26,10 +34,14 @@ function PostListing() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [itemAge, setItemAge] = useState("");
-  
+  const [phone, setPhone] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [waSame, setWaSame] = useState(true);
+
   const [categoryId, setCategoryId] = useState("");
   const [country, setCountry] = useState<"US" | "UK" | "CA" | "">("");
-  const [cityId, setCityId] = useState("");
+  const [cityIds, setCityIds] = useState<string[]>([]);
+  const [cityOpen, setCityOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [aiHint, setAiHint] = useState("");
@@ -83,6 +95,14 @@ function PostListing() {
     },
   });
 
+  const selectedCities = useMemo(
+    () => (cities ?? []).filter((c) => cityIds.includes(c.id)),
+    [cities, cityIds],
+  );
+
+  const toggleCity = (id: string) =>
+    setCityIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
   const MAX_PHOTOS = 5;
   const onFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS - files.length);
@@ -92,46 +112,65 @@ function PostListing() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return toast.error("Sign in first");
-    if (!categoryId || !cityId) return toast.error("Pick a category and city");
+    if (!categoryId) return toast.error("Pick a category");
+    if (cityIds.length === 0) return toast.error("Pick at least one city");
     const ageTrimmed = itemAge.trim();
     if (!ageTrimmed) return toast.error("Age is required");
     if (ageTrimmed.length > 60) return toast.error("Age must be 60 characters or less");
+    const phoneTrim = phone.trim();
+    if (!PHONE_RE.test(phoneTrim)) return toast.error("Enter a valid phone number");
+    const waTrim = (waSame ? phoneTrim : whatsapp.trim());
+    if (waTrim && !PHONE_RE.test(waTrim)) return toast.error("Enter a valid WhatsApp number");
+
     setSubmitting(true);
     try {
-      const { data: listing, error } = await supabase
-        .from("listings")
-        .insert({
-          user_id: user.id,
-          title: title.trim(),
-          description: description.trim(),
-          item_age: ageTrimmed,
-          category_id: categoryId,
-          city_id: cityId,
-          slug: "",
-        })
-        .select("id, slug")
-        .single();
-      if (error) throw error;
-
-      // upload images
+      // Upload images ONCE under the user's folder (reused across all city duplicates).
       const uploaded: { url: string; sort_order: number }[] = [];
+      const stamp = Date.now();
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
         const ext = f.name.split(".").pop();
-        const path = `${user.id}/${listing.id}/${Date.now()}-${i}.${ext}`;
+        const path = `${user.id}/shared/${stamp}-${i}.${ext}`;
         const { error: upErr } = await supabase.storage.from("listing-images").upload(path, f, { upsert: false });
         if (upErr) { console.error(upErr); continue; }
         const { data: pub } = supabase.storage.from("listing-images").getPublicUrl(path);
         uploaded.push({ url: pub.publicUrl, sort_order: i });
       }
-      if (uploaded.length) {
-        await supabase.from("listing_images").insert(
-          uploaded.map((u) => ({ listing_id: listing.id, url: u.url, sort_order: u.sort_order }))
-        );
+
+      const created: { id: string; slug: string | null }[] = [];
+      for (const cId of cityIds) {
+        const { data: listing, error } = await supabase
+          .from("listings")
+          .insert({
+            user_id: user.id,
+            title: title.trim(),
+            description: description.trim(),
+            item_age: ageTrimmed,
+            category_id: categoryId,
+            city_id: cId,
+            phone: phoneTrim,
+            whatsapp: waTrim || null,
+            slug: "",
+          } as any)
+          .select("id, slug")
+          .single();
+        if (error) throw error;
+        created.push(listing as any);
+
+        if (uploaded.length) {
+          await supabase.from("listing_images").insert(
+            uploaded.map((u) => ({ listing_id: (listing as any).id, url: u.url, sort_order: u.sort_order })),
+          );
+        }
       }
 
-      toast.success("Listing posted!");
-      navigate({ to: "/listings/$id", params: { id: (listing as any).slug ?? listing.id } });
+      toast.success(
+        cityIds.length === 1
+          ? "Listing posted!"
+          : `Posted to ${cityIds.length} cities!`,
+      );
+      const first = created[0];
+      navigate({ to: "/listings/$id", params: { id: (first as any).slug ?? first.id } });
     } catch (err: any) {
       toast.error(err.message ?? "Failed to post");
     } finally {
@@ -179,7 +218,6 @@ function PostListing() {
           <Textarea id="desc" required rows={6} maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Condition, size, history, why you're selling…" className="bg-white/70" />
         </div>
 
-
         <div className="space-y-2">
           <Label htmlFor="item-age">Age</Label>
           <Input
@@ -193,6 +231,41 @@ function PostListing() {
           />
         </div>
 
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone number</Label>
+            <Input
+              id="phone"
+              required
+              inputMode="tel"
+              maxLength={32}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1 555 123 4567"
+              className="bg-white/70"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="whatsapp">WhatsApp number</Label>
+            <Input
+              id="whatsapp"
+              inputMode="tel"
+              maxLength={32}
+              value={waSame ? phone : whatsapp}
+              disabled={waSame}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              placeholder="+1 555 123 4567"
+              className="bg-white/70"
+            />
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={waSame}
+                onCheckedChange={(v) => setWaSame(v === true)}
+              />
+              Same as phone number
+            </label>
+          </div>
+        </div>
 
         <div className="space-y-2">
           <Label>Category</Label>
@@ -204,10 +277,10 @@ function PostListing() {
           </Select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Country</Label>
-            <Select value={country} onValueChange={(v) => { setCountry(v as any); setCityId(""); }}>
+            <Select value={country} onValueChange={(v) => { setCountry(v as any); setCityIds([]); }}>
               <SelectTrigger className="bg-white/70"><SelectValue placeholder="Pick country" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="US">United States</SelectItem>
@@ -217,13 +290,73 @@ function PostListing() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>City</Label>
-            <Select value={cityId} onValueChange={setCityId} disabled={!country}>
-              <SelectTrigger className="bg-white/70"><SelectValue placeholder={country ? "Pick city" : "Select country first"} /></SelectTrigger>
-              <SelectContent className="max-h-72">
-                {cities?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}, {c.region}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Label>Cities (select one or more)</Label>
+            <Popover open={cityOpen} onOpenChange={setCityOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  disabled={!country}
+                  className="w-full justify-between bg-white/70 font-normal"
+                >
+                  <span className="truncate">
+                    {cityIds.length === 0
+                      ? (country ? "Search & pick cities" : "Select country first")
+                      : `${cityIds.length} selected`}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Type to search cities…" />
+                  <CommandList className="max-h-64">
+                    <CommandEmpty>No cities found.</CommandEmpty>
+                    <CommandGroup>
+                      {cities?.map((c) => {
+                        const checked = cityIds.includes(c.id);
+                        return (
+                          <CommandItem
+                            key={c.id}
+                            value={`${c.name} ${c.region}`}
+                            onSelect={() => toggleCity(c.id)}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", checked ? "opacity-100" : "opacity-0")} />
+                            <span className="truncate">{c.name}, {c.region}</span>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            {selectedCities.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {selectedCities.map((c) => (
+                  <span
+                    key={c.id}
+                    className="inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/80 px-2.5 py-1 text-xs font-medium"
+                  >
+                    {c.name}
+                    <button
+                      type="button"
+                      onClick={() => toggleCity(c.id)}
+                      className="rounded-full hover:bg-black/5"
+                      aria-label={`Remove ${c.name}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {cityIds.length > 1 && (
+              <p className="text-xs text-muted-foreground">
+                We'll post a copy of this listing in each selected city.
+              </p>
+            )}
           </div>
         </div>
 
@@ -254,10 +387,9 @@ function PostListing() {
         </div>
 
         <Button type="submit" size="lg" className="btn-gradient w-full" disabled={submitting}>
-          {submitting ? "Posting…" : "Post listing"}
+          {submitting ? "Posting…" : cityIds.length > 1 ? `Post to ${cityIds.length} cities` : "Post listing"}
         </Button>
       </form>
     </div>
   );
 }
-
