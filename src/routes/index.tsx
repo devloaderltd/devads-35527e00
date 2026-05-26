@@ -153,7 +153,7 @@ function Home() {
           {heroFeatured ? (
             <Link
               to="/listings/$id"
-              params={{ id: heroFeatured.id }}
+              params={{ id: (heroFeatured as any).slug ?? heroFeatured.id }}
               className="group relative col-span-1 row-span-1 overflow-hidden rounded-[2rem] glass md:col-span-2 md:row-span-2"
             >
               <img
