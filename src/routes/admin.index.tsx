@@ -158,38 +158,60 @@ function DashboardPage() {
 
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard title="Signups & listings (30 days)">
+        <ChartCard title="Signups & listings">
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={charts?.days ?? []}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <defs>
+                <linearGradient id="gradUsers" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#7c5cff" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#7c5cff" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradListings" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c1c3" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#22c1c3" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
-              <Legend />
-              <Line type="monotone" dataKey="users" stroke="#7c5cff" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="listings" stroke="#22c1c3" strokeWidth={2} dot={false} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey="users" stroke="#7c5cff" strokeWidth={2.5} dot={false} fill="url(#gradUsers)" />
+              <Line type="monotone" dataKey="listings" stroke="#22c1c3" strokeWidth={2.5} dot={false} fill="url(#gradListings)" />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
-        <ChartCard title="Revenue per day (30 days)">
+        <ChartCard title="Revenue per day">
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={charts?.days ?? []}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <defs>
+                <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ff7a59" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#ff7a59" stopOpacity={0.3} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
               <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
-              <Bar dataKey="revenue" fill="#ff7a59" radius={[6, 6, 0, 0]} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
+              <Bar dataKey="revenue" fill="url(#gradRevenue)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
         <ChartCard title="Listings by category">
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={charts?.byCategory ?? []}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <defs>
+                <linearGradient id="gradCat" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#36c172" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#36c172" stopOpacity={0.3} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
               <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} interval={0} angle={-20} textAnchor="end" height={60} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
-              <Bar dataKey="value" fill="#36c172" radius={[6, 6, 0, 0]} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
+              <Bar dataKey="value" fill="url(#gradCat)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
