@@ -43,12 +43,15 @@ function ProfileEdit() {
     queryKey: ["profile-self", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("display_name, bio, phone, avatar_url, country, city_id, created_at")
-        .eq("id", user!.id)
-        .maybeSingle();
-      return data;
+      const [{ data }, { data: phoneVal }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("display_name, bio, avatar_url, country, city_id, created_at")
+          .eq("id", user!.id)
+          .maybeSingle(),
+        supabase.rpc("get_my_phone"),
+      ]);
+      return data ? { ...data, phone: (phoneVal as string | null) ?? null } : null;
     },
   });
 

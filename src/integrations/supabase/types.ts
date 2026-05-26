@@ -1195,6 +1195,7 @@ export type Database = {
         Returns: number
       }
       generate_listing_slug: { Args: { _title: string }; Returns: string }
+      get_my_phone: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
