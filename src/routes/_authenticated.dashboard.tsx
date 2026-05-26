@@ -176,10 +176,12 @@ function DashboardPage() {
             <RecentNotificationsCard userId={user?.id} />
             <RecentMessagesCard userId={user?.id} />
           </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <InsightsCard listings={stats?.listings ?? []} totals={{}} />
             <OnboardingChecklist userId={user?.id} />
-            <ExpiringSoonCard userId={user?.id} />
+            <ReferralCard userId={user?.id} />
           </div>
+          <ExpiringSoonCard userId={user?.id} />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
           <ChartCard title="Listings created (last 30 days)">
