@@ -27,9 +27,7 @@ type RangeDays = 7 | 30 | 90;
 const RANGE_KEY = "admin.dashboard.range";
 
 
-export const Route = createFileRoute("/admin/")({
-  component: DashboardPage,
-});
+
 
 const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8", "#5aa9ff"];
 
