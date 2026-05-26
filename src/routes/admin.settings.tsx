@@ -24,6 +24,8 @@ type FormState = {
   maintenance_message: string;
   site_name: string;
   support_email: string;
+  logo_url: string;
+  favicon_url: string;
 };
 
 function validate(f: FormState) {
