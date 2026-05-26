@@ -67,7 +67,7 @@ function Home() {
       const { data, error } = await supabase
         .from("listings")
         .select(`
-          id, slug, title, condition, created_at, bumped_at,
+          id, slug, title, condition, created_at, bumped_at, verified_at,
           categories(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),
