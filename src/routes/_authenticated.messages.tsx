@@ -153,17 +153,18 @@ function MessagesLayout() {
       </h1>
       <div className="grid gap-4 md:grid-cols-[340px_1fr]">
         <aside className={`overflow-hidden rounded-2xl glass ${hasActive ? "hidden md:block" : "block"}`}>
-          <div className="flex gap-1 border-b border-white/40 p-2">
-            {(["inbox", "archived"] as const).map((t) => (
+          <div className="flex gap-1 overflow-x-auto border-b border-white/40 p-2">
+            {(["inbox", "unread", "starred", "archived"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 rounded-full px-3 py-1.5 text-xs font-medium capitalize transition ${
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   tab === t ? "bg-primary text-primary-foreground" : "bg-white/40 text-muted-foreground hover:bg-white/70"
                 }`}
               >
-                {t} {t === "inbox" && totalUnread > 0 && <span className="ml-1">({totalUnread})</span>}
-                {t === "archived" && archivedThreads.length > 0 && <span className="ml-1">({archivedThreads.length})</span>}
+                {t === "starred" && <Star className="mr-1 inline h-3 w-3" />}
+                {tabLabel[t]}
+                {counts[t] > 0 && <span className="ml-1 opacity-80">({counts[t]})</span>}
               </button>
             ))}
           </div>
@@ -191,6 +192,7 @@ function MessagesLayout() {
               const isActive = activeId === t.id;
               const muted = (t.muted_by ?? []).includes(user?.id ?? "");
               const archived = (t.archived_by ?? []).includes(user?.id ?? "");
+              const starred = (t.starred_by ?? []).includes(user?.id ?? "");
               return (
                 <li key={t.id} className="group relative">
                   <Link
@@ -208,6 +210,7 @@ function MessagesLayout() {
                         <div className={`min-w-0 flex-1 truncate text-sm ${unread && !isActive ? "font-bold" : "font-medium"}`}>
                           {t.other?.display_name ?? "User"}
                         </div>
+                        {starred && <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />}
                         {muted && <BellOff className="h-3 w-3 shrink-0 text-muted-foreground" />}
                         {unread && !isActive && (
                           <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
@@ -233,6 +236,10 @@ function MessagesLayout() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-xl">
+                        <DropdownMenuItem onClick={() => toggleStar(t)}>
+                          <Star className={`mr-2 h-4 w-4 ${starred ? "fill-amber-400 text-amber-400" : ""}`} />
+                          {starred ? "Unfavorite" : "Add to favorites"}
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => toggleMute(t)}>
                           {muted ? <Bell className="mr-2 h-4 w-4" /> : <BellOff className="mr-2 h-4 w-4" />}
                           {muted ? "Unmute" : "Mute"}
