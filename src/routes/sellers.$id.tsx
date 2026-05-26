@@ -169,6 +169,16 @@ function SellerPage() {
               <p className="mt-3 whitespace-pre-wrap text-[0.95rem] leading-relaxed">{profile.bio}</p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
+              {user?.id !== id && (
+                <Button
+                  size="sm"
+                  className="btn-gradient rounded-full border-0"
+                  disabled={contacting}
+                  onClick={contactSeller}
+                >
+                  <MessageSquare className="mr-1 h-4 w-4" /> {contacting ? "Opening…" : "Contact seller"}
+                </Button>
+              )}
               <SellerFollowButton sellerId={id} />
               <Button
                 size="sm"
@@ -182,6 +192,31 @@ function SellerPage() {
           </div>
         </div>
       </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr]">
+        <RatingDistribution sellerId={id} />
+        {categoryChips.length > 0 && (
+          <div className="rounded-2xl glass p-4">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <Tag className="h-3.5 w-3.5" /> Sells in
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {categoryChips.map((c) => (
+                <Link
+                  key={c.slug}
+                  to="/search"
+                  search={{ category: c.slug }}
+                  className="inline-flex items-center gap-1 rounded-full border border-white/50 bg-white/60 px-3 py-1 text-xs backdrop-blur transition hover:bg-white"
+                >
+                  {c.name}
+                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">{c.count}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
 
       <h2 className="mt-8 font-display text-xl font-bold">
         Active <span className="gradient-text">listings</span>
