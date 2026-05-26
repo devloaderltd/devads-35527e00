@@ -10,4 +10,5 @@ export default isVercel
     })
   : defineConfig({
       tanstackStart: { server: { entry: "server" } },
+      vite: { ssr: { noExternal: true } },
     });
