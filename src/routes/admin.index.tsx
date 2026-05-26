@@ -188,25 +188,27 @@ function DashboardPage() {
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard title="Signups & listings">
           <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={charts?.days ?? []}>
+            <ComposedChart data={charts?.days ?? []}>
               <defs>
                 <linearGradient id="gradUsers" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#7c5cff" stopOpacity={0.35} />
+                  <stop offset="0%" stopColor="#7c5cff" stopOpacity={0.4} />
                   <stop offset="100%" stopColor="#7c5cff" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradListings" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c1c3" stopOpacity={0.35} />
+                  <stop offset="0%" stopColor="#22c1c3" stopOpacity={0.4} />
                   <stop offset="100%" stopColor="#22c1c3" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+              <CartesianGrid strokeDasharray="2 4" opacity={0.12} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
               <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Line type="monotone" dataKey="users" stroke="#7c5cff" strokeWidth={2.5} dot={false} fill="url(#gradUsers)" />
-              <Line type="monotone" dataKey="listings" stroke="#22c1c3" strokeWidth={2.5} dot={false} fill="url(#gradListings)" />
-            </LineChart>
+              <Area type="monotone" dataKey="users" stroke="none" fill="url(#gradUsers)" />
+              <Area type="monotone" dataKey="listings" stroke="none" fill="url(#gradListings)" />
+              <Line type="monotone" dataKey="users" stroke="#7c5cff" strokeWidth={2.5} dot={false} activeDot={{ r: 5, strokeWidth: 0, fill: "#a78bfa" }} />
+              <Line type="monotone" dataKey="listings" stroke="#22c1c3" strokeWidth={2.5} dot={false} activeDot={{ r: 5, strokeWidth: 0, fill: "#5eead4" }} />
+            </ComposedChart>
           </ResponsiveContainer>
         </ChartCard>
         <ChartCard title="Revenue per day">
