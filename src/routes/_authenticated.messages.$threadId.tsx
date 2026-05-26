@@ -251,14 +251,20 @@ function ThreadView() {
       </div>
       <div className="border-t border-white/40 p-3">
         <div className="mb-2 flex flex-wrap gap-1.5">
-          {QUICK_REPLIES.map((q) => (
+          {QUICK_REPLIES.map((q, i) => (
             <button
-              key={q}
-              onClick={() => setBody(q)}
+              key={`${q.label}-${i}`}
+              onClick={() => setBody(q.body)}
               type="button"
-              className="rounded-full border border-white/50 bg-white/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur hover:bg-white hover:text-foreground"
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs backdrop-blur transition hover:bg-white hover:text-foreground ${
+                q.custom
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-white/50 bg-white/60 text-muted-foreground"
+              }`}
+              title={q.body}
             >
-              {q}
+              {q.custom && <Sparkles className="h-3 w-3" />}
+              {q.label}
             </button>
           ))}
         </div>
