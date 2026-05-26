@@ -1,26 +1,25 @@
-## Problem
+## Goal
 
-The dashboard wraps its content in a `SidebarProvider` + `DashboardWorkspaceSidebar` (left rail) plus a "Workspace" trigger bar at the top. On mobile this looks broken:
-- The "Workspace" strip sits awkwardly between the header/search and the page heading
-- Opening it shows a sidebar that duplicates links already in the main `Header` (New listing, Messages, Wallet, Favorites, Saved searches, Profile, Notifications)
-- The dashboard already exposes its own sub-sections via the tabs at the bottom (Overview, Performance, My Listings, Reviews)
+Add the full rating + write-review UI to the listing detail page. Today the listing page shows only an average badge plus a "See all reviews →" link, so visitors have to navigate to the seller page to submit a star rating.
 
-So the sidebar adds visual noise without giving the user anything they don't already have one tap away.
+## What's already in place
 
-## Fix
+The `SellerReviews` component (`src/components/SellerReviews.tsx`) is a complete reviews block: average + distribution bars, 1–5 star picker, write/edit/delete form, list of past reviews, and the "you can review after messaging" gate. It's currently only rendered on `/sellers/$id`.
 
-Remove the workspace sidebar from the dashboard route entirely.
+## Change
 
-### `src/routes/_authenticated.dashboard.tsx`
-- Drop the `SidebarProvider` / `SidebarInset` / `SidebarTrigger` / `DashboardWorkspaceSidebar` imports
-- Replace `DashboardShell` with a plain wrapper that just renders `<DashboardPage />`
-- Remove the "Workspace" strip (the `<div>` with the trigger + label)
+### `src/routes/listings.$id.tsx`
+- Import `SellerReviews` from `@/components/SellerReviews`
+- Render `<SellerReviews sellerId={listing.user_id} />` as a new section just after the "Similar listings" block (around line 480), wrapped in `<div id="reviews" className="scroll-mt-24">` so the existing `#reviews` deep link still works
+- Replace the "See all reviews →" link target from `/sellers/${listing.user_id}#reviews` to the in-page `#reviews` anchor so users stay on the listing
 
-### Cleanup
-- Delete `src/components/DashboardWorkspaceSidebar.tsx` (no other importers)
+No backend/schema changes — server functions (`listSellerReviews`, `canReviewSeller`, `submitSellerReview`, `deleteMyReview`) already exist and are used by the same component.
 
-No other routes use this sidebar, and the main site `Header` + dashboard tabs already cover navigation, so nothing else needs to change.
+## Marked features
+
+The previously circled item (dashboard "Workspace" sidebar) was already removed in the last turn. No other features are flagged in this message — if there are more, please point them out and I'll remove them in a follow-up.
 
 ## Out of scope
-- Admin sidebar (`/admin/*`) — unrelated, stays as is
-- Header / tabs styling — not what the user flagged
+
+- Per-listing reviews (current model is seller-level reviews)
+- Changes to the seller page reviews section
