@@ -38,6 +38,7 @@ import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminMaintenanceRouteImport } from './routes/admin.maintenance'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminListingsRouteImport } from './routes/admin.listings'
+import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
 import { Route as AdminHomepageRouteImport } from './routes/admin.homepage'
 import { Route as AdminDebugRouteImport } from './routes/admin.debug'
@@ -47,6 +48,7 @@ import { Route as AdminBroadcastsRouteImport } from './routes/admin.broadcasts'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated.wallet'
+import { Route as AuthenticatedVerifyRouteImport } from './routes/_authenticated.verify'
 import { Route as AuthenticatedSavedSearchesRouteImport } from './routes/_authenticated.saved-searches'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated.profile'
 import { Route as AuthenticatedPostRouteImport } from './routes/_authenticated.post'
@@ -208,6 +210,11 @@ const AdminListingsRoute = AdminListingsRouteImport.update({
   path: '/listings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminKycRoute = AdminKycRouteImport.update({
+  id: '/kyc',
+  path: '/kyc',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminInsightsRoute = AdminInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
@@ -251,6 +258,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
 const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedVerifyRoute = AuthenticatedVerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSavedSearchesRoute =
@@ -362,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/post': typeof AuthenticatedPostRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/saved-searches': typeof AuthenticatedSavedSearchesRoute
+  '/verify': typeof AuthenticatedVerifyRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -371,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/admin/debug': typeof AdminDebugRoute
   '/admin/homepage': typeof AdminHomepageRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/kyc': typeof AdminKycRoute
   '/admin/listings': typeof AdminListingsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/maintenance': typeof AdminMaintenanceRoute
@@ -415,6 +429,7 @@ export interface FileRoutesByTo {
   '/post': typeof AuthenticatedPostRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/saved-searches': typeof AuthenticatedSavedSearchesRoute
+  '/verify': typeof AuthenticatedVerifyRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -424,6 +439,7 @@ export interface FileRoutesByTo {
   '/admin/debug': typeof AdminDebugRoute
   '/admin/homepage': typeof AdminHomepageRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/kyc': typeof AdminKycRoute
   '/admin/listings': typeof AdminListingsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/maintenance': typeof AdminMaintenanceRoute
@@ -472,6 +488,7 @@ export interface FileRoutesById {
   '/_authenticated/post': typeof AuthenticatedPostRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/saved-searches': typeof AuthenticatedSavedSearchesRoute
+  '/_authenticated/verify': typeof AuthenticatedVerifyRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -481,6 +498,7 @@ export interface FileRoutesById {
   '/admin/debug': typeof AdminDebugRoute
   '/admin/homepage': typeof AdminHomepageRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/kyc': typeof AdminKycRoute
   '/admin/listings': typeof AdminListingsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/maintenance': typeof AdminMaintenanceRoute
@@ -529,6 +547,7 @@ export interface FileRouteTypes {
     | '/post'
     | '/profile'
     | '/saved-searches'
+    | '/verify'
     | '/wallet'
     | '/admin/audit'
     | '/admin/banners'
@@ -538,6 +557,7 @@ export interface FileRouteTypes {
     | '/admin/debug'
     | '/admin/homepage'
     | '/admin/insights'
+    | '/admin/kyc'
     | '/admin/listings'
     | '/admin/login'
     | '/admin/maintenance'
@@ -582,6 +602,7 @@ export interface FileRouteTypes {
     | '/post'
     | '/profile'
     | '/saved-searches'
+    | '/verify'
     | '/wallet'
     | '/admin/audit'
     | '/admin/banners'
@@ -591,6 +612,7 @@ export interface FileRouteTypes {
     | '/admin/debug'
     | '/admin/homepage'
     | '/admin/insights'
+    | '/admin/kyc'
     | '/admin/listings'
     | '/admin/login'
     | '/admin/maintenance'
@@ -638,6 +660,7 @@ export interface FileRouteTypes {
     | '/_authenticated/post'
     | '/_authenticated/profile'
     | '/_authenticated/saved-searches'
+    | '/_authenticated/verify'
     | '/_authenticated/wallet'
     | '/admin/audit'
     | '/admin/banners'
@@ -647,6 +670,7 @@ export interface FileRouteTypes {
     | '/admin/debug'
     | '/admin/homepage'
     | '/admin/insights'
+    | '/admin/kyc'
     | '/admin/listings'
     | '/admin/login'
     | '/admin/maintenance'
@@ -902,6 +926,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminListingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/kyc': {
+      id: '/admin/kyc'
+      path: '/kyc'
+      fullPath: '/admin/kyc'
+      preLoaderRoute: typeof AdminKycRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/insights': {
       id: '/admin/insights'
       path: '/insights'
@@ -963,6 +994,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof AuthenticatedWalletRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/verify': {
+      id: '/_authenticated/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof AuthenticatedVerifyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/saved-searches': {
@@ -1104,6 +1142,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPostRoute: typeof AuthenticatedPostRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSavedSearchesRoute: typeof AuthenticatedSavedSearchesRoute
+  AuthenticatedVerifyRoute: typeof AuthenticatedVerifyRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedDebugSessionRoute: typeof AuthenticatedDebugSessionRoute
 }
@@ -1117,6 +1156,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPostRoute: AuthenticatedPostRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSavedSearchesRoute: AuthenticatedSavedSearchesRoute,
+  AuthenticatedVerifyRoute: AuthenticatedVerifyRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedDebugSessionRoute: AuthenticatedDebugSessionRoute,
 }
@@ -1134,6 +1174,7 @@ interface AdminRouteChildren {
   AdminDebugRoute: typeof AdminDebugRoute
   AdminHomepageRoute: typeof AdminHomepageRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
+  AdminKycRoute: typeof AdminKycRoute
   AdminListingsRoute: typeof AdminListingsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMaintenanceRoute: typeof AdminMaintenanceRoute
@@ -1158,6 +1199,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDebugRoute: AdminDebugRoute,
   AdminHomepageRoute: AdminHomepageRoute,
   AdminInsightsRoute: AdminInsightsRoute,
+  AdminKycRoute: AdminKycRoute,
   AdminListingsRoute: AdminListingsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMaintenanceRoute: AdminMaintenanceRoute,
@@ -1201,13 +1243,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -48,7 +48,12 @@ function AdminKycPage() {
   }>;
 
   return (
-    <AdminShell title="KYC verification" subtitle="Review identity submissions and credit $5 bonus on approval.">
+    <AdminShell>
+      <div className="mb-4">
+        <h1 className="font-display text-2xl font-bold text-white">KYC verification</h1>
+        <p className="text-sm text-slate-400">Review identity submissions and credit $5 bonus on approval.</p>
+      </div>
+
       <Tabs value={status} onValueChange={(v) => setStatus(v as Status)} className="mb-4">
         <TabsList>
           <TabsTrigger value="pending">Pending</TabsTrigger>
