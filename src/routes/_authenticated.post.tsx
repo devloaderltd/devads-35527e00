@@ -107,8 +107,9 @@ function PostListing() {
           item_age: ageTrimmed,
           category_id: categoryId,
           city_id: cityId,
+          slug: "",
         })
-        .select("id")
+        .select("id, slug")
         .single();
       if (error) throw error;
 
@@ -130,7 +131,7 @@ function PostListing() {
       }
 
       toast.success("Listing posted!");
-      navigate({ to: "/listings/$id", params: { id: listing.id } });
+      navigate({ to: "/listings/$id", params: { id: (listing as any).slug ?? listing.id } });
     } catch (err: any) {
       toast.error(err.message ?? "Failed to post");
     } finally {
