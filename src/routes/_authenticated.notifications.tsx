@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { Trash2, CheckCheck } from "lucide-react";
+import { Trash2, CheckCheck, BellOff } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { listMyNotifications, markNotificationRead, deleteNotification } from "@/lib/extras.functions";
+import { PanelShell } from "@/components/PanelShell";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({ meta: [{ title: "Notifications — CallEscort24" }, { name: "robots", content: "noindex" }] }),
@@ -24,19 +25,19 @@ function Page() {
 
   const items = q.data?.items ?? [];
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">Notifications</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{q.data?.total ?? 0} total</p>
-        </div>
+    <PanelShell
+      title="Your"
+      highlight="notifications"
+      subtitle={`${q.data?.total ?? 0} total`}
+      action={
         <Button size="sm" variant="outline" className="rounded-full bg-white/70" onClick={() => mark.mutate({ all: true })}>
           <CheckCheck className="mr-1 h-4 w-4" /> Mark all read
         </Button>
-      </div>
-      <div className="mt-6 space-y-2">
+      }
+    >
+      <div className="space-y-2">
         {items.map((n) => (
-          <div key={n.id} className={`flex items-start gap-3 rounded-2xl border p-4 backdrop-blur ${n.read_at ? "border-white/40 bg-white/40" : "border-primary/30 bg-white/70"}`}>
+          <div key={n.id} className={`flex items-start gap-3 rounded-2xl border-0 p-4 backdrop-blur dark:bg-white/5 ${n.read_at ? "bg-white/50" : "bg-white/80 ring-1 ring-primary/20"}`}>
             <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${n.read_at ? "bg-muted-foreground/40" : "bg-primary"}`} />
             <div className="min-w-0 flex-1">
               <div className="font-medium">{n.title}</div>
@@ -50,8 +51,13 @@ function Page() {
             </div>
           </div>
         ))}
-        {!items.length && <div className="rounded-2xl border bg-card p-10 text-center text-muted-foreground">You're all caught up.</div>}
+        {!items.length && (
+          <div className="rounded-2xl border-0 bg-white/70 p-10 text-center text-muted-foreground backdrop-blur dark:bg-white/5">
+            <BellOff className="mx-auto mb-2 h-8 w-8 opacity-40" />
+            You're all caught up.
+          </div>
+        )}
       </div>
-    </div>
+    </PanelShell>
   );
 }

@@ -1,4 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   LayoutDashboard, Users, Flag, Package, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, FileClock, ShieldCheck,
@@ -9,6 +11,7 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
+import { getKycPendingCount } from "@/lib/kyc.functions";
 
 const groups = [
   {
@@ -23,7 +26,7 @@ const groups = [
     label: "People",
     items: [
       { title: "Users", url: "/admin/users", icon: Users },
-      { title: "KYC verification", url: "/admin/kyc", icon: BadgeCheck },
+      { title: "KYC verification", url: "/admin/kyc", icon: BadgeCheck, badgeKey: "kyc" as const },
       { title: "Reports", url: "/admin/reports", icon: Flag },
       { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert },
       { title: "Reviews", url: "/admin/reviews", icon: Star },
@@ -66,6 +69,15 @@ export function AdminSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string, exact?: boolean) => (exact ? path === url : path === url || path.startsWith(url + "/"));
 
+  const kycCountFn = useServerFn(getKycPendingCount);
+  const { data: kycData } = useQuery({
+    queryKey: ["admin-kyc-pending-count"],
+    queryFn: () => kycCountFn(),
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  });
+  const badges: Record<string, number> = { kyc: kycData?.count ?? 0 };
+
   return (
     <Sidebar collapsible="icon" className="border-r border-white/10 bg-slate-950">
       <SidebarHeader className="border-b border-white/10 bg-slate-950 px-3 py-3">
@@ -82,21 +94,34 @@ export function AdminSidebar() {
             {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-slate-500">{g.label}</SidebarGroupLabel>}
             <SidebarGroupContent>
               <SidebarMenu>
-                {g.items.map((it) => (
-                  <SidebarMenuItem key={it.url}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(it.url, "exact" in it ? it.exact : false)}
-                      tooltip={it.title}
-                      className="data-[active=true]:bg-white/10 data-[active=true]:text-white hover:bg-white/5"
-                    >
-                      <Link to={it.url} className="flex items-center gap-2 text-slate-300">
-                        <it.icon className="h-4 w-4" />
-                        {!collapsed && <span>{it.title}</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {g.items.map((it) => {
+                  const badgeCount = "badgeKey" in it && it.badgeKey ? badges[it.badgeKey] ?? 0 : 0;
+                  return (
+                    <SidebarMenuItem key={it.url}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(it.url, "exact" in it ? it.exact : false)}
+                        tooltip={it.title}
+                        className="data-[active=true]:bg-white/10 data-[active=true]:text-white hover:bg-white/5"
+                      >
+                        <Link to={it.url} className="flex w-full items-center gap-2 text-slate-300">
+                          <it.icon className="h-4 w-4" />
+                          {!collapsed && <span className="flex-1 truncate">{it.title}</span>}
+                          {badgeCount > 0 && (
+                            <span
+                              className={`inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold leading-5 text-white shadow-sm ${
+                                collapsed ? "absolute right-1 top-1 h-4 min-w-[1rem] px-1 text-[9px] leading-4" : ""
+                              }`}
+                              aria-label={`${badgeCount} pending`}
+                            >
+                              {badgeCount > 99 ? "99+" : badgeCount}
+                            </span>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
