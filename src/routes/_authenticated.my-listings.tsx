@@ -30,6 +30,7 @@ type Row = {
   expires_at: string;
   view_count: number;
   bumped_at: string;
+  auto_renew: boolean;
   cities: { name: string; region: string; country: string } | null;
   listing_images: { url: string; sort_order: number }[];
   favCount?: number;
