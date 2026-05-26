@@ -382,6 +382,19 @@ function ListingDetail() {
         <div>
           <h1 className="font-display text-2xl font-bold md:text-3xl">{listing.title}</h1>
 
+          {/* Price + offer */}
+          {(listing.price != null) && (
+            <div className="mt-3 flex flex-wrap items-baseline gap-3">
+              <div className="font-display text-3xl font-bold gradient-text">
+                ${Number(listing.price).toFixed(2)}
+              </div>
+              {listing.is_negotiable && (
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                  Negotiable
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
             {listing.cities && (
@@ -403,6 +416,14 @@ function ListingDetail() {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <FavoriteButton listingId={listing.id} variant="inline" showLabel />
+            {listing.is_negotiable && listing.user_id !== user?.id && (
+              <MakeOfferDialog
+                listingId={listing.id}
+                listingTitle={listing.title}
+                sellerId={listing.user_id}
+                askingPrice={listing.price as number | null}
+              />
+            )}
             <button
               type="button"
               onClick={share}
@@ -411,6 +432,10 @@ function ListingDetail() {
               <Share2 className="h-4 w-4" /> Share
             </button>
           </div>
+
+          {/* Price history (if any) */}
+          <PriceHistoryChart listingId={listing.id} />
+
 
 
           {/* Seller card */}
