@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Send, ChevronLeft, CheckCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { listQuickReplies } from "@/lib/social.functions";
+import { notifyNewMessage } from "@/lib/email/notify.functions";
 
 export const Route = createFileRoute("/_authenticated/messages/$threadId")({
   component: ThreadView,
@@ -158,6 +159,9 @@ function ThreadView() {
         .from("message_threads")
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", threadId);
+      // Fire-and-forget email notification to the other party.
+      // Failures are swallowed so the send UX is never blocked by email infra.
+      notifyNewMessage({ data: { threadId, preview: text } }).catch(() => {});
     },
     onSuccess: () => {
       setBody("");

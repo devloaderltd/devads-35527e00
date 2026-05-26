@@ -4,6 +4,39 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-middleware";
 import { runSeedDemo } from "./seed-demo.server";
+import { enqueueTransactionalEmail, getUserEmail, getUserDisplayName } from "./email/enqueue.server";
+
+const SITE_URL = "https://callescort.devloader.com";
+
+/** Email a listing owner about an approval/rejection. Never throws. */
+async function emailListingDecision(
+  listingId: string,
+  decision: "approved" | "rejected",
+  reason?: string,
+) {
+  try {
+    const { data: listing } = await supabaseAdmin
+      .from("listings").select("id, title, user_id, slug").eq("id", listingId).maybeSingle();
+    if (!listing?.user_id) return;
+    const email = await getUserEmail(listing.user_id);
+    if (!email) return;
+    const name = await getUserDisplayName(listing.user_id);
+    await enqueueTransactionalEmail({
+      templateName: decision === "approved" ? "listing-approved" : "listing-rejected",
+      recipientEmail: email,
+      idempotencyKey: `listing-${decision}-${listingId}-${Date.now()}`,
+      templateData: {
+        recipientName: name ?? undefined,
+        listingTitle: listing.title ?? undefined,
+        reason,
+        listingUrl: listing.slug
+          ? `${SITE_URL}/listings/${listing.slug}`
+          : `${SITE_URL}/dashboard/listings`,
+        dashboardUrl: `${SITE_URL}/dashboard`,
+      },
+    });
+  } catch (e) { console.error("listing decision email failed", e); }
+}
 
 const uuid = z.string().uuid();
 
@@ -398,6 +431,14 @@ export const bulkUpdateListings = createServerFn({ method: "POST" })
       const status = data.action === "restore" ? "active" : data.action;
       const { error } = await supabaseAdmin.from("listings").update({ status }).in("id", data.ids);
       if (error) throw new Error(error.message);
+      // Email owners on approve (restore/active) or removal — one email per listing
+      const decision: "approved" | "rejected" | null =
+        status === "active" ? "approved" : status === "removed" ? "rejected" : null;
+      if (decision) {
+        await Promise.all(
+          data.ids.map((id) => emailListingDecision(id, decision)),
+        );
+      }
     }
     await audit(context.userId, `listing.bulk_${data.action}`, "listing", null, { count: data.ids.length, ids: data.ids });
     return { ok: true };
@@ -424,6 +465,8 @@ export const editListingAdmin = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("listings").update(patch as never).eq("id", id);
     if (error) throw new Error(error.message);
     await audit(context.userId, "listing.edit", "listing", id, patch);
+    if (rest.status === "active") await emailListingDecision(id, "approved");
+    else if (rest.status === "removed") await emailListingDecision(id, "rejected");
     return { ok: true };
   });
 

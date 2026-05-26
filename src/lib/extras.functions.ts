@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-middleware";
+import { enqueueTransactionalEmail, getUserEmail, getUserDisplayName } from "./email/enqueue.server";
 
 const uuid = z.string().uuid();
 
@@ -245,6 +246,24 @@ export const submitSellerReview = createServerFn({ method: "POST" })
       link: `/sellers/${data.sellerId}`,
       metadata: { rating: data.rating },
     });
+    // Email seller (fire-and-forget)
+    try {
+      const email = await getUserEmail(data.sellerId);
+      if (email) {
+        const name = await getUserDisplayName(data.sellerId);
+        await enqueueTransactionalEmail({
+          templateName: "review-received",
+          recipientEmail: email,
+          idempotencyKey: `review-${data.sellerId}-${context.userId}-${data.listingId ?? "none"}`,
+          templateData: {
+            recipientName: name ?? undefined,
+            rating: data.rating,
+            body: data.body || undefined,
+            profileUrl: `https://callescort.devloader.com/sellers/${data.sellerId}`,
+          },
+        });
+      }
+    } catch (e) { console.error("review email failed", e); }
     return { ok: true };
   });
 
