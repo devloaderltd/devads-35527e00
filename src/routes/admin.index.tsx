@@ -96,6 +96,21 @@ function DashboardPage() {
   const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
 
+  const qc = useQueryClient();
+  const refreshAll = () => {
+    qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    qc.invalidateQueries({ queryKey: ["admin-quick-stats"] });
+    qc.invalidateQueries({ queryKey: ["admin-activity"] });
+    qc.invalidateQueries({ queryKey: ["admin-sparklines"] });
+    qc.invalidateQueries({ queryKey: ["admin-funnel"] });
+    qc.invalidateQueries({ queryKey: ["admin-system-health"] });
+    qc.invalidateQueries({ queryKey: ["admin-badges"] });
+  };
+  const isFetchingAny =
+    overview.isFetching || quick.isFetching || activity.isFetching ||
+    sparks.isFetching || funnel.isFetching || health.isFetching;
+  const lastUpdated = overview.dataUpdatedAt || health.dataUpdatedAt;
+
   return (
     <div>
       <AdminPageHeader
@@ -109,6 +124,12 @@ function DashboardPage() {
         }
       />
 
+      <HeroStrip
+        lastUpdated={lastUpdated}
+        onRefresh={refreshAll}
+        loading={isFetchingAny}
+      />
+
       {/* Hero health strip */}
       <HealthStrip
         loading={health.isLoading}
@@ -117,12 +138,19 @@ function DashboardPage() {
         data={health.data}
       />
 
-      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <SectionDivider label={`This period · ${range} days`} />
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
 
         <KpiTile icon={<Users className="h-4 w-4" />} label={`Users (${range}d)`} value={s?.users.current ?? "—"} delta={s?.users} spark={s?.users.spark} accent="#7c5cff" loading={sparks.isLoading} />
         <KpiTile icon={<Package className="h-4 w-4" />} label={`Listings (${range}d)`} value={s?.listings.current ?? "—"} delta={s?.listings} spark={s?.listings.spark} accent="#22c1c3" loading={sparks.isLoading} />
         <KpiTile icon={<DollarSign className="h-4 w-4" />} label={`Revenue (${range}d)`} value={`$${(s?.revenue.current ?? 0).toFixed(2)}`} delta={s?.revenue} spark={s?.revenue.spark} accent="#ff7a59" loading={sparks.isLoading} />
         <KpiTile icon={<Flag className="h-4 w-4" />} label={`Reports (${range}d)`} value={s?.reports.current ?? "—"} delta={s?.reports} spark={s?.reports.spark} accent="#e94aa8" loading={sparks.isLoading} />
+      </div>
+
+      <SectionDivider label="All-time" />
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiTile icon={<Package className="h-4 w-4" />} label="Active listings" value={active} accent="#36c172" />
         <KpiTile icon={<DollarSign className="h-4 w-4" />} label="Revenue (all-time)" value={`$${totalRevenue.toFixed(2)}`} accent="#ffb454" />
         <KpiTile icon={<Wallet className="h-4 w-4" />} label="Total in wallets" value={`$${(quick.data?.totalWalletUsd ?? 0).toFixed(2)}`} accent="#5aa9ff" />
