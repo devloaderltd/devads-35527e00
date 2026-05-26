@@ -1,55 +1,64 @@
 ## Scope
 
-Finish the admin polish pass: dashboard hero + chart refinement, unify loading/error states across data tables, and upgrade the notifications inbox with per-kind read tracking.
+Five focused improvements on top of the existing admin polish, plus re-setting up Lovable Emails in the new workspace the project was transferred into.
 
-## 1. Dashboard hero + chart polish (`src/routes/admin.index.tsx`)
+## 1. Manual "Refresh health" button on dashboard HealthStrip
 
-- **HeroStrip** above existing `HealthStrip`: gradient panel (`from-indigo-500/10 via-fuchsia-500/5 to-transparent`) with greeting, current admin name, last refresh timestamp, and a "Refresh all" button that calls `queryClient.invalidateQueries({ queryKey: ['admin'] })`.
-- **HealthStrip refinement**: animated pulse on bad/warn dots, hover ring, link each tile to its destination (errors → `/admin/debug`, failed payments → `/admin/payments?status=failed`, pending top-ups → `/admin/topups?status=pending`).
-- **Charts**: 
-  - Line charts: add area gradient fill under the line, dotted grid, larger end-point dot with glow.
-  - Bar charts: rounded tops, gradient bars (indigo→fuchsia), value label on hover.
-  - Funnel: convert to horizontal stepped bar with % drop chips between steps.
-- **Section headers**: split KPI grid into "This period" / "All-time" with a thin gradient divider.
+File: `src/routes/admin.index.tsx`
 
-## 2. Skeleton + error fallback consistency
+- Add a small icon button to the top-right of `HealthStrip` (next to the section title).
+- On click: `queryClient.invalidateQueries({ queryKey: ['admin','system-health'] })` and any related health keys, with a spinning `RefreshCw` while `isFetching` is true.
+- Tooltip "Refresh health". Disabled state while refetching. No layout shift.
+- Keep the existing "Refresh all" button in `HeroStrip` unchanged — this one is health-only.
 
-Apply the same `RowSkeleton` / `ErrorFallback` / `EmptyState` pattern already used on audit/reports to:
-- `admin.listings.tsx`
-- `admin.users.tsx`
-- `admin.payments.tsx`
-- `admin.topups.tsx`
-- `admin.wallets.tsx`
-- `admin.kyc.tsx`
+## 2. Skeleton + error fallback audit across every admin page
 
-For each: replace ad-hoc "Loading…" and try/catch text with `<RowSkeleton rows={8} />` while pending, `<ErrorFallback error={...} onRetry={refetch} />` on error, and `<EmptyState />` when result is empty. Keep table column structure unchanged.
+Verify and fix every route under `src/routes/admin.*.tsx` so all use the same pattern:
+- Pending → `<RowSkeleton rows={n} />` (or `<CardGridSkeleton />` for tiles)
+- Error → `<ErrorFallback ... onRetry={() => refetch()} />`
+- Empty → `<EmptyState ... />`
 
-## 3. Notifications inbox upgrades (`src/routes/admin.notifications.tsx` + `NotificationsBell.tsx`)
+Pages to verify (in addition to the ones already done): `admin.reports.tsx`, `admin.debug.tsx`, `admin.audit.tsx`, `admin.activity.tsx`, `admin.banners.tsx`, `admin.broadcasts.tsx`, `admin.categories.tsx`, `admin.cities.tsx`, `admin.homepage.tsx`, `admin.insights.tsx`, `admin.maintenance.tsx`, `admin.moderation.tsx`, `admin.reviews.tsx`, `admin.settings.tsx`, `admin.threads.tsx`. Touch only the loading/error/empty branches — column structure and queries stay as-is.
 
-- **Per-kind read tracking**: replace single `lastSeenAt` with a record `{ kyc, reports, topups, errors, broadcasts, payments }` stored in `localStorage` under `admin.inbox.lastSeenByKind`. New helper `src/lib/admin-inbox-seen.ts` exporting `getLastSeen(kind)`, `setLastSeen(kind, iso)`, `getAllLastSeen()`, `markAllSeen(items)`.
-- **Tab badges**: each tab shows its own unseen count derived from `getLastSeen(kind)`.
-- **"Mark tab as read"** button per tab (in addition to existing "Mark all").
-- **Loading state**: `CardGridSkeleton` instead of plain text.
-- **Empty state**: per-tab `EmptyState` with kind-specific copy + icon (e.g. "No new KYC submissions" + Shield icon).
-- **Error state**: `ErrorFallback` with retry.
-- **Bell**: sum of per-kind unseen counts; dropdown groups items by kind with mini section headers.
+## 3. Unique gradient IDs per chart (Recharts conflict fix)
 
-## 4. Files
+File: `src/routes/admin.index.tsx`
 
-**New**
-- `src/lib/admin-inbox-seen.ts`
+- Recharts inlines `<defs>` into a shared SVG layer; duplicate IDs like `lineFill` cause the wrong gradient to render on the second chart.
+- Refactor each chart to generate a stable unique id (e.g. `useId()` prefix + suffix `-area`, `-bar`, `-glow`) and reference it via `url(#${id})` in both `<linearGradient>` and the consuming `<Area>`/`<Bar>` `fill`.
+- Apply to: signups area, listings area, revenue bars, categories bars, funnel bars.
 
-**Edited**
-- `src/routes/admin.index.tsx` (hero, chart gradients, section headers)
-- `src/routes/admin.listings.tsx`
-- `src/routes/admin.users.tsx`
-- `src/routes/admin.payments.tsx`
-- `src/routes/admin.topups.tsx`
-- `src/routes/admin.wallets.tsx`
-- `src/routes/admin.kyc.tsx`
-- `src/routes/admin.notifications.tsx`
-- `src/components/admin/NotificationsBell.tsx`
+## 4. Smarter `ErrorFallback`
+
+File: `src/components/admin/Skeletons.tsx`
+
+- Extend props: `isRetrying?: boolean`, optional `hint?: string`.
+- While `isRetrying`, swap the `RefreshCw` icon for a spinning loader, change label to "Retrying…", and disable the button.
+- Improve default copy: derive a friendlier message from common error shapes (network, 401/403, 5xx, timeout) instead of raw `error.message`.
+- Update all call sites to pass `isRetrying={query.isFetching && query.isError}` so users get visible feedback when they click Retry.
+
+## 5. Email setup in the new workspace
+
+The project was transferred and the new workspace has **no email domain configured**. Auth + transactional emails won't send until a sender domain is set up. Plan:
+
+1. User opens the email setup dialog and adds their sender subdomain (e.g. `notify.callescort.devloader.com`). NS records are added at the registrar; Lovable manages the rest.
+2. Once the domain is registered (DNS can still be verifying), re-scaffold the auth email templates so the existing custom templates in `src/lib/email-templates/*` are wired to this workspace's `auth-email-hook` server route.
+3. Re-run email infra setup so the pgmq queues, `process-email-queue` cron, and Vault service-role key exist on the new workspace's Cloud project.
+4. Confirm transactional sending still works (the existing `src/routes/lovable/email/transactional/send.ts` + `registry.ts` stay — only the workspace-side credentials change). Update `SENDER_DOMAIN` in the transactional route if the new subdomain differs from the previous one.
+5. Tell the user to monitor **Cloud → Emails** for DNS verification; sends resume automatically once active.
+
+The setup dialog button will appear in the response after this plan is approved.
 
 ## Out of scope
 
-No DB migrations, no new server functions, no role/permission changes, no chart library swap (continue using the existing inline SVG charts).
+No new admin features, no schema changes, no chart library swap, no changes to existing email templates' content.
+
+## Files
+
+**Edited**
+- `src/routes/admin.index.tsx` (refresh health button, unique gradient ids)
+- `src/components/admin/Skeletons.tsx` (ErrorFallback upgrade)
+- All `src/routes/admin.*.tsx` pages still using ad-hoc loading/error text
+- `src/routes/lovable/email/transactional/send.ts` (only if `SENDER_DOMAIN` needs updating)
+
+**No new files.**
