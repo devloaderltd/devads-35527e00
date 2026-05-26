@@ -14,7 +14,7 @@ export function ExpiringSoonCard({ userId }: { userId: string | undefined }) {
       const cutoff = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data } = await supabase
         .from("listings")
-        .select("id, title, expires_at, status")
+        .select("id, slug, title, expires_at, status")
         .eq("user_id", userId!)
         .eq("status", "active")
         .lt("expires_at", cutoff)
@@ -39,7 +39,7 @@ export function ExpiringSoonCard({ userId }: { userId: string | undefined }) {
         <ul className="divide-y divide-border/40">
           {data.map((l) => (
             <li key={l.id} className="flex items-center justify-between gap-3 py-2.5">
-              <Link to="/listings/$id" params={{ id: l.id }} className="min-w-0 flex-1 truncate text-sm font-medium hover:text-primary">
+              <Link to="/listings/$id" params={{ id: (l as any).slug ?? l.id }} className="min-w-0 flex-1 truncate text-sm font-medium hover:text-primary">
                 {l.title}
               </Link>
               <span className="shrink-0 text-xs text-amber-600 dark:text-amber-400">

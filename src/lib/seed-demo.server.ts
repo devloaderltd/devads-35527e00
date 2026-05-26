@@ -54,6 +54,7 @@ async function seedListingsFor(userId: string) {
     category_id: cats[i % cats.length].id,
     city_id: cities[i % cities.length].id,
     view_count: Math.floor(Math.random() * 240) + 10,
+    slug: "",
   }));
   const { error } = await supabaseAdmin.from("listings").insert(rows);
   if (error) throw error;

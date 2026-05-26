@@ -433,6 +433,7 @@ export type Database = {
           item_age: string
           price: number | null
           search_tsv: unknown
+          slug: string
           status: Database["public"]["Enums"]["listing_status"]
           title: string
           updated_at: string
@@ -454,6 +455,7 @@ export type Database = {
           item_age?: string
           price?: number | null
           search_tsv?: unknown
+          slug?: string
           status?: Database["public"]["Enums"]["listing_status"]
           title: string
           updated_at?: string
@@ -475,6 +477,7 @@ export type Database = {
           item_age?: string
           price?: number | null
           search_tsv?: unknown
+          slug?: string
           status?: Database["public"]["Enums"]["listing_status"]
           title?: string
           updated_at?: string
@@ -1191,6 +1194,7 @@ export type Database = {
         }
         Returns: number
       }
+      generate_listing_slug: { Args: { _title: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

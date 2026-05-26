@@ -10,13 +10,14 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 export const getSellerContact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ listingId: z.string().uuid() }).parse(input),
+    z.object({ listingId: z.string().min(1).max(120) }).parse(input),
   )
   .handler(async ({ data }) => {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.listingId);
     const { data: listing, error: lerr } = await supabaseAdmin
       .from("listings")
       .select("user_id, status")
-      .eq("id", data.listingId)
+      .eq(isUuid ? "id" : "slug", data.listingId)
       .maybeSingle();
     if (lerr) throw new Error(lerr.message);
     if (!listing || listing.status !== "active") {

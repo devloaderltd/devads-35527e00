@@ -114,16 +114,19 @@ export function clearConsent(): void {
 /** React hook that re-renders when consent changes (this tab or others). */
 export function useConsent(): {
   consent: ConsentState | null;
+  hydrated: boolean;
   save: (partial: { analytics: boolean; marketing: boolean }) => void;
 } {
-  const [consent, setState] = useState<ConsentState | null>(() => getConsent());
+  // Always start with null on SSR and first client render to avoid hydration mismatch.
+  const [consent, setState] = useState<ConsentState | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const sync = () => setState(getConsent());
     window.addEventListener("storage", sync);
     window.addEventListener(EVENT_NAME, sync as EventListener);
-    // Initial sync in case SSR returned null but localStorage has a value.
     sync();
+    setHydrated(true);
     return () => {
       window.removeEventListener("storage", sync);
       window.removeEventListener(EVENT_NAME, sync as EventListener);
@@ -134,7 +137,7 @@ export function useConsent(): {
     setState(setConsent(partial));
   }, []);
 
-  return { consent, save };
+  return { consent, hydrated, save };
 }
 
 export const DEFAULT_CONSENT = DEFAULT;

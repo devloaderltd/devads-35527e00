@@ -25,6 +25,8 @@ export const Route = createFileRoute("/listings/$id")({
   component: ListingDetail,
 });
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function ListingDetail() {
   const { id } = Route.useParams();
   const { user } = useAuth();
@@ -36,6 +38,7 @@ function ListingDetail() {
   const { data: listing, isLoading, error } = useQuery({
     queryKey: ["listing", id],
     queryFn: async () => {
+      const isUuid = UUID_RE.test(id);
       const { data, error } = await supabase
         .from("listings")
         .select(`
@@ -44,7 +47,7 @@ function ListingDetail() {
           cities(name, region, country, slug),
           listing_images(url, sort_order)
         `)
-        .eq("id", id)
+        .eq(isUuid ? "id" : "slug", id)
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
@@ -56,6 +59,13 @@ function ListingDetail() {
       return { ...data, profile };
     },
   });
+
+  // Redirect UUID URLs to slug URLs
+  useEffect(() => {
+    if (listing && UUID_RE.test(id) && (listing as any).slug && (listing as any).slug !== id) {
+      navigate({ to: "/listings/$id", params: { id: (listing as any).slug }, replace: true });
+    }
+  }, [listing, id, navigate]);
 
   // Fire-and-forget view increment + recently viewed tracking
   useEffect(() => {

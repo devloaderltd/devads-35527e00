@@ -67,7 +67,7 @@ function Home() {
       const { data, error } = await supabase
         .from("listings")
         .select(`
-          id, title, condition, created_at, bumped_at,
+          id, slug, title, condition, created_at, bumped_at,
           categories(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),
@@ -153,7 +153,7 @@ function Home() {
           {heroFeatured ? (
             <Link
               to="/listings/$id"
-              params={{ id: heroFeatured.id }}
+              params={{ id: (heroFeatured as any).slug ?? heroFeatured.id }}
               className="group relative col-span-1 row-span-1 overflow-hidden rounded-[2rem] glass md:col-span-2 md:row-span-2"
             >
               <img

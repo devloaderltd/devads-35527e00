@@ -10,7 +10,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const [{ data: categories }, { data: cities }, { data: listings }] = await Promise.all([
           supabaseAdmin.from("categories").select("slug"),
           supabaseAdmin.from("cities").select("slug").limit(500),
-          supabaseAdmin.from("listings").select("id, updated_at").eq("status", "active").order("updated_at", { ascending: false }).limit(1000),
+          supabaseAdmin.from("listings").select("id, slug, updated_at").eq("status", "active").order("updated_at", { ascending: false }).limit(1000),
         ]);
 
         const urls: string[] = [
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         const staticEntries = urls.map((u) => `  <url><loc>${u}</loc></url>`);
         const listingEntries = (listings ?? []).map(
-          (l) => `  <url><loc>${BASE}/listings/${l.id}</loc><lastmod>${new Date(l.updated_at).toISOString()}</lastmod></url>`,
+          (l: any) => `  <url><loc>${BASE}/listings/${l.slug ?? l.id}</loc><lastmod>${new Date(l.updated_at).toISOString()}</lastmod></url>`,
         );
 
         const body = `<?xml version="1.0" encoding="UTF-8"?>

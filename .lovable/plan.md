@@ -1,46 +1,51 @@
-## Goal
+## 1. Slug system for listings
 
-Reviews already exist (table `seller_reviews`, server fns, `SellerReviews` component on `/sellers/$id`), but there's no entry point from the user dashboard and the listing detail page only shows a rating badge. This plan completes the surface area.
+URLs become `/listings/my-iphone-15-pro-a1b2c3` instead of `/listings/<uuid>`.
 
-## What's missing
+**Database migration** on `public.listings`:
+- Add `slug text` column, unique.
+- Add SQL function `generate_listing_slug(_title text)` that lowercases, strips non-alphanumerics to `-`, trims, truncates to ~60 chars, and appends a 6-char random suffix to guarantee uniqueness.
+- Add `BEFORE INSERT` trigger that auto-fills `slug` when null, using the title.
+- Backfill: `UPDATE listings SET slug = generate_listing_slug(title) WHERE slug IS NULL`.
+- Make `slug` `NOT NULL` after backfill, add unique index.
 
-1. The dashboard sidebar has a "Reviews" link pointing to `/dashboard?tab=reviews`, but the dashboard tabs are only Overview / Performance / Listings — clicking it goes nowhere.
-2. Sellers can't see, in one place, the reviews buyers left them, with rating breakdown and the ability to respond.
-3. There's no "Reviews I've written" view for buyers.
-4. Listing detail page (`/listings/$id`) shows only the rating badge — no clickable path to the reviews section on the seller profile.
+**Route refactor** — rename `src/routes/listings.$id.tsx` to `src/routes/listings.$slug.tsx`:
+- Look up by `slug` instead of `id` (`.eq("slug", slug)`).
+- Keep all existing logic (recently viewed, contact reveal, related, etc.) — only the lookup key changes.
+- Add a redirect-compatibility branch: if the param looks like a UUID, fetch by id, then `navigate({ to: "/listings/$slug", params: { slug }, replace: true })` so old URLs still work and 301-style redirect to the new URL.
 
-## Changes
+**Link/ref updates** — replace every `to="/listings/$id" params={{ id: l.id }}` with `to="/listings/$slug" params={{ slug: l.slug }}`. Files: `ListingCard`, `ExpiringSoonCard`, `RecentlyViewedRail`, `index.tsx`, `_authenticated.dashboard.tsx`, `_authenticated.my-listings.tsx`, `_authenticated.favorites.tsx`, `_authenticated.messages.$threadId.tsx`, admin pages, and the post-create redirect in `_authenticated.post.tsx`. Every query that selects listings adds `slug` to the projection.
 
-### 1. New Reviews tab on `/dashboard`
+**Post-create** (`_authenticated.post.tsx`): after insert, navigate to the returned `slug`.
 
-Add a `reviews` tab to `src/routes/_authenticated.dashboard.tsx`, opened by default when URL has `?tab=reviews`. Contents:
+## 2. Sitemap
 
-- **Summary card**: average rating, total count, 5→1 star distribution bar chart (built from `seller_reviews` where `seller_id = me`).
-- **Received reviews** list: each row shows reviewer name + avatar, stars, body, photos, date. If no seller response yet, an inline "Respond" textarea + Save button. If response exists, show it below with edit option.
-- **Reviews I wrote**: collapsible list of reviews where `reviewer_id = me`, with edit / delete buttons (reuse existing `submitSellerReview` / `deleteMyReview`).
+Both `src/routes/sitemap[.]xml.tsx` and `src/routes/api/public/sitemap[.]xml.ts` currently emit `/listings/${id}`. Update both to:
+- Select `slug, updated_at` from `listings`.
+- Emit `${BASE}/listings/${slug}`.
 
-### 2. Two new server functions in `src/lib/extras.functions.ts`
+Keep the existing static routes, categories, cities entries. No structural change otherwise.
 
-- `listMyReceivedReviews` — returns reviews where `seller_id = auth.uid()`, joined with reviewer profile.
-- `listMyAuthoredReviews` — returns reviews where `reviewer_id = auth.uid()`, joined with seller profile.
-- `respondToReview({ reviewId, response })` — updates `response` + `response_at` on a review where `seller_id = auth.uid()`. Adds an RLS policy allowing sellers to update only the `response` / `response_at` columns of reviews left for them.
+## 3. Cookie banner sticky-after-accept
 
-### 3. Listing detail page — link the rating badge
+Root cause: `useConsent` initializes `useState(() => getConsent())` which on SSR returns `null` (no `window`). After hydration the effect's `sync()` runs, but the local `dismissed` state in `CookieConsent` is only set on the current session — a fresh page load with consent already stored should hide via `consent != null`. The current code does that, but the banner stays visible because `CookieConsent` returns the banner during the brief hydration window and (the user's report) doesn't re-hide on storage-backed consent on subsequent visits. Likely the storage write inside `save()` is happening but the SSR snapshot keeps showing the banner until the effect; combined with the `cityDialogOpen` guard, the banner can re-mount visible.
 
-In `src/routes/listings.$id.tsx`, wrap the existing `SellerRatingBadge` so it's a `Link` to `/sellers/$id#reviews`, and add a small "See all reviews →" link next to it. Add `id="reviews"` to the `SellerReviews` wrapper on the seller page so anchor scrolling works.
+Fix in `src/components/CookieConsent.tsx` + `src/lib/cookie-consent.ts`:
+- Add a `hydrated` flag in `useConsent` (set true inside the effect). Export it.
+- In `CookieConsent`, render `null` until `hydrated` is true — prevents the SSR/hydration flash that the user perceives as "always showing".
+- Keep the existing `consent || dismissed → null` short-circuit so once accepted, the banner stays gone on every subsequent navigation.
+- Also call `save()` synchronously **before** `setDismissed(true)` so the write to localStorage happens before any re-render, and ensure the `EVENT_NAME` listener catches it on other open tabs.
 
-### 4. Header user menu — quick link
+No visual changes to the banner UI.
 
-Add a "My reviews" item in the user dropdown (`src/components/Header.tsx`) that opens `/dashboard?tab=reviews`.
+## Files touched
 
-## Database
+- new migration: add `slug`, function, trigger, backfill, unique index
+- `src/routes/listings.$id.tsx` → renamed to `src/routes/listings.$slug.tsx` (with UUID-compat redirect)
+- `src/routes/sitemap[.]xml.tsx`, `src/routes/api/public/sitemap[.]xml.ts`
+- `src/components/ListingCard.tsx`, `ExpiringSoonCard.tsx`, `RecentlyViewedRail.tsx`
+- `src/routes/index.tsx`, `_authenticated.post.tsx`, `_authenticated.dashboard.tsx`, `_authenticated.my-listings.tsx`, `_authenticated.favorites.tsx`, `_authenticated.messages.$threadId.tsx`
+- admin routes that link to listings (`admin.listings.tsx`, `admin.moderation.tsx`, `admin.reports.tsx`, `admin.broadcasts.tsx`)
+- `src/lib/cookie-consent.ts`, `src/components/CookieConsent.tsx`
 
-One migration:
-
-- Add RLS policy on `seller_reviews` so a seller can update `response` and `response_at` on reviews where `seller_id = auth.uid()` (existing policies only allow the reviewer to update).
-
-## Not touching
-
-- Existing `SellerReviews` write/edit/delete flow on `/sellers/$id` — works already.
-- Review photos upload — already supported via `photo_urls`, no change needed.
-- Admin reviews moderation page — separate concern, already exists.
+Out of scope: no changes to reviews, auth, payments, or other features.

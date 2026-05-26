@@ -5,6 +5,7 @@ import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 type Listing = {
   id: string;
+  slug?: string | null;
   title: string;
   condition?: string;
   bumped_at?: string;
@@ -21,7 +22,7 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
   return (
     <Link
       to="/listings/$id"
-      params={{ id: listing.id }}
+      params={{ id: listing.slug ?? listing.id }}
       className={`group hover-float flex flex-col overflow-hidden rounded-2xl glass ${isFeatured ? "iridescent-border" : ""}`}
     >
       <div className="relative aspect-square overflow-hidden">
