@@ -321,6 +321,41 @@ function ListingDetail() {
                 <dd className="font-medium">{listing.view_count ?? 0}</dd>
               </div>
               <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                <dt className="flex items-center gap-1.5 text-muted-foreground"><Phone className="h-3.5 w-3.5" /> Phone</dt>
+                <dd className="truncate text-right font-medium">
+                  {!user ? (
+                    <Link to="/login" className="inline-flex items-center gap-1 text-primary hover:underline">
+                      <Lock className="h-3.5 w-3.5" /> Sign in
+                    </Link>
+                  ) : contact?.phone ? (
+                    <a href={`tel:${contact.phone}`} className="text-primary hover:underline">{contact.phone}</a>
+                  ) : (
+                    "—"
+                  )}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
+                <dt className="flex items-center gap-1.5 text-muted-foreground"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</dt>
+                <dd className="truncate text-right font-medium">
+                  {!user ? (
+                    <Link to="/login" className="inline-flex items-center gap-1 text-primary hover:underline">
+                      <Lock className="h-3.5 w-3.5" /> Sign in
+                    </Link>
+                  ) : contact?.whatsapp ? (
+                    <a
+                      href={`https://wa.me/${contact.whatsapp.replace(/[^\d]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      {contact.whatsapp}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2 border-b border-white/40 py-1.5">
                 <dt className="text-muted-foreground">Listing ID</dt>
                 <dd className="font-mono text-xs font-medium text-muted-foreground">
                   #{String(listing.id).slice(0, 8)}
