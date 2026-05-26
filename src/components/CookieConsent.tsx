@@ -7,7 +7,7 @@ import { useConsent } from "@/lib/cookie-consent";
 import { useCity } from "@/lib/city-context";
 
 export function CookieConsent() {
-  const { consent, save } = useConsent();
+  const { consent, hydrated: consentHydrated, save } = useConsent();
   const { cityId, hydrated, pickerOpen } = useCity();
   const [customizing, setCustomizing] = useState(false);
   const [analytics, setAnalytics] = useState(false);
@@ -15,6 +15,10 @@ export function CookieConsent() {
   // Local dismissal so the banner unmounts immediately even if localStorage
   // is blocked (private mode, restrictive mobile browsers).
   const [dismissed, setDismissed] = useState(false);
+
+  // Wait for hydration so we never render the banner during SSR/first paint
+  // before we know whether the user has already saved consent.
+  if (!consentHydrated) return null;
 
   // The city selector dialog (non-dismissable for first-time visitors) covers
   // the screen with a modal overlay and would block clicks on this banner.
@@ -25,9 +29,9 @@ export function CookieConsent() {
   // Only show the banner when no decision has been recorded yet.
   if (consent || dismissed) return null;
 
-  const acceptAll = () => { setDismissed(true); save({ analytics: true, marketing: true }); };
-  const rejectOptional = () => { setDismissed(true); save({ analytics: false, marketing: false }); };
-  const savePreferences = () => { setDismissed(true); save({ analytics, marketing }); };
+  const acceptAll = () => { save({ analytics: true, marketing: true }); setDismissed(true); };
+  const rejectOptional = () => { save({ analytics: false, marketing: false }); setDismissed(true); };
+  const savePreferences = () => { save({ analytics, marketing }); setDismissed(true); };
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-3 z-[60] flex justify-center px-3 md:bottom-6">
