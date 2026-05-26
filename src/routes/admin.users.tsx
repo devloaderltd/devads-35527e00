@@ -14,6 +14,7 @@ import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
 import { BulkActionBar } from "@/components/admin/BulkActionBar";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 import {
   listUsersAdmin, setUserRole, banUser, unbanUser, deleteUserAdmin, sendPasswordReset,
   adminAdjustWallet,
