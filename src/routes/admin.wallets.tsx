@@ -41,8 +41,10 @@ function WalletsPage() {
           {walletsQ.isLoading && <RowSkeleton rows={6} />}
           {walletsQ.isError && (
             <ErrorFallback
-              message={(walletsQ.error as Error | undefined)?.message ?? "Could not load wallets."}
+              title="Couldn't load wallets"
+              message={(walletsQ.error as Error | undefined)?.message}
               onRetry={() => walletsQ.refetch()}
+              isRetrying={walletsQ.isFetching}
             />
           )}
           {!walletsQ.isLoading && !walletsQ.isError && wallets.map(w => (

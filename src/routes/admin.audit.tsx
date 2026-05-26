@@ -174,9 +174,11 @@ function AuditPage() {
         {isLoading && <RowSkeleton rows={8} />}
         {isError && !isLoading && (
           <ErrorFallback
-            message={(error as Error | undefined)?.message ?? "Audit log failed to load."}
-            onRetry={() => refetch()}
-          />
+            title="Audit log failed to load"
+          message={(error as Error | undefined)?.message}
+          onRetry={() => refetch()}
+          isRetrying={isFetching}
+        />
         )}
         {!isLoading && !isError && (
           <div className="space-y-2">

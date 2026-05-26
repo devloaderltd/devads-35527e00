@@ -128,8 +128,10 @@ function ReportsPage() {
       {isLoading && <RowSkeleton rows={6} />}
       {isError && !isLoading && (
         <ErrorFallback
-          message={(error as Error | undefined)?.message ?? "Reports failed to load."}
+          title="Reports failed to load"
+          message={(error as Error | undefined)?.message}
           onRetry={() => refetch()}
+          isRetrying={isFetching}
         />
       )}
 

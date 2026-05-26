@@ -197,9 +197,11 @@ function NotificationsPage() {
 
         {q.isError && (
           <ErrorFallback
-            message={(q.error as Error | undefined)?.message ?? "Inbox failed to load."}
-            onRetry={() => q.refetch()}
-          />
+            title="Inbox failed to load"
+              message={(q.error as Error | undefined)?.message}
+              onRetry={() => q.refetch()}
+              isRetrying={q.isFetching}
+            />
         )}
 
         {!q.isLoading && !q.isError && items.length === 0 && (
