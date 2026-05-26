@@ -19,10 +19,16 @@ import { getMyListingAnalytics } from "@/lib/extras.functions";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { ExpiringSoonCard } from "@/components/ExpiringSoonCard";
 import { DashboardReviewsPanel } from "@/components/DashboardReviewsPanel";
+import { ProfileCompletionCard } from "@/components/dashboard/ProfileCompletionCard";
+import { RecentNotificationsCard } from "@/components/dashboard/RecentNotificationsCard";
+import { RecentMessagesCard } from "@/components/dashboard/RecentMessagesCard";
+import { WalletPanel } from "@/components/dashboard/WalletPanel";
+import { ListingRowActions } from "@/components/dashboard/ListingRowActions";
 
 const dashboardSearchSchema = z.object({
-  tab: z.enum(["analytics", "performance", "listings", "reviews"]).optional(),
+  tab: z.enum(["analytics", "performance", "wallet", "listings", "reviews"]).optional(),
 });
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — CallEscort24" }, { name: "robots", content: "noindex" }] }),
@@ -153,17 +159,24 @@ function DashboardPage() {
           <TabsList className="inline-flex w-max rounded-full bg-white/60 backdrop-blur dark:bg-white/10">
             <TabsTrigger value="analytics" className="rounded-full">Overview</TabsTrigger>
             <TabsTrigger value="performance" className="rounded-full">Performance</TabsTrigger>
+            <TabsTrigger value="wallet" className="rounded-full">Wallet</TabsTrigger>
             <TabsTrigger value="listings" className="rounded-full">My Listings</TabsTrigger>
             <TabsTrigger value="reviews" className="rounded-full">Reviews</TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="analytics" className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <ProfileCompletionCard userId={user?.id} />
+            <RecentNotificationsCard userId={user?.id} />
+            <RecentMessagesCard userId={user?.id} />
+          </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <OnboardingChecklist userId={user?.id} />
             <ExpiringSoonCard userId={user?.id} />
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+
           <ChartCard title="Listings created (last 30 days)">
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={charts?.days ?? []}>
@@ -224,6 +237,11 @@ function DashboardPage() {
 
 
 
+
+        <TabsContent value="wallet" className="mt-4">
+          <WalletPanel userId={user?.id} />
+        </TabsContent>
+
         <TabsContent value="listings" className="mt-4">
           <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
             <CardContent className="p-0">
@@ -235,7 +253,7 @@ function DashboardPage() {
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Views</th>
                       <th className="px-4 py-3">Created</th>
-                      <th className="px-4 py-3"></th>
+                      <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -247,10 +265,8 @@ function DashboardPage() {
                         </td>
                         <td className="px-4 py-3">{l.view_count ?? 0}</td>
                         <td className="px-4 py-3 text-muted-foreground">{format(new Date(l.created_at), "MMM d, yyyy")}</td>
-                        <td className="px-4 py-3 text-right">
-                          <Button asChild size="sm" variant="outline" className="rounded-full">
-                            <Link to="/listings/$id" params={{ id: (l as any).slug ?? l.id }}>View</Link>
-                          </Button>
+                        <td className="px-4 py-3">
+                          <ListingRowActions listing={{ id: l.id, slug: (l as { slug?: string }).slug, status: l.status }} />
                         </td>
                       </tr>
                     ))}
@@ -263,6 +279,7 @@ function DashboardPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
 
         <TabsContent value="reviews" className="mt-4">
           <DashboardReviewsPanel />
