@@ -1,26 +1,22 @@
-## Goal
+# Fix admin dashboard layout overflow
 
-You can't get into the admin panel. The project already has a seeded admin account (`admin@callescort24.test`) and a public rotation endpoint (`/api/public/seed-demo`) that resets that account's password and re-confirms the email idempotently. We just need to call it.
+## Problem
+On `/admin`, the `SeedDemoButton` is a full `Card` (Demo accounts panel) rendered inside the `AdminPageHeader` `actions` slot. The header is a `flex-wrap` row meant for small controls (range toggle, buttons). A full card in that slot overflows the page on mobile (393px viewport) and visually sits on top of the dashboard content — exactly what the screenshot shows.
 
-## What I'll do (no code changes)
+## Fix
+Convert `SeedDemoButton` into a compact header control:
 
-1. POST to `https://devads.lovable.app/api/public/seed-demo` with the `x-seed-token` header set to `SUPABASE_SERVICE_ROLE_KEY` (already in project secrets).
-2. The endpoint will:
-   - Reset the password on `admin@callescort24.test` (creating it if missing).
-   - Reset the password on `demo@callescort24.test`.
-   - Re-confirm both emails so login works immediately.
-   - Ensure the `admin` row in `user_roles` exists for the admin account.
-   - Write an entry to `audit_log` (`demo.seed_rotate.public`).
-3. Return the freshly generated passwords to you in chat. You can then sign in at `/login` with `admin@callescort24.test` + the new password and reach `/admin`.
+1. Render only a small pill button in the header: `[icon] Demo accounts`, matching the style of the existing range toggle / outline buttons (`rounded-full border-white/20 bg-white/5`).
+2. Clicking it opens a `Dialog` (shadcn) containing the existing card body: description, "Rotate & reveal credentials" button, hide/show toggle, known emails list, and the rotated credentials panel. All current rotation logic and `runDemoSeed` server-fn behavior stays the same.
+3. Inside the dialog, drop the outer `Card`/`CardHeader`/`CardTitle` wrapper (the Dialog provides the title and chrome). Keep the inner content blocks unchanged.
+4. Make the dialog content `max-w-md` with `max-h-[85vh] overflow-y-auto` so the credentials list scrolls on small screens.
 
-## What this does NOT do
+No other admin routes change. No backend, server-fn, or seed logic changes.
 
-- No schema changes, no migration, no edits to seed code or RLS.
-- Does not touch any real user accounts — only the two seeded test accounts.
-- Does not change your email domain or auth provider config.
+## Files
+- `src/components/admin/SeedDemoButton.tsx` — wrap existing UI in a `Dialog`, replace outer `Card` with a compact `DialogTrigger` button.
 
-## After you're back in
-
-Once you're logged in as admin, you can change the admin email/password to something personal from the auth user management UI, or re-run the rotation any time from Admin → Maintenance ("Seed demo data").
-
-Confirm and I'll run the rotation.
+## Out of scope
+- Dashboard data, KPI tiles, charts, range toggle.
+- Other admin pages.
+- Seed endpoint / credential rotation behavior.
