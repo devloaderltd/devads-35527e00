@@ -392,6 +392,10 @@ function PerformancePanel() {
         <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="Conversion" value={`${conv}%`} />
       </div>
 
+      <div className="mt-4">
+        <FunnelCard totals={totals} />
+      </div>
+
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard title={`Engagement (last ${days} days)`}>
           <ResponsiveContainer width="100%" height={260}>
