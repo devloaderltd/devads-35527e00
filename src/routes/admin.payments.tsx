@@ -91,8 +91,10 @@ function PaymentsPage() {
           {paymentsQ.isLoading && <RowSkeleton rows={6} />}
           {paymentsQ.isError && (
             <ErrorFallback
-              message={(paymentsQ.error as Error | undefined)?.message ?? "Could not load payments."}
+              title="Couldn't load payments"
+              message={(paymentsQ.error as Error | undefined)?.message}
               onRetry={() => paymentsQ.refetch()}
+              isRetrying={paymentsQ.isFetching}
             />
           )}
           {!paymentsQ.isLoading && !paymentsQ.isError && filtered.map(p => (

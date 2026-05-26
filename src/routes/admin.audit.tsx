@@ -92,7 +92,7 @@ function AuditPage() {
   const [exporting, setExporting] = useState(false);
   const perPage = 50;
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, error, refetch } = useQuery({
     queryKey: ["audit-log", category, q, actor, from, to, page],
     queryFn: () => fn({ data: { category, q, actor, from, to, page, perPage } }),
   });
@@ -174,9 +174,11 @@ function AuditPage() {
         {isLoading && <RowSkeleton rows={8} />}
         {isError && !isLoading && (
           <ErrorFallback
-            message={(error as Error | undefined)?.message ?? "Audit log failed to load."}
-            onRetry={() => refetch()}
-          />
+            title="Audit log failed to load"
+          message={(error as Error | undefined)?.message}
+          onRetry={() => refetch()}
+          isRetrying={isFetching}
+        />
         )}
         {!isLoading && !isError && (
           <div className="space-y-2">

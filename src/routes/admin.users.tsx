@@ -118,8 +118,10 @@ function UsersPage() {
           {usersQ.isLoading && <RowSkeleton rows={6} />}
           {usersQ.isError && (
             <ErrorFallback
-              message={(usersQ.error as Error | undefined)?.message ?? "Could not load users."}
+              title="Couldn't load users"
+              message={(usersQ.error as Error | undefined)?.message}
               onRetry={() => usersQ.refetch()}
+              isRetrying={usersQ.isFetching}
             />
           )}
           {!usersQ.isLoading && users.map(u => (

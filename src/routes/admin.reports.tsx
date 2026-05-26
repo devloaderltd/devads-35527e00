@@ -22,7 +22,7 @@ function ReportsPage() {
   const [status, setStatus] = useState("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const { data: reports, isLoading, isError, error, refetch } = useQuery({
+  const { data: reports, isLoading, isError, isFetching, error, refetch } = useQuery({
     queryKey: ["admin-reports"],
     queryFn: async () => {
       const { data: rs, error } = await supabase.from("reports").select("*").order("created_at", { ascending: false }).limit(500);
@@ -128,8 +128,10 @@ function ReportsPage() {
       {isLoading && <RowSkeleton rows={6} />}
       {isError && !isLoading && (
         <ErrorFallback
-          message={(error as Error | undefined)?.message ?? "Reports failed to load."}
+          title="Reports failed to load"
+          message={(error as Error | undefined)?.message}
           onRetry={() => refetch()}
+          isRetrying={isFetching}
         />
       )}
 

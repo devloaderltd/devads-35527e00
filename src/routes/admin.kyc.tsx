@@ -125,9 +125,11 @@ function AdminKycPage() {
       {isLoading && <RowSkeleton rows={5} />}
       {kycQ.isError && (
         <ErrorFallback
-          message={(kycQ.error as Error | undefined)?.message ?? "Could not load submissions."}
-          onRetry={() => kycQ.refetch()}
-        />
+          title="Couldn't load KYC submissions"
+              message={(kycQ.error as Error | undefined)?.message}
+              onRetry={() => kycQ.refetch()}
+              isRetrying={kycQ.isFetching}
+            />
       )}
 
       {!isLoading && filtered.length === 0 && (

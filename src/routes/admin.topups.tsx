@@ -75,8 +75,10 @@ function TopupsPage() {
           {q.isLoading && <RowSkeleton rows={6} />}
           {q.isError && (
             <ErrorFallback
-              message={(q.error as Error | undefined)?.message ?? "Could not load top-ups."}
+              title="Couldn't load top-ups"
+              message={(q.error as Error | undefined)?.message}
               onRetry={() => q.refetch()}
+              isRetrying={q.isFetching}
             />
           )}
           {!q.isLoading && !q.isError && filtered.map(t => (

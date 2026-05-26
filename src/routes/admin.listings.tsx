@@ -102,8 +102,10 @@ function ListingsPage() {
           {listingsQ.isLoading && <RowSkeleton rows={6} />}
           {listingsQ.isError && (
             <ErrorFallback
-              message={(listingsQ.error as Error | undefined)?.message ?? "Could not load listings."}
+              title="Couldn't load listings"
+              message={(listingsQ.error as Error | undefined)?.message}
               onRetry={() => listingsQ.refetch()}
+              isRetrying={listingsQ.isFetching}
             />
           )}
           {!listingsQ.isLoading && !listingsQ.isError && filtered.map(l => (
