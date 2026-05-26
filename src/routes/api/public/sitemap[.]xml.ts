@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/sitemap.xml")({
         ];
         (categories ?? []).forEach((c) => urls.push(`<url><loc>${BASE}/search?category=${c.slug}</loc><priority>0.6</priority></url>`));
         (cities ?? []).forEach((c) => urls.push(`<url><loc>${BASE}/search?country=${c.country}&amp;city=${c.slug}</loc><priority>0.5</priority></url>`));
-        (listings ?? []).forEach((l) => urls.push(`<url><loc>${BASE}/listings/${l.id}</loc><lastmod>${new Date(l.updated_at).toISOString()}</lastmod><priority>0.7</priority></url>`));
+        (listings ?? []).forEach((l: any) => urls.push(`<url><loc>${BASE}/listings/${l.slug ?? l.id}</loc><lastmod>${new Date(l.updated_at).toISOString()}</lastmod><priority>0.7</priority></url>`));
         const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>`;
         return new Response(xml, { headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
       },
