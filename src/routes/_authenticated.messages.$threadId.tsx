@@ -132,7 +132,8 @@ function ThreadView() {
   });
 
   const QUICK_REPLIES = useMemo(() => {
-    if (!thread) return [] as { label: string; body: string; custom?: boolean }[];
+    type QR = { label: string; body: string; custom: boolean };
+    if (!thread) return [] as QR[];
     const isSeller = thread.seller_id === user?.id;
     const sold = thread.listing?.status === "sold";
     const defaults: string[] = sold
@@ -140,8 +141,9 @@ function ThreadView() {
       : isSeller
       ? ["Yes, it's still available.", "Best price I can do.", "When can you pick it up?", "Want to see more photos?"]
       : ["Is it still available?", "Can you do a better price?", "When can I pick it up?", "Where are you located?"];
-    const custom = (customQr?.items ?? []).map((it) => ({ label: it.label, body: it.body, custom: true }));
-    return [...custom, ...defaults.map((d) => ({ label: d, body: d }))];
+    const custom: QR[] = (customQr?.items ?? []).map((it) => ({ label: it.label, body: it.body, custom: true }));
+    const def: QR[] = defaults.map((d) => ({ label: d, body: d, custom: false }));
+    return [...custom, ...def];
   }, [thread, user?.id, customQr]);
 
   const send = useMutation({
