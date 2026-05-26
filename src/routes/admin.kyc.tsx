@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { AdminShell } from "@/components/admin/AdminShell";
+
 import { adminListKyc, adminReviewKyc } from "@/lib/kyc.functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ function AdminKycPage() {
   }>;
 
   return (
-    <AdminShell>
+    <div>
       <div className="mb-4">
         <h1 className="font-display text-2xl font-bold text-white">KYC verification</h1>
         <p className="text-sm text-slate-400">Review identity submissions and credit $5 bonus on approval.</p>
@@ -139,7 +139,7 @@ function AdminKycPage() {
           </Card>
         ))}
       </div>
-    </AdminShell>
+    </div>
   );
 }
 
