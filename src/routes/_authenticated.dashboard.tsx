@@ -267,7 +267,7 @@ function DashboardPage() {
                         <td className="px-4 py-3 text-muted-foreground">{format(new Date(l.created_at), "MMM d, yyyy")}</td>
                         <td className="px-4 py-3 text-right">
                           <Button asChild size="sm" variant="outline" className="rounded-full">
-                            <Link to="/listings/$id" params={{ id: l.id }}>View</Link>
+                            <Link to="/listings/$id" params={{ id: (l as any).slug ?? l.id }}>View</Link>
                           </Button>
                         </td>
                       </tr>
