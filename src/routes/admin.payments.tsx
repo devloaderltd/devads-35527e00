@@ -13,13 +13,15 @@ import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 export const Route = createFileRoute("/admin/payments")({ component: PaymentsPage });
 
 function PaymentsPage() {
-  const { data } = useQuery({
+  const paymentsQ = useQuery({
     queryKey: ["admin-payments"],
     queryFn: async () => {
-      const { data } = await supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(500);
+      const { data, error } = await supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(500);
+      if (error) throw new Error(error.message);
       return data ?? [];
     },
   });
+  const data = paymentsQ.data;
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
