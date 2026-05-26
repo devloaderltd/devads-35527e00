@@ -3,10 +3,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type Filters = { q?: string; category?: string; city?: string; country?: string; condition?: string };
 
-export const Route = createFileRoute("/api/public/cron/match-saved-searches")({
-  server: {
-    handlers: {
-      POST: async () => {
+const run = async () => {
         const { data: searches } = await supabaseAdmin
           .from("saved_searches").select("*").eq("notify", true);
         if (!searches?.length) return new Response(JSON.stringify({ ok: true, processed: 0 }), { headers: { "Content-Type": "application/json" } });
