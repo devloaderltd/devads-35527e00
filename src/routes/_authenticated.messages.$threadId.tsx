@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, ChevronLeft, CheckCheck } from "lucide-react";
+import { Send, ChevronLeft, CheckCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { listQuickReplies } from "@/lib/social.functions";
 
 export const Route = createFileRoute("/_authenticated/messages/$threadId")({
   component: ThreadView,
@@ -121,14 +123,28 @@ function ThreadView() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages?.length]);
 
+  const listQrFn = useServerFn(listQuickReplies);
+  const { data: customQr } = useQuery({
+    queryKey: ["quick-replies"],
+    enabled: !!user,
+    queryFn: () => listQrFn(),
+    staleTime: 60_000,
+  });
+
   const QUICK_REPLIES = useMemo(() => {
-    if (!thread) return [];
+    type QR = { label: string; body: string; custom: boolean };
+    if (!thread) return [] as QR[];
     const isSeller = thread.seller_id === user?.id;
     const sold = thread.listing?.status === "sold";
-    if (sold) return ["Sorry, this one is sold.", "I'll let you know if I have another.", "Thanks for the interest!"];
-    if (isSeller) return ["Yes, it's still available.", "Best price I can do.", "When can you pick it up?", "Want to see more photos?"];
-    return ["Is it still available?", "Can you do a better price?", "When can I pick it up?", "Where are you located?"];
-  }, [thread, user?.id]);
+    const defaults: string[] = sold
+      ? ["Sorry, this one is sold.", "I'll let you know if I have another.", "Thanks for the interest!"]
+      : isSeller
+      ? ["Yes, it's still available.", "Best price I can do.", "When can you pick it up?", "Want to see more photos?"]
+      : ["Is it still available?", "Can you do a better price?", "When can I pick it up?", "Where are you located?"];
+    const custom: QR[] = (customQr?.items ?? []).map((it) => ({ label: it.label, body: it.body, custom: true }));
+    const def: QR[] = defaults.map((d) => ({ label: d, body: d, custom: false }));
+    return [...custom, ...def];
+  }, [thread, user?.id, customQr]);
 
   const send = useMutation({
     mutationFn: async (text: string) => {
@@ -237,14 +253,20 @@ function ThreadView() {
       </div>
       <div className="border-t border-white/40 p-3">
         <div className="mb-2 flex flex-wrap gap-1.5">
-          {QUICK_REPLIES.map((q) => (
+          {QUICK_REPLIES.map((q, i) => (
             <button
-              key={q}
-              onClick={() => setBody(q)}
+              key={`${q.label}-${i}`}
+              onClick={() => setBody(q.body)}
               type="button"
-              className="rounded-full border border-white/50 bg-white/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur hover:bg-white hover:text-foreground"
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs backdrop-blur transition hover:bg-white hover:text-foreground ${
+                q.custom
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-white/50 bg-white/60 text-muted-foreground"
+              }`}
+              title={q.body}
             >
-              {q}
+              {q.custom && <Sparkles className="h-3 w-3" />}
+              {q.label}
             </button>
           ))}
         </div>

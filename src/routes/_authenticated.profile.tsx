@@ -21,6 +21,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { AccountSettingsCard } from "@/components/AccountSettingsCard";
 import { PanelShell } from "@/components/PanelShell";
+import { QuickRepliesManager } from "@/components/QuickRepliesManager";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -332,8 +333,9 @@ function ProfileEdit() {
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_400px]">
         <AccountSettingsCard />
+        <QuickRepliesManager />
       </div>
     </PanelShell>
   );

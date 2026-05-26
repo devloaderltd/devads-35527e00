@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart, CheckSquare } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart, CheckSquare, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ListingSparkline } from "@/components/ThreadSparkline";
@@ -30,6 +30,7 @@ type Row = {
   expires_at: string;
   view_count: number;
   bumped_at: string;
+  auto_renew: boolean;
   cities: { name: string; region: string; country: string } | null;
   listing_images: { url: string; sort_order: number }[];
   favCount?: number;
@@ -54,7 +55,7 @@ function MyListings() {
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("listings")
-        .select(`id, title, status, created_at, expires_at, view_count, bumped_at,
+        .select(`id, title, status, created_at, expires_at, view_count, bumped_at, auto_renew,
           cities(name, region, country),
           listing_images(url, sort_order)`)
         .eq("user_id", user!.id)
@@ -120,6 +121,14 @@ function MyListings() {
     toast.success("Renewed for 30 days");
     qc.invalidateQueries({ queryKey: ["my-listings"] });
   };
+
+  const toggleAutoRenew = async (id: string, next: boolean) => {
+    const { error } = await supabase.from("listings").update({ auto_renew: next }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(next ? "Auto-renew enabled" : "Auto-renew disabled");
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
 
   const expiringSoonList = useMemo(() => (data ?? []).filter(r => {
     if (r.status !== "active") return false;
@@ -292,6 +301,12 @@ function MyListings() {
                             <Sparkles className="mr-2 h-4 w-4" /> Mark as sold
                           </DropdownMenuItem>
                         )}
+                        {l.status === "active" && (
+                          <DropdownMenuItem onClick={() => toggleAutoRenew(l.id, !l.auto_renew)}>
+                            <Zap className={`mr-2 h-4 w-4 ${l.auto_renew ? "text-primary" : ""}`} />
+                            {l.auto_renew ? "Disable auto-renew" : "Enable auto-renew"}
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => remove(l.id)} className="text-red-600 focus:text-red-600">
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -321,6 +336,11 @@ function MyListings() {
                   )}
                   {l.status === "sold" && (
                     <Badge className="rounded-full bg-slate-200 text-slate-800 hover:bg-slate-200">Sold</Badge>
+                  )}
+                  {l.auto_renew && l.status === "active" && (
+                    <Badge className="gap-1 rounded-full bg-primary/10 text-primary hover:bg-primary/10">
+                      <Zap className="h-3 w-3" /> Auto
+                    </Badge>
                   )}
                   <span className="ml-auto text-muted-foreground">
                     {formatDistanceToNow(new Date(l.created_at), { addSuffix: true })}
