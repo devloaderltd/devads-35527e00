@@ -16,9 +16,9 @@ function ReportsPage() {
     queryFn: async () => {
       const { data: rs } = await supabase.from("reports").select("*").order("created_at", { ascending: false }).limit(200);
       if (!rs) return [];
-      const ids = [...new Set(rs.map(r => r.listing_id))];
+      const ids = [...new Set(rs.map(r => r.listing_id).filter((x): x is string => !!x))];
       const { data: listings } = ids.length ? await supabase.from("listings").select("id, title, status").in("id", ids) : { data: [] as { id: string; title: string; status: string }[] };
-      return rs.map(r => ({ ...r, listing: listings?.find(l => l.id === r.listing_id) }));
+      return rs.map(r => ({ ...r, listing: r.listing_id ? listings?.find(l => l.id === r.listing_id) : null }));
     },
   });
 
