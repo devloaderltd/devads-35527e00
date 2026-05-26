@@ -260,7 +260,16 @@ function MyListings() {
             {f} · {counts[f]}
           </button>
         ))}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search your listings…"
+              className="h-8 w-44 rounded-full bg-white/70 pl-8 text-xs backdrop-blur sm:w-56"
+            />
+          </div>
           <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
             <SelectTrigger className="h-8 w-44 rounded-full bg-white/70 text-xs backdrop-blur">
               <SelectValue />
