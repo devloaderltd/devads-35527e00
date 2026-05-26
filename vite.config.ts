@@ -11,9 +11,9 @@ export default isVercel
   : defineConfig({
       tanstackStart: { server: { entry: "server" } },
       vite: {
-        ssr: { noExternal: true },
+        ssr: { noExternal: ["h3-v2"] },
         environments: {
-          ssr: { resolve: { noExternal: true } },
+          ssr: { resolve: { noExternal: ["h3-v2"] } },
         },
       },
     });
