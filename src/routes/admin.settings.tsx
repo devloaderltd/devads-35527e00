@@ -57,6 +57,8 @@ function SettingsPage() {
     maintenance_message: s.maintenance_message,
     site_name: s.site_name,
     support_email: s.support_email,
+    logo_url: (s as any).logo_url ?? "",
+    favicon_url: (s as any).favicon_url ?? "",
   } : null, [s]);
 
   const [form, setForm] = useState<FormState | null>(null);
