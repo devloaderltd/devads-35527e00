@@ -1315,3 +1315,87 @@ export const getFunnelStats = createServerFn({ method: "POST" })
       days: data.days,
     };
   });
+
+export const getDashboardOverview = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { days?: number }) => ({
+    days: [7, 30, 90].includes(Math.floor(input.days ?? 30)) ? Math.floor(input.days ?? 30) : 30,
+  }))
+  .handler(async ({ data }) => {
+    const now = Date.now();
+    const since7d = new Date(now - 7 * 86400000).toISOString();
+    const sinceRange = new Date(now - data.days * 86400000).toISOString();
+
+    const [
+      catRes,
+      listingsByStatus,
+      listingsByCategory,
+      listingsDaily,
+      usersDaily,
+      revenueDaily,
+      totalsRes,
+      newUsers7dRes,
+      totalRevenueRes,
+      openReportsRes,
+    ] = await Promise.all([
+      supabaseAdmin.from("categories").select("id, name"),
+      supabaseAdmin.from("listings").select("status"),
+      supabaseAdmin.from("listings").select("category_id"),
+      supabaseAdmin.from("listings").select("created_at").gte("created_at", sinceRange),
+      supabaseAdmin.from("profiles").select("created_at").gte("created_at", sinceRange),
+      supabaseAdmin.from("payments").select("amount, created_at").eq("status", "completed").gte("created_at", sinceRange),
+      supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", since7d),
+      supabaseAdmin.from("payments").select("amount").eq("status", "completed"),
+      supabaseAdmin.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+    ]);
+
+    const sinceMs = new Date(sinceRange).getTime();
+    const dayMs = 86400000;
+    const days: { date: string; users: number; listings: number; revenue: number }[] = [];
+    for (let i = 0; i < data.days; i++) {
+      const d = new Date(sinceMs + i * dayMs);
+      days.push({
+        date: d.toISOString().slice(0, 10),
+        users: 0,
+        listings: 0,
+        revenue: 0,
+      });
+    }
+    const bumpDay = (createdAt: string, key: "users" | "listings", amount = 1) => {
+      const t = new Date(createdAt).getTime();
+      const idx = Math.floor((t - sinceMs) / dayMs);
+      if (idx >= 0 && idx < days.length) (days[idx] as any)[key] += amount;
+    };
+    (usersDaily.data ?? []).forEach((r) => bumpDay(r.created_at, "users"));
+    (listingsDaily.data ?? []).forEach((r) => bumpDay(r.created_at, "listings"));
+    (revenueDaily.data ?? []).forEach((r) => {
+      const t = new Date(r.created_at).getTime();
+      const idx = Math.floor((t - sinceMs) / dayMs);
+      if (idx >= 0 && idx < days.length) days[idx].revenue += Number(r.amount ?? 0);
+    });
+
+    const catNameById = new Map((catRes.data ?? []).map((c) => [c.id, c.name]));
+    const catMap = new Map<string, number>();
+    (listingsByCategory.data ?? []).forEach((l) => {
+      const name = catNameById.get(l.category_id) ?? "Other";
+      catMap.set(name, (catMap.get(name) ?? 0) + 1);
+    });
+    const statusMap = new Map<string, number>();
+    (listingsByStatus.data ?? []).forEach((l) => statusMap.set(l.status, (statusMap.get(l.status) ?? 0) + 1));
+
+    const totalRevenue = (totalRevenueRes.data ?? []).reduce((s, p) => s + Number(p.amount ?? 0), 0);
+
+    return {
+      days,
+      byCategory: [...catMap.entries()].map(([name, value]) => ({ name, value })),
+      byStatus: [...statusMap.entries()].map(([name, value]) => ({ name, value })),
+      totals: {
+        totalUsers: totalsRes.count ?? 0,
+        newUsers7d: newUsers7dRes.count ?? 0,
+        activeListings: statusMap.get("active") ?? 0,
+        totalRevenue,
+        openReports: openReportsRes.count ?? 0,
+      },
+    };
+  });
