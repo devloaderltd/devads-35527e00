@@ -8,9 +8,10 @@ import { PromoteDialog } from "@/components/PromoteDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart, CheckSquare, Zap } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart, CheckSquare, Zap, Copy, Search } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ListingSparkline } from "@/components/ThreadSparkline";
@@ -45,6 +46,7 @@ function MyListings() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("newest");
+  const [query, setQuery] = useState("");
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const toggle = (id: string) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -89,6 +91,8 @@ function MyListings() {
   const visible = useMemo(() => {
     let rows = [...(data ?? [])];
     if (filter !== "all") rows = rows.filter(r => r.status === filter);
+    const q = query.trim().toLowerCase();
+    if (q) rows = rows.filter(r => r.title.toLowerCase().includes(q));
     rows.sort((a, b) => {
       if (sort === "views") return b.view_count - a.view_count;
       if (sort === "favorites") return (b.favCount ?? 0) - (a.favCount ?? 0);
@@ -96,7 +100,7 @@ function MyListings() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     return rows;
-  }, [data, filter, sort]);
+  }, [data, filter, sort, query]);
 
   const remove = async (id: string) => {
     if (!confirm("Delete this listing? This cannot be undone.")) return;
@@ -127,6 +131,30 @@ function MyListings() {
     const { error } = await supabase.from("listings").update({ auto_renew: next }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success(next ? "Auto-renew enabled" : "Auto-renew disabled");
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
+  const duplicate = async (id: string) => {
+    if (!user) return;
+    const { data: src, error: e1 } = await supabase
+      .from("listings")
+      .select("title, description, condition, item_age, price, is_negotiable, phone, whatsapp, category_id, city_id, auto_renew")
+      .eq("id", id)
+      .single();
+    if (e1 || !src) return toast.error(e1?.message ?? "Could not load listing");
+    const { data: imgs } = await supabase.from("listing_images").select("url, sort_order").eq("listing_id", id);
+    const { data: inserted, error: e2 } = await supabase
+      .from("listings")
+      .insert({ ...src, title: `${src.title} (copy)`, user_id: user.id, status: "draft" })
+      .select("id")
+      .single();
+    if (e2 || !inserted) return toast.error(e2?.message ?? "Could not duplicate");
+    if (imgs?.length) {
+      await supabase.from("listing_images").insert(
+        imgs.map((im) => ({ listing_id: inserted.id, url: im.url, sort_order: im.sort_order }))
+      );
+    }
+    toast.success("Duplicated as draft");
     qc.invalidateQueries({ queryKey: ["my-listings"] });
   };
 
@@ -232,7 +260,16 @@ function MyListings() {
             {f} · {counts[f]}
           </button>
         ))}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search your listings…"
+              className="h-8 w-44 rounded-full bg-white/70 pl-8 text-xs backdrop-blur sm:w-56"
+            />
+          </div>
           <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
             <SelectTrigger className="h-8 w-44 rounded-full bg-white/70 text-xs backdrop-blur">
               <SelectValue />
@@ -291,6 +328,9 @@ function MyListings() {
                           <Link to="/post" search={{ edit: l.id } as never}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit
                           </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => duplicate(l.id)}>
+                          <Copy className="mr-2 h-4 w-4" /> Duplicate
                         </DropdownMenuItem>
                         {(isExpired || expiringSoon) && (
                           <DropdownMenuItem onClick={() => renew(l.id)}>

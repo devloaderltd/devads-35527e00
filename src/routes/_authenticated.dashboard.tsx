@@ -24,6 +24,11 @@ import { RecentNotificationsCard } from "@/components/dashboard/RecentNotificati
 import { RecentMessagesCard } from "@/components/dashboard/RecentMessagesCard";
 import { WalletPanel } from "@/components/dashboard/WalletPanel";
 import { ListingRowActions } from "@/components/dashboard/ListingRowActions";
+import { FunnelCard } from "@/components/dashboard/FunnelCard";
+import { InsightsCard } from "@/components/dashboard/InsightsCard";
+import { ReferralCard } from "@/components/dashboard/ReferralCard";
+import { toCSV, downloadCSV } from "@/lib/csv";
+import { Download } from "lucide-react";
 
 const dashboardSearchSchema = z.object({
   tab: z.enum(["analytics", "performance", "wallet", "listings", "reviews"]).optional(),
@@ -171,10 +176,12 @@ function DashboardPage() {
             <RecentNotificationsCard userId={user?.id} />
             <RecentMessagesCard userId={user?.id} />
           </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <InsightsCard listings={stats?.listings ?? []} totals={{}} />
             <OnboardingChecklist userId={user?.id} />
-            <ExpiringSoonCard userId={user?.id} />
+            <ReferralCard userId={user?.id} />
           </div>
+          <ExpiringSoonCard userId={user?.id} />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
           <ChartCard title="Listings created (last 30 days)">
@@ -242,7 +249,28 @@ function DashboardPage() {
           <WalletPanel userId={user?.id} />
         </TabsContent>
 
-        <TabsContent value="listings" className="mt-4">
+        <TabsContent value="listings" className="mt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">{(stats?.listings ?? []).length} listing{(stats?.listings ?? []).length === 1 ? "" : "s"}</div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full bg-white/70 backdrop-blur"
+              disabled={!stats?.listings?.length}
+              onClick={() => {
+                const rows = (stats?.listings ?? []).map((l) => ({
+                  id: l.id,
+                  title: l.title,
+                  status: l.status,
+                  views: l.view_count ?? 0,
+                  created_at: format(new Date(l.created_at), "yyyy-MM-dd"),
+                }));
+                downloadCSV(`listings-${format(new Date(), "yyyy-MM-dd")}.csv`, toCSV(rows));
+              }}
+            >
+              <Download className="mr-1 h-4 w-4" /> Export CSV
+            </Button>
+          </div>
           <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -362,6 +390,10 @@ function PerformancePanel() {
         <KpiCard icon={<MessageSquare className="h-5 w-5" />} label="Messages" value={totals.message ?? 0} />
         <KpiCard icon={<Heart className="h-5 w-5" />} label="Favorites" value={totals.favorite ?? 0} />
         <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="Conversion" value={`${conv}%`} />
+      </div>
+
+      <div className="mt-4">
+        <FunnelCard totals={totals} />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
