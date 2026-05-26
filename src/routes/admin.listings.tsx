@@ -25,15 +25,17 @@ function ListingsPage() {
   const bulkFn = useServerFn(bulkUpdateListings);
   const promoFn = useServerFn(grantPromotion);
 
-  const { data } = useQuery({
+  const listingsQ = useQuery({
     queryKey: ["admin-listings", statusFilter],
     queryFn: async () => {
       let qy = supabase.from("listings").select("id, title, status, view_count, created_at, user_id").order("created_at", { ascending: false }).limit(500);
       if (statusFilter !== "all") qy = qy.eq("status", statusFilter as "active" | "sold" | "removed" | "expired");
-      const { data } = await qy;
+      const { data, error } = await qy;
+      if (error) throw new Error(error.message);
       return data ?? [];
     },
   });
+  const data = listingsQ.data;
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
