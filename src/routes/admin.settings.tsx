@@ -286,7 +286,7 @@ function AssetUploader({
   return (
     <div>
       <Label className="text-slate-300">{label}</Label>
-      <div className="mt-1 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-2">
+      <div className="mt-1 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-2">
         <div className="grid h-14 w-14 flex-shrink-0 place-items-center overflow-hidden rounded-md bg-slate-950/40">
           {value ? (
             <img src={value} alt={label} className="h-full w-full object-contain" />
