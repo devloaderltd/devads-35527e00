@@ -21,8 +21,8 @@ export function ListingRowActions({ listing, onChange }: { listing: { id: string
 
   const toggleStatus = useMutation({
     mutationFn: async () => {
-      const next = listing.status === "active" ? "paused" : "active";
-      const { error } = await supabase.from("listings").update({ status: next }).eq("id", listing.id);
+      const next = listing.status === "active" ? "draft" : "active";
+      const { error } = await supabase.from("listings").update({ status: next as "active" | "draft" }).eq("id", listing.id);
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Status updated"); qc.invalidateQueries({ queryKey: ["dashboard-stats"] }); onChange?.(); },
@@ -42,22 +42,22 @@ export function ListingRowActions({ listing, onChange }: { listing: { id: string
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-1">
-      <Button size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs" onClick={() => bump.mutate()} disabled={bump.isPending} title="Bump to top">
+      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => bump.mutate()} disabled={bump.isPending} title="Bump to top">
         <TrendingUp className="h-3.5 w-3.5" />
       </Button>
-      <Button size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs" onClick={() => setPromoteOpen(true)} title="Promote">
-        <Sparkles className="h-3.5 w-3.5" />
-      </Button>
-      <Button size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs" onClick={() => toggleStatus.mutate()} disabled={toggleStatus.isPending} title={isActive ? "Pause" : "Activate"}>
+      <span title="Promote">
+        <PromoteDialog listingId={listing.id} />
+      </span>
+      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => toggleStatus.mutate()} disabled={toggleStatus.isPending} title={isActive ? "Pause" : "Activate"}>
         {isActive ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
       </Button>
-      <Button asChild size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs" title="View / edit">
+      <Button asChild size="sm" variant="ghost" className="h-7 px-2" title="View">
         <Link to="/listings/$id" params={{ id: listing.slug ?? listing.id }}><Pencil className="h-3.5 w-3.5" /></Link>
       </Button>
-      <Button size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs text-rose-600 hover:text-rose-700" onClick={() => { if (confirm("Delete this listing?")) del.mutate(); }} disabled={del.isPending} title="Delete">
+      <Button size="sm" variant="ghost" className="h-7 px-2 text-rose-600 hover:text-rose-700" onClick={() => { if (confirm("Delete this listing?")) del.mutate(); }} disabled={del.isPending} title="Delete">
         <Trash2 className="h-3.5 w-3.5" />
       </Button>
-      <PromoteDialog open={promoteOpen} onOpenChange={setPromoteOpen} listingId={listing.id} />
     </div>
   );
 }
+
