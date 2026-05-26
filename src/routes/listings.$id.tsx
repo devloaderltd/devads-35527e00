@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   MapPin, Calendar, Tag, ChevronLeft, ChevronRight, MessageSquare,
-  Share2, Eye, Package, Phone, Mail, Lock, MessageCircle,
+  Share2, Eye, Package, Phone, Lock, MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
@@ -504,7 +504,7 @@ function ListingDetail() {
                   className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm text-muted-foreground hover:bg-white"
                 >
                   <Lock className="h-4 w-4" />
-                  Sign in to see phone & email
+                  Sign in to see contact info
                 </Link>
               ) : (
                 <div className="space-y-1.5">
@@ -540,20 +540,6 @@ function ListingDetail() {
                       <MessageCircle className="h-4 w-4 text-[#25D366]" />
                       WhatsApp: {(listing as any).whatsapp}
                     </a>
-                  )}
-                  {contact?.email ? (
-                    <a
-                      href={`mailto:${contact.email}?subject=${encodeURIComponent("Re: " + listing.title)}`}
-                      className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
-                    >
-                      <Mail className="h-4 w-4 text-primary" />
-                      <span className="truncate">{contact.email}</span>
-                    </a>
-                  ) : (
-                    <div className="flex items-center gap-2 rounded-xl bg-white/40 px-3 py-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      {contact ? "Email not available" : "Loading…"}
-                    </div>
                   )}
                 </div>
               )}

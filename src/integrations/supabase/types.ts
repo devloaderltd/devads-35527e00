@@ -1473,6 +1473,13 @@ export type Database = {
         Args: { _note: string; _submission_id: string }
         Returns: undefined
       }
+      reveal_listing_contact: {
+        Args: { _listing_id: string }
+        Returns: {
+          phone: string
+          whatsapp: string
+        }[]
+      }
     }
     Enums: {
       app_role: "user" | "moderator" | "admin"

@@ -1,42 +1,42 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /**
- * Returns the seller's email + phone for a given listing.
- * Requires the caller to be signed in (anti-scraping protection).
+ * Returns the seller's phone + whatsapp for a given listing.
+ * Routes through the `reveal_listing_contact` SECURITY DEFINER RPC so the
+ * reveal is logged in `listing_events` and column-level grants stay locked
+ * down for anonymous visitors. Email is intentionally not returned — buyers
+ * should reach sellers via the in-app message thread.
  */
 export const getSellerContact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z.object({ listingId: z.string().min(1).max(120) }).parse(input),
   )
-  .handler(async ({ data }) => {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.listingId);
-    const { data: listing, error: lerr } = await supabaseAdmin
-      .from("listings")
-      .select("user_id, status, phone, whatsapp")
-      .eq(isUuid ? "id" : "slug", data.listingId)
-      .maybeSingle();
-    if (lerr) throw new Error(lerr.message);
-    if (!listing || listing.status !== "active") {
-      return { email: null, phone: null, whatsapp: null };
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    // Resolve slug → id if needed
+    let listingId = data.listingId;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(listingId);
+    if (!isUuid) {
+      const { data: row } = await supabase
+        .from("listings")
+        .select("id")
+        .eq("slug", listingId)
+        .maybeSingle();
+      if (!row) return { phone: null, whatsapp: null };
+      listingId = row.id;
     }
 
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("phone")
-      .eq("id", listing.user_id)
-      .maybeSingle();
-
-    const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(
-      listing.user_id,
-    );
-
+    const { data: rows, error } = await supabase.rpc("reveal_listing_contact", {
+      _listing_id: listingId,
+    });
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(rows) ? rows[0] : rows;
     return {
-      email: userInfo?.user?.email ?? null,
-      phone: listing.phone ?? profile?.phone ?? null,
-      whatsapp: listing.whatsapp ?? null,
+      phone: row?.phone ?? null,
+      whatsapp: row?.whatsapp ?? null,
     };
   });

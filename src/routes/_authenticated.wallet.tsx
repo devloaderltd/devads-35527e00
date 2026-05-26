@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getWallet, createTopupInvoice } from "@/lib/wallet.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PanelShell } from "@/components/PanelShell";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({ meta: [{ title: "Wallet — CallEscort24" }, { name: "robots", content: "noindex" }] }),
@@ -21,6 +22,7 @@ function WalletPage() {
   const fetchWallet = useServerFn(getWallet);
   const topupFn = useServerFn(createTopupInvoice);
   const qc = useQueryClient();
+  const { user } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ["wallet"],
@@ -34,17 +36,18 @@ function WalletPage() {
 
   // Realtime updates on wallet + topups
   useEffect(() => {
+    if (!user) return;
     const ch = supabase
-      .channel("wallet-rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "wallets" }, () => {
+      .channel(`wallet-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "wallets", filter: `user_id=eq.${user.id}` }, () => {
         qc.invalidateQueries({ queryKey: ["wallet"] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "crypto_topups" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "crypto_topups", filter: `user_id=eq.${user.id}` }, () => {
         qc.invalidateQueries({ queryKey: ["wallet"] });
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [qc]);
+  }, [qc, user]);
 
   // Toast on success return
   useEffect(() => {
