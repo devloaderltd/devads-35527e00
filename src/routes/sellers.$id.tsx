@@ -13,6 +13,7 @@ import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 import { SellerFollowButton } from "@/components/SellerFollowButton";
 import { ShareSheet } from "@/components/ShareSheet";
 import { RatingDistribution } from "@/components/seller/RatingDistribution";
+import { BrandLoader } from "@/components/BrandLoader";
 
 
 
