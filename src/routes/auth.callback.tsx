@@ -12,6 +12,7 @@ export const Route = createFileRoute("/auth/callback")({
       redirect: typeof r === "string" && r.startsWith("/") && !r.startsWith("//") ? r : "/",
       error: typeof error === "string" ? error : undefined,
       error_description: typeof error_description === "string" ? error_description : undefined,
+      verified: search.verified === "1" || search.verified === 1 ? true : false,
     };
   },
   head: () => ({ meta: [{ title: "Signing you in…" }] }),
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/auth/callback")({
 });
 
 function AuthCallbackPage() {
-  const { redirect, error, error_description } = Route.useSearch();
+  const { redirect, error, error_description, verified } = Route.useSearch();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,10 +31,10 @@ function AuthCallbackPage() {
     }
 
     let cancelled = false;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return;
       if (session) {
-        toast.success("Signed in!");
+        toast.success(verified ? "Email verified — welcome!" : "Signed in!");
         navigate({ to: redirect, replace: true });
       }
     });
