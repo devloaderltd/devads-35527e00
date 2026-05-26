@@ -8,6 +8,7 @@ import { CreditCard } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 
 export const Route = createFileRoute("/admin/payments")({ component: PaymentsPage });
 
