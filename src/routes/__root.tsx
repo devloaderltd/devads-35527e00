@@ -259,3 +259,27 @@ function AuthInvalidator() {
   }, [router, qc]);
   return null;
 }
+
+function DynamicFavicon() {
+  const fetchSettings = useServerFn(getSiteSettings);
+  const { data } = useQuery({
+    queryKey: ["site-settings-public"],
+    queryFn: () => fetchSettings(),
+    staleTime: 60_000,
+  });
+  const url = (data?.settings as any)?.favicon_url as string | undefined;
+  useEffect(() => {
+    if (typeof document === "undefined" || !url) return;
+    const selectors = ['link[rel="icon"]', 'link[rel="apple-touch-icon"]'];
+    const originals: Array<{ el: HTMLLinkElement; href: string }> = [];
+    for (const sel of selectors) {
+      document.querySelectorAll<HTMLLinkElement>(sel).forEach((el) => {
+        originals.push({ el, href: el.href });
+        el.href = url;
+      });
+    }
+    return () => { originals.forEach(({ el, href }) => { el.href = href; }); };
+  }, [url]);
+  return null;
+}
+
