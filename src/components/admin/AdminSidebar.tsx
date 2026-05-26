@@ -29,8 +29,6 @@ const groups = [
       { title: "KYC verification", url: "/admin/kyc", icon: BadgeCheck, badgeKey: "kyc" as const },
       { title: "Reports", url: "/admin/reports", icon: Flag, badgeKey: "reports" as const },
       { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert, badgeKey: "moderation" as const },
-      { title: "Reports", url: "/admin/reports", icon: Flag },
-      { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert },
       { title: "Reviews", url: "/admin/reviews", icon: Star },
       { title: "Threads", url: "/admin/threads", icon: MessagesSquare },
     ],
