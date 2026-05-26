@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, ChevronLeft, CheckCheck } from "lucide-react";
+import { Send, ChevronLeft, CheckCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { listQuickReplies } from "@/lib/social.functions";
 
 export const Route = createFileRoute("/_authenticated/messages/$threadId")({
   component: ThreadView,
