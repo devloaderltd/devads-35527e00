@@ -1144,3 +1144,173 @@ export const adminPeekTable = createServerFn({ method: "POST" })
   });
 
 export const safeTablesList = Object.keys(SAFE_TABLES);
+
+/* ---------------- Admin shell helpers (badges/search/activity/health) ---------------- */
+
+export const getAdminBadges = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const [kyc, reports, topups, broadcasts, mod] = await Promise.all([
+      supabaseAdmin.from("kyc_submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabaseAdmin.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+      supabaseAdmin.from("crypto_topups").select("id", { count: "exact", head: true }).in("status", ["waiting", "confirming"]),
+      supabaseAdmin.from("admin_broadcasts").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 86400000).toISOString()),
+      supabaseAdmin.from("listings").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    ]);
+    return {
+      kyc: kyc.count ?? 0,
+      reports: reports.count ?? 0,
+      topups: topups.count ?? 0,
+      broadcasts: broadcasts.count ?? 0,
+      moderation: mod.count ?? 0,
+    };
+  });
+
+export const searchAdmin = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { q: string }) => ({ q: (input.q ?? "").slice(0, 80).trim() }))
+  .handler(async ({ data }) => {
+    if (!data.q) return { users: [], listings: [], payments: [] };
+    const like = `%${data.q.replace(/[%_]/g, "")}%`;
+    const [users, listings, payments] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id, display_name").ilike("display_name", like).limit(6),
+      supabaseAdmin.from("listings").select("id, title, slug, status").ilike("title", like).limit(6),
+      supabaseAdmin.from("payments").select("id, amount, status, provider_session_id").ilike("provider_session_id", like).limit(4),
+    ]);
+    return {
+      users: users.data ?? [],
+      listings: listings.data ?? [],
+      payments: payments.data ?? [],
+    };
+  });
+
+export const getAdminActivityFeed = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { types?: string[]; q?: string; limit?: number; before?: string | null }) => ({
+    types: Array.isArray(input.types) ? input.types.slice(0, 12) : [],
+    q: (input.q ?? "").slice(0, 80).trim(),
+    limit: Math.min(100, Math.max(10, Math.floor(input.limit ?? 40))),
+    before: input.before ?? null,
+  }))
+  .handler(async ({ data }) => {
+    const before = data.before ? new Date(data.before).toISOString() : new Date().toISOString();
+    const want = (k: string) => data.types.length === 0 || data.types.includes(k);
+    const N = data.limit;
+    const tasks: Promise<{ data: Record<string, unknown>[] | null }>[] = [];
+    const keys: string[] = [];
+    if (want("signup")) { keys.push("signup"); tasks.push(supabaseAdmin.from("profiles").select("id, display_name, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
+    if (want("listing")) { keys.push("listing"); tasks.push(supabaseAdmin.from("listings").select("id, title, slug, user_id, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
+    if (want("payment")) { keys.push("payment"); tasks.push(supabaseAdmin.from("payments").select("id, amount, promotion_type, status, user_id, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
+    if (want("topup")) { keys.push("topup"); tasks.push(supabaseAdmin.from("crypto_topups").select("id, price_amount_usd, status, user_id, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
+    if (want("report")) { keys.push("report"); tasks.push(supabaseAdmin.from("reports").select("id, reason, status, reporter_id, listing_id, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
+    if (want("kyc")) { keys.push("kyc"); tasks.push(supabaseAdmin.from("kyc_submissions").select("id, user_id, status, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
+    if (want("broadcast")) { keys.push("broadcast"); tasks.push(supabaseAdmin.from("admin_broadcasts").select("id, title, audience, recipient_count, actor_id, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
+    if (want("audit")) { keys.push("audit"); tasks.push(supabaseAdmin.from("audit_log").select("id, action, target_type, target_id, actor_id, created_at").lt("created_at", before).order("created_at", { ascending: false }).limit(N) as never); }
+
+    const results = await Promise.all(tasks);
+    type Item = { kind: string; at: string; id: string; payload: Record<string, unknown> };
+    const items: Item[] = [];
+    results.forEach((res, i) => {
+      const kind = keys[i];
+      (res.data ?? []).forEach((r) => {
+        items.push({ kind, at: String(r.created_at), id: String(r.id ?? ""), payload: r });
+      });
+    });
+
+    let filtered = items;
+    if (data.q) {
+      const q = data.q.toLowerCase();
+      filtered = items.filter((it) => JSON.stringify(it.payload).toLowerCase().includes(q));
+    }
+    filtered.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+    const sliced = filtered.slice(0, N);
+    const nextCursor = sliced.length === N ? sliced[sliced.length - 1].at : null;
+    return { items: sliced, nextCursor };
+  });
+
+export const getAdminHealth = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const start = Date.now();
+    const ping = await supabaseAdmin.from("site_settings").select("id").limit(1);
+    const dbMs = Date.now() - start;
+    const [errors24h, lastBroadcast, lastAudit] = await Promise.all([
+      supabaseAdmin.from("client_error_logs").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 86400000).toISOString()),
+      supabaseAdmin.from("admin_broadcasts").select("created_at").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabaseAdmin.from("audit_log").select("created_at, action").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    return {
+      db: { ok: !ping.error, latencyMs: dbMs, error: ping.error?.message ?? null },
+      errors24h: errors24h.count ?? 0,
+      lastBroadcastAt: lastBroadcast.data?.created_at ?? null,
+      lastAuditAt: lastAudit.data?.created_at ?? null,
+      lastAuditAction: lastAudit.data?.action ?? null,
+      checkedAt: new Date().toISOString(),
+    };
+  });
+
+export const getDashboardSparklines = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { days?: number }) => ({
+    days: [7, 30, 90].includes(Math.floor(input.days ?? 30)) ? Math.floor(input.days ?? 30) : 30,
+  }))
+  .handler(async ({ data }) => {
+    const now = Date.now();
+    const since = new Date(now - data.days * 86400000).toISOString();
+    const prior = new Date(now - 2 * data.days * 86400000).toISOString();
+    const [users, listings, payments, reports] = await Promise.all([
+      supabaseAdmin.from("profiles").select("created_at").gte("created_at", prior),
+      supabaseAdmin.from("listings").select("created_at, status").gte("created_at", prior),
+      supabaseAdmin.from("payments").select("amount, status, created_at").gte("created_at", prior).eq("status", "completed"),
+      supabaseAdmin.from("reports").select("created_at, status").gte("created_at", prior),
+    ]);
+    const sinceMs = new Date(since).getTime();
+    const priorMs = new Date(prior).getTime();
+    const bucket = (rows: { created_at: string }[]) => {
+      const arr = new Array(data.days).fill(0);
+      rows.forEach((r) => {
+        const t = new Date(r.created_at).getTime();
+        if (t < sinceMs) return;
+        const idx = Math.floor((t - sinceMs) / 86400000);
+        if (idx >= 0 && idx < data.days) arr[idx]++;
+      });
+      return arr;
+    };
+    const inCur = <T extends { created_at: string }>(rows: T[]) => rows.filter((r) => new Date(r.created_at).getTime() >= sinceMs);
+    const inPrior = <T extends { created_at: string }>(rows: T[]) => rows.filter((r) => {
+      const t = new Date(r.created_at).getTime();
+      return t < sinceMs && t >= priorMs;
+    });
+
+    const sumAmt = (rows: { amount: number | string }[]) => rows.reduce((s, p) => s + Number(p.amount ?? 0), 0);
+
+    return {
+      users: { current: inCur(users.data ?? []).length, prior: inPrior(users.data ?? []).length, spark: bucket(inCur(users.data ?? [])) },
+      listings: { current: inCur(listings.data ?? []).length, prior: inPrior(listings.data ?? []).length, spark: bucket(inCur(listings.data ?? [])) },
+      revenue: { current: sumAmt(inCur(payments.data ?? []) as never), prior: sumAmt(inPrior(payments.data ?? []) as never), spark: bucket(inCur(payments.data ?? [])) },
+      reports: { current: inCur(reports.data ?? []).length, prior: inPrior(reports.data ?? []).length, spark: bucket(inCur(reports.data ?? [])) },
+    };
+  });
+
+export const getFunnelStats = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { days?: number }) => ({
+    days: [7, 30, 90].includes(Math.floor(input.days ?? 30)) ? Math.floor(input.days ?? 30) : 30,
+  }))
+  .handler(async ({ data }) => {
+    const since = new Date(Date.now() - data.days * 86400000).toISOString();
+    const [users, listings, payments] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id, created_at").gte("created_at", since),
+      supabaseAdmin.from("listings").select("user_id, created_at"),
+      supabaseAdmin.from("payments").select("user_id, status, created_at").eq("status", "completed"),
+    ]);
+    const cohort = new Set((users.data ?? []).map((u) => u.id));
+    const posters = new Set((listings.data ?? []).filter((l) => cohort.has(l.user_id)).map((l) => l.user_id));
+    const payers = new Set((payments.data ?? []).filter((p) => cohort.has(p.user_id)).map((p) => p.user_id));
+    return {
+      signups: cohort.size,
+      posted: posters.size,
+      paid: payers.size,
+      days: data.days,
+    };
+  });
