@@ -1,28 +1,16 @@
-## Plan: Finish email infrastructure & branded auth templates
+## Goal
+Remove the leftover `https://devads.lovable.app` reference from the auth email preview so previews show your real domain `callescort.devloader.com`.
 
-Domain `notify.callescort.devloader.com` is verified ✅. Current preview crashes with "Cannot find module '@lovable.dev/email-js'" because the queue processor route was created but its dependencies were never installed and the rest of the email infra (DB tables, RPCs, cron) is partially set up.
+## Findings
+- Live auth emails (`src/routes/lovable/email/auth/webhook.ts`) already use `ROOT_DOMAIN = "callescort.devloader.com"` for `siteUrl`, and `confirmationUrl` comes from Supabase. No `devads` reference there.
+- The only remaining `devads.lovable.app` lives in the preview sample data:
+  - `src/routes/lovable/email/auth/preview.ts` → `const SAMPLE_PROJECT_URL = "https://devads.lovable.app"`
+  This URL is only used to render dashboard previews (sample buttons/links), not for actual sends.
 
-### Steps
+Note: you wrote `callescort.devlosder.com` — assuming a typo for the existing domain `callescort.devloader.com`. Confirm if different.
 
-1. **Install missing npm packages**
-   - `@lovable.dev/email-js`, `@lovable.dev/webhooks-js`, `@react-email/components`, `react-email`
-   - Fixes the runtime error breaking the preview right now.
+## Change
+Edit `src/routes/lovable/email/auth/preview.ts`:
+- `SAMPLE_PROJECT_URL` → `"https://callescort.devloader.com"`
 
-2. **Run `setup_email_infra`** (idempotent)
-   - Ensures pgmq queues, `enqueue_email` / `read_email_batch` / `delete_email` / `move_to_dlq` RPCs, `email_send_log`, `email_send_state`, `suppressed_emails`, `email_unsubscribe_tokens`, vault secret, and `process-email-queue` pg_cron job all exist and point at the correct app URL.
-
-3. **Scaffold auth email templates** via `scaffold_auth_email_templates`
-   - Creates `auth-email-hook` server route (queue-based) and 6 React Email templates: signup confirmation, magic link, password recovery, invite, email change, reauthentication.
-
-4. **Brand the 6 auth email templates** to match CallEscort24
-   - Read brand tokens from `src/styles.css`
-   - Apply: white body background (#ffffff hard rule), brand accent buttons, rounded corners, system font stack, footer with site name + tagline
-   - Consistent header logo/wordmark, generous spacing, mobile-friendly
-
-5. **Verify** preview no longer errors; confirm pg_cron job + queue tables exist; tell user emails will flow via `notify.callescort.devloader.com`.
-
-### Out of scope
-- Transactional (app) emails — can be added next as a follow-up
-- Editing template copy beyond the standard auth flows
-
-Approve to proceed.
+No other files need changes. No DB / infra / template edits.
