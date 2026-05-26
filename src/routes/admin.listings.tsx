@@ -125,7 +125,7 @@ function ListingsPage() {
               </div>
             </div>
           ))}
-          {!filtered.length && (
+          {!listingsQ.isLoading && !listingsQ.isError && !filtered.length && (
             <EmptyState
               icon={Package}
               title={q || statusFilter !== "all" ? "No listings match" : "No listings yet"}
