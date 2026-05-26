@@ -165,6 +165,7 @@ function RootComponent() {
                   <MobileTabBar />
                   <CompareBar />
                   <OnboardingTour />
+                  <CommandPalette />
                 </MaintenanceGate>
               </div>
             )}
