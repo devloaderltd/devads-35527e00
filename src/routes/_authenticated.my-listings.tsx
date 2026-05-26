@@ -122,6 +122,14 @@ function MyListings() {
     qc.invalidateQueries({ queryKey: ["my-listings"] });
   };
 
+  const toggleAutoRenew = async (id: string, next: boolean) => {
+    const { error } = await supabase.from("listings").update({ auto_renew: next }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(next ? "Auto-renew enabled" : "Auto-renew disabled");
+    qc.invalidateQueries({ queryKey: ["my-listings"] });
+  };
+
+
   const expiringSoonList = useMemo(() => (data ?? []).filter(r => {
     if (r.status !== "active") return false;
     const days = (new Date(r.expires_at).getTime() - Date.now()) / 86400000;
