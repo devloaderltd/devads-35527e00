@@ -1,11 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Wallet } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
+import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
+import { EmptyState } from "@/components/admin/EmptyState";
 import { listTopupsAdmin, retryTopupCredit } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/topups")({ component: TopupsPage });
@@ -22,12 +26,52 @@ function TopupsPage() {
   });
   const topups = q.data?.topups ?? [];
 
+  const [text, setText] = useState("");
+  const [status, setStatus] = useState("all");
+
+  const filtered = useMemo(() => {
+    const needle = text.trim().toLowerCase();
+    return topups.filter(t => {
+      if (status === "credited" && !t.credited) return false;
+      if (status === "uncredited" && t.credited) return false;
+      if (status !== "all" && status !== "credited" && status !== "uncredited" && t.status !== status) return false;
+      if (!needle) return true;
+      return [t.id, t.user_id, t.pay_currency, t.status].filter(Boolean).some(v => String(v).toLowerCase().includes(needle));
+    });
+  }, [topups, text, status]);
+
+  const exportCsv = () => {
+    const rows = filtered.map(t => ({
+      id: t.id, user_id: t.user_id, amount_usd: t.price_amount_usd, currency: t.pay_currency ?? "",
+      status: t.status, credited: t.credited, created_at: t.created_at,
+    }));
+    downloadCsv(`topups-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
+  };
+
   return (
     <div>
-      <AdminPageHeader title="Crypto top-ups" subtitle={`${topups.length} records`} />
+      <AdminPageHeader title="Crypto top-ups" subtitle={`${filtered.length} of ${topups.length}`} />
+      <AdminTableToolbar
+        q={text}
+        onQ={setText}
+        placeholder="Search id, user, currency…"
+        filters={[{
+          value: status, onChange: setStatus, label: "Status",
+          options: [
+            { value: "all", label: "All" },
+            { value: "finished", label: "Finished" },
+            { value: "pending", label: "Pending" },
+            { value: "failed", label: "Failed" },
+            { value: "credited", label: "Credited" },
+            { value: "uncredited", label: "Not credited" },
+          ],
+        }]}
+        total={filtered.length}
+        onExportCsv={exportCsv}
+      />
       <Panel>
         <div className="space-y-2">
-          {topups.map(t => (
+          {filtered.map(t => (
             <div key={t.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -45,7 +89,13 @@ function TopupsPage() {
               </div>
             </div>
           ))}
-          {!topups.length && <div className="py-10 text-center text-sm text-slate-400">No top-ups.</div>}
+          {!filtered.length && (
+            <EmptyState
+              icon={Wallet}
+              title={text || status !== "all" ? "No top-ups match" : "No top-ups yet"}
+              description={text || status !== "all" ? "Try clearing filters." : "Crypto top-ups will appear once users fund their wallets."}
+            />
+          )}
         </div>
       </Panel>
     </div>
