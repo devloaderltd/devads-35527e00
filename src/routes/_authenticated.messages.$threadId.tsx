@@ -6,10 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, ChevronLeft, CheckCheck, Sparkles } from "lucide-react";
+import { Send, ChevronLeft, Sparkles, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { listQuickReplies } from "@/lib/social.functions";
 import { notifyNewMessage } from "@/lib/email/notify.functions";
+import { TypingBubble } from "@/components/messages/TypingBubble";
+import { MessageTicks } from "@/components/messages/MessageTicks";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export const Route = createFileRoute("/_authenticated/messages/$threadId")({
   component: ThreadView,
@@ -24,6 +27,7 @@ function ThreadView() {
   const [otherLastRead, setOtherLastRead] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<number | null>(null);
+  const presenceRef = useRef<RealtimeChannel | null>(null);
 
   const { data: thread } = useQuery({
     queryKey: ["thread", threadId],
