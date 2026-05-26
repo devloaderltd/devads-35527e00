@@ -19,6 +19,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoUrl from "@/assets/logo.png";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getSiteSettings } from "@/lib/admin.functions";
 
 export function Header() {
   const { user } = useAuth();
@@ -26,6 +29,14 @@ export function Header() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const fetchSettings = useServerFn(getSiteSettings);
+  const { data: settingsData } = useQuery({
+    queryKey: ["site-settings-public"],
+    queryFn: () => fetchSettings(),
+    staleTime: 60_000,
+  });
+  const customLogo = (settingsData?.settings as any)?.logo_url as string | undefined;
+  const siteName = (settingsData?.settings as any)?.site_name || "CallEscort24";
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
