@@ -1,15 +1,6 @@
 import * as React from 'react'
-
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Text,
-} from '@react-email/components'
+import { Button, Heading, Link, Text } from '@react-email/components'
+import { EmailShell, styles } from './_layout'
 
 interface RecoveryEmailProps {
   siteName: string
@@ -20,50 +11,29 @@ export const RecoveryEmail = ({
   siteName,
   confirmationUrl,
 }: RecoveryEmailProps) => (
-  <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>Reset your password for {siteName}</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Reset your password</Heading>
-        <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Reset Password
-        </Button>
-        <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
+  <EmailShell siteName={siteName} preview={`Reset your password for ${siteName}`}>
+    <Heading style={styles.h1}>Reset your password</Heading>
+    <Text style={styles.text}>
+      We received a request to reset the password on your {siteName} account.
+      Click the button below to choose a new one — the link is valid for a
+      limited time.
+    </Text>
+    <div style={styles.buttonWrap}>
+      <Button style={styles.button} href={confirmationUrl}>
+        Choose a new password
+      </Button>
+    </div>
+    <Text style={styles.small}>
+      Or paste this URL into your browser:
+      <br />
+      <Link href={confirmationUrl} style={styles.link}>
+        {confirmationUrl}
+      </Link>
+    </Text>
+    <Text style={styles.small}>
+      Didn't ask for this? You can ignore this email — your password won't change.
+    </Text>
+  </EmailShell>
 )
 
 export default RecoveryEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
