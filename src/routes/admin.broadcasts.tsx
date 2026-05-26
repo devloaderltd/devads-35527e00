@@ -81,6 +81,29 @@ function BroadcastsPage() {
               onClick={() => { if (confirm("Send this broadcast?")) sendMut.mutate(); }}>
               {sendMut.isPending ? "Sending…" : "Send broadcast"}
             </Button>
+
+            <div className="mt-2">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-400">
+                <Bell className="h-3 w-3" /> Notification preview
+              </div>
+              <div className="rounded-xl border border-white/10 bg-slate-950/60 p-3">
+                {title || body || link ? (
+                  <div className="flex items-start gap-2.5">
+                    <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white">
+                      <Bell className="h-3.5 w-3.5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-slate-100">{title || "Untitled"}</div>
+                      {body && <div className="mt-0.5 line-clamp-2 text-xs text-slate-400">{body}</div>}
+                      {link && <div className="mt-1 truncate text-[11px] text-indigo-300">{link}</div>}
+                      <div className="mt-1 text-[10px] text-slate-500">just now</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-4 text-center text-xs text-slate-500">Start typing to see the preview…</div>
+                )}
+              </div>
+            </div>
           </div>
         </Panel>
         <Panel title="Recent broadcasts">
