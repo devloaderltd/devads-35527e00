@@ -1,96 +1,43 @@
 ## Goal
+Remove Vercel Cron config so deployment passes on the Hobby plan, and switch the two cron endpoints to URL-based triggers protected by a shared secret token so a third-party cron service (cron-job.org, EasyCron, etc.) can invoke them safely.
 
-Ship a coherent round of user-panel + frontend upgrades and polish, in line with the existing glass / gradient design system. Backend touches only where features genuinely need it; everything else is presentation.
+## Changes
 
-## 0. Quiet fixes first (blockers)
+### 1. `vercel.json` — drop the `crons` block
+Remove the `crons` array entirely. Keep `buildCommand`, `outputDirectory`, `framework`, `regions`. After this, Vercel deploy stops complaining about the 15-minute schedule.
 
-Runtime currently throws "Expected corresponding JSX closing tag for `<PanelShell>`" in three files. Re-balance the JSX in:
-- `src/routes/_authenticated.wallet.tsx`
-- `src/routes/_authenticated.my-listings.tsx`
-- `src/routes/_authenticated.saved-searches.tsx`
+### 2. Add a shared secret
+Add a new secret `CRON_TRIGGER_SECRET` (random 32+ char string) via the secrets tool. This becomes the auth token the third-party cron service sends.
 
-(Stray inner `</div>` from the previous PanelShell wrap — remove the orphan closing tag in each file so the tree balances.) No behavior change.
+### 3. Protect both cron endpoints with the secret
+Files:
+- `src/routes/api/public/cron/auto-promote.ts`
+- `src/routes/api/public/cron/match-saved-searches.ts`
 
-## 1. New features
+Wrap the existing `run` handler so it first checks the incoming request for a matching token. Accept the token in either:
+- header: `x-cron-secret: <token>`, OR
+- query string: `?token=<token>` (useful for cron services that only support GET URLs with no custom headers)
 
-### A. Listing compare + share/QR
-- `src/components/CompareBar.tsx` — sticky bottom bar that appears when 2-4 listings are added; "Compare" button + clear.
-- `src/lib/compare-context.tsx` — small Zustand-free context (localStorage-backed, max 4).
-- `ListingCard`: add a "Compare" checkbox icon (top-left of image) toggling the set.
-- `src/routes/compare.tsx` — side-by-side table (image, title, price, city, condition, seller rating, posted, views, contact button). Mobile: horizontal scroll with sticky first column.
-- `src/components/ShareSheet.tsx` — drop-in dialog using `navigator.share` when available, otherwise copy-link + WhatsApp/Telegram/X/Email buttons + a QR code (use `qrcode` npm pkg → canvas data URL, downloadable as PNG).
-- Wire share button on `listings.$id.tsx` and `sellers.$id.tsx`.
+If neither matches `process.env.CRON_TRIGGER_SECRET`, return `401 Unauthorized`. Otherwise run the existing logic. Keep both `GET` and `POST` handlers so any cron provider works.
 
-### B. Seller profile polish (`src/routes/sellers.$id.tsx`)
-- Cover photo strip (gradient fallback) + avatar overlap.
-- Badges row: KYC verified, member-since, response rate (derived from existing message stats).
-- Tabs: "Active listings" / "Reviews" / "About".
-- Follow seller button → `seller_follows` table (new); count + "Following" toggle. Notifications already exist; add a `new_listing_from_followed` type into existing notifications insert when a followed seller posts.
+Also fix the stale parse-error symptom on `auto-promote.ts` by rewriting the file cleanly (current indentation is salvageable but I'll normalize it while editing).
 
-### C. Messages upgrades (`_authenticated.messages.*`)
-- Quick replies: per-user saved canned messages. Small `+ Saved replies` button next to composer; manage in a popover (add/edit/delete). New table `message_quick_replies(user_id, label, body)` with RLS.
-- Typing indicator: Supabase Realtime presence on `thread:<id>`; broadcast typing on input + debounce 2s.
-- Read receipts toggle: `profiles.show_read_receipts boolean default true`; only show ✓✓ to the other party if both have it on.
+### 4. (Optional cleanup) Disable the existing `pg_cron` jobs
+If `pg_cron` is currently scheduling these same endpoints, the third-party cron + pg_cron would double-fire. Plan: leave pg_cron as-is for now; user can run `SELECT cron.unschedule('<job-name>')` later from the SQL panel once the third-party trigger is verified. I'll note the exact commands in the final message but not run them automatically.
 
-### D. Wallet auto-promote rules
-- Per-listing toggle in `MyListings` row actions: "Auto-bump every N days while balance ≥ $X".
-- New table `auto_promote_rules(listing_id, type:'bump'|'featured', interval_days, min_balance_usd, active)` + RLS (owner only).
-- Cron route `api/public/cron/auto-promote.ts` (signature-protected like existing crons) processes due rules using `debit_wallet` + existing promote logic.
+## Third-party setup (post-deploy instructions you'll get in the final message)
+For each endpoint, create a job in your third-party cron service:
 
-### E. Onboarding tour
-- `src/components/OnboardingTour.tsx` — driver.js-free, custom popover-based tour (uses existing `Popover` + a backdrop). Steps: dashboard cards → "Post a listing" → wallet top-up → KYC → messages.
-- Persist completion in `profiles.onboarding_done_at`. Show once on first login; "Restart tour" link in Account settings.
+- **auto-promote** — daily, e.g. `15 3 * * *`
+  URL: `https://<your-domain>/api/public/cron/auto-promote?token=<CRON_TRIGGER_SECRET>`
+  Method: GET
 
-## 2. UI polish
+- **match-saved-searches** — every 15 minutes, `*/15 * * * *`
+  URL: `https://<your-domain>/api/public/cron/match-saved-searches?token=<CRON_TRIGGER_SECRET>`
+  Method: GET
 
-### Header + mobile nav
-- `Header.tsx`: stronger glass blur + scrim on scroll; condensed search-pill on `/search` and listing pages.
-- New `src/components/MobileTabBar.tsx`: bottom fixed bar for authed users — Home, Search, Post (center FAB), Messages, Account. Hide on inputs focus.
+Header-based alternative: send `x-cron-secret: <CRON_TRIGGER_SECRET>` instead of the query token.
 
-### Listing detail (`listings.$id.tsx`)
-- Photo gallery: tap-to-zoom lightbox, swipe on mobile, thumbnails strip on desktop.
-- Sticky right-rail contact card on desktop; sticky bottom contact bar on mobile.
-- "More from this seller" + "Similar in this city" rails at bottom.
-- Breadcrumbs (Category › City › Title) + JSON-LD Product.
-
-### Search + filters
-- Replace filter dropdowns with chip row (category/city/condition/price); selected chips show inline with × to remove.
-- Sort segmented control (Newest / Price ↑ / Price ↓ / Most viewed).
-- Skeleton grid while loading; empty state with "Save this search" CTA.
-- Optional map toggle (defer to next round if scope tight — keep button stubbed).
-
-### Global tokens + motion
-- Tighten `src/styles.css`: surface tiers (`--surface-1/2/3`), shadow tiers, consistent radius scale (10/14/20/28), focus ring token, dark-mode contrast pass on muted text.
-- Standard motion: `transition-all duration-200 ease-out` baseline; `animate-fade-in` on route mounts; hover-lift on cards.
-
-## 3. Technical details
-
-- **New deps**: `qrcode` (tiny, edge-safe).
-- **New tables / columns** (single migration):
-  - `seller_follows(follower_id, seller_id, created_at)` + RLS (owner read/write own).
-  - `message_quick_replies(id, user_id, label, body)` + RLS.
-  - `auto_promote_rules(id, listing_id, type, interval_days, min_balance_usd, active, last_run_at)` + RLS (owner).
-  - `profiles`: add `show_read_receipts boolean default true`, `onboarding_done_at timestamptz`.
-- **New server fns**: follow/unfollow, list followers; CRUD quick replies; CRUD auto-promote rules; cron handler.
-- **No edits** to `client.ts`, `types.ts`, `auth-middleware.ts`, `auth-attacher.ts`, `.env`.
-- **Realtime**: enable presence channel `thread:<id>` (no schema change needed).
-- **Cron**: add row to existing pg_cron setup pointing at `/api/public/cron/auto-promote` with `CRON_SECRET`.
-
-## 4. Out of scope (this round)
-
-- Map view (stub only).
-- Native push notifications.
-- Admin panel changes.
-- Payments beyond existing wallet flow.
-
-## 5. Order of work
-
-1. JSX fixes (blockers).
-2. Migration + types regen.
-3. Global tokens + motion + Header + MobileTabBar (foundation for the rest).
-4. Listing detail polish + Share/QR + Compare.
-5. Seller profile polish + follow.
-6. Messages upgrades.
-7. Auto-promote + cron.
-8. Onboarding tour.
-9. Search polish.
+## Out of scope
+- No business-logic changes inside the two cron handlers.
+- No changes to other routes or UI.
