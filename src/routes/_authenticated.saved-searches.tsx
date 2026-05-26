@@ -49,20 +49,16 @@ function Page() {
   const notifyOnCount = items.filter(i => i.notify).length;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">
-            Saved <span className="gradient-text">searches</span>
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {items.length} saved · {notifyOnCount} with alerts on
-          </p>
-        </div>
+    <PanelShell
+      title="Saved"
+      highlight="searches"
+      subtitle={`${items.length} saved · ${notifyOnCount} with alerts on`}
+      action={
         <Button asChild className="btn-gradient rounded-full border-0">
           <Link to="/search"><Search className="mr-1 h-4 w-4" /> Browse listings</Link>
         </Button>
-      </div>
+      }
+    >
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {items.map((s) => (
