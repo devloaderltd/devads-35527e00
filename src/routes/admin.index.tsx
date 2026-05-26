@@ -278,3 +278,81 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
     </Card>
   );
 }
+
+type HealthData = {
+  counts: {
+    users: number;
+    listings: number;
+    activeListings: number;
+    pendingTopups: number;
+    failedPayments24h: number;
+    openReports: number;
+    unresolvedErrors: number;
+    serverErrors24h: number;
+  };
+  walletsTotalUsd: number;
+  maintenanceMode: boolean;
+};
+
+function HealthStrip({
+  loading,
+  error,
+  onRetry,
+  data,
+}: {
+  loading: boolean;
+  error?: string;
+  onRetry: () => void;
+  data?: HealthData;
+}) {
+  if (loading) return <div className="mb-1"><CardGridSkeleton tiles={4} /></div>;
+  if (error) return <div className="mb-1"><ErrorFallback message={error} onRetry={onRetry} /></div>;
+  if (!data) return null;
+  const c = data.counts;
+  const errorsTotal = c.serverErrors24h + c.unresolvedErrors;
+  const items: Array<{
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    value: number | string;
+    tone: "ok" | "warn" | "bad";
+  }> = [
+    { icon: Wrench, label: "Maintenance", value: data.maintenanceMode ? "ON" : "off", tone: data.maintenanceMode ? "warn" : "ok" },
+    { icon: ServerCrash, label: "Errors (24h)", value: errorsTotal, tone: errorsTotal === 0 ? "ok" : errorsTotal < 10 ? "warn" : "bad" },
+    { icon: ShieldAlert, label: "Failed payments (24h)", value: c.failedPayments24h, tone: c.failedPayments24h === 0 ? "ok" : c.failedPayments24h < 5 ? "warn" : "bad" },
+    { icon: Activity, label: "Pending top-ups", value: c.pendingTopups, tone: c.pendingTopups === 0 ? "ok" : c.pendingTopups < 10 ? "warn" : "bad" },
+  ];
+  const toneRing: Record<"ok" | "warn" | "bad", string> = {
+    ok: "ring-emerald-400/20 bg-emerald-500/[0.06] text-emerald-200",
+    warn: "ring-amber-400/30 bg-amber-500/[0.08] text-amber-200",
+    bad: "ring-rose-400/40 bg-rose-500/[0.1] text-rose-200",
+  };
+  const toneDot: Record<"ok" | "warn" | "bad", string> = {
+    ok: "bg-emerald-400",
+    warn: "bg-amber-400",
+    bad: "bg-rose-400 animate-pulse",
+  };
+  return (
+    <div className="mb-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {items.map((it) => (
+        <div
+          key={it.label}
+          className={`group flex items-center gap-2.5 rounded-xl border border-white/10 px-3 py-2.5 ring-1 ring-inset transition-all hover:-translate-y-0.5 ${toneRing[it.tone]}`}
+        >
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5">
+            <it.icon className="h-3.5 w-3.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide opacity-80">
+              <span className={`h-1.5 w-1.5 rounded-full ${toneDot[it.tone]}`} />
+              <span className="truncate">{it.label}</span>
+            </div>
+            <div className="mt-0.5 font-display text-base font-bold leading-tight text-slate-100 sm:text-lg">
+              {it.value}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
