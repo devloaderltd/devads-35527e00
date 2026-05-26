@@ -1,17 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format, subDays, startOfDay, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
 import { Users, Package, DollarSign, Flag, Wallet, Bitcoin, TrendingUp, AlertCircle } from "lucide-react";
+
 import { SeedDemoButton } from "@/components/admin/SeedDemoButton";
 import { panelCls, AdminPageHeader } from "@/components/admin/ui";
 import { KpiTile } from "@/components/admin/KpiTile";
