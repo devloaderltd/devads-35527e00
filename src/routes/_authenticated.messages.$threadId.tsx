@@ -123,14 +123,26 @@ function ThreadView() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages?.length]);
 
+  const listQrFn = useServerFn(listQuickReplies);
+  const { data: customQr } = useQuery({
+    queryKey: ["quick-replies"],
+    enabled: !!user,
+    queryFn: () => listQrFn(),
+    staleTime: 60_000,
+  });
+
   const QUICK_REPLIES = useMemo(() => {
-    if (!thread) return [];
+    if (!thread) return [] as { label: string; body: string; custom?: boolean }[];
     const isSeller = thread.seller_id === user?.id;
     const sold = thread.listing?.status === "sold";
-    if (sold) return ["Sorry, this one is sold.", "I'll let you know if I have another.", "Thanks for the interest!"];
-    if (isSeller) return ["Yes, it's still available.", "Best price I can do.", "When can you pick it up?", "Want to see more photos?"];
-    return ["Is it still available?", "Can you do a better price?", "When can I pick it up?", "Where are you located?"];
-  }, [thread, user?.id]);
+    const defaults: string[] = sold
+      ? ["Sorry, this one is sold.", "I'll let you know if I have another.", "Thanks for the interest!"]
+      : isSeller
+      ? ["Yes, it's still available.", "Best price I can do.", "When can you pick it up?", "Want to see more photos?"]
+      : ["Is it still available?", "Can you do a better price?", "When can I pick it up?", "Where are you located?"];
+    const custom = (customQr?.items ?? []).map((it) => ({ label: it.label, body: it.body, custom: true }));
+    return [...custom, ...defaults.map((d) => ({ label: d, body: d }))];
+  }, [thread, user?.id, customQr]);
 
   const send = useMutation({
     mutationFn: async (text: string) => {
