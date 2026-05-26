@@ -90,7 +90,7 @@ export function Footer() {
             </div>
           ))}
 
-          <div className="md:col-span-2">
+          <div className="col-span-2 md:col-span-2">
             <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Stay in touch
             </div>
