@@ -17,6 +17,9 @@ import { ListingCard } from "@/components/ListingCard";
 import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 import { SellerReviews } from "@/components/SellerReviews";
 import { ShareSheet } from "@/components/ShareSheet";
+import { PriceHistoryChart } from "@/components/listing/PriceHistoryChart";
+import { MakeOfferDialog } from "@/components/listing/MakeOfferDialog";
+import { BlockSellerButton } from "@/components/listing/BlockSellerButton";
 import DOMPurify from "dompurify";
 
 function sanitizeDescription(html: string): string {
@@ -379,6 +382,19 @@ function ListingDetail() {
         <div>
           <h1 className="font-display text-2xl font-bold md:text-3xl">{listing.title}</h1>
 
+          {/* Price + offer */}
+          {(listing.price != null) && (
+            <div className="mt-3 flex flex-wrap items-baseline gap-3">
+              <div className="font-display text-3xl font-bold gradient-text">
+                ${Number(listing.price).toFixed(2)}
+              </div>
+              {listing.is_negotiable && (
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                  Negotiable
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
             {listing.cities && (
@@ -400,6 +416,14 @@ function ListingDetail() {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <FavoriteButton listingId={listing.id} variant="inline" showLabel />
+            {listing.is_negotiable && listing.user_id !== user?.id && (
+              <MakeOfferDialog
+                listingId={listing.id}
+                listingTitle={listing.title}
+                sellerId={listing.user_id}
+                askingPrice={listing.price as number | null}
+              />
+            )}
             <button
               type="button"
               onClick={share}
@@ -408,6 +432,10 @@ function ListingDetail() {
               <Share2 className="h-4 w-4" /> Share
             </button>
           </div>
+
+          {/* Price history (if any) */}
+          <PriceHistoryChart listingId={listing.id} />
+
 
 
           {/* Seller card */}
@@ -538,9 +566,11 @@ function ListingDetail() {
                 <PromoteDialog listingId={listing.id} />
               </div>
             )}
-            <div className="mt-2 flex justify-end">
+            <div className="mt-2 flex items-center justify-between">
+              <BlockSellerButton sellerId={listing.user_id} />
               <ReportDialog listingId={listing.id} />
             </div>
+
           </div>
         </div>
       </div>
@@ -648,9 +678,19 @@ function ListingDetail() {
             category: listing.categories?.name,
             seller: seller ? { "@type": "Person", name: seller.display_name } : undefined,
             areaServed: listing.cities ? `${listing.cities.name}, ${listing.cities.region}` : undefined,
+            offers: listing.price != null ? {
+              "@type": "Offer",
+              price: Number(listing.price),
+              priceCurrency: "USD",
+              availability: "https://schema.org/InStock",
+              itemCondition: `https://schema.org/${
+                listing.condition === "new" ? "NewCondition" : "UsedCondition"
+              }`,
+            } : undefined,
           }),
         }}
       />
+
       <ShareSheet
         open={shareOpen}
         onOpenChange={setShareOpen}

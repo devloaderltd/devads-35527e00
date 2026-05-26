@@ -203,7 +203,18 @@ function SearchPage() {
   const update = (patch: Partial<typeof search>, resetPage = true) =>
     navigate({ search: { ...search, ...patch, ...(resetPage ? { page: undefined } : {}) } as any });
 
-  const applyQ = () => update({ q: qInput.trim() || undefined });
+  const applyQ = () => {
+    const q = qInput.trim() || undefined;
+    if (q && typeof window !== "undefined") {
+      try {
+        const raw = JSON.parse(localStorage.getItem("recent_searches") || "[]");
+        const list = Array.isArray(raw) ? raw : [];
+        const next = [q, ...list.filter((x: string) => x !== q)].slice(0, 6);
+        localStorage.setItem("recent_searches", JSON.stringify(next));
+      } catch { /* ignore */ }
+    }
+    update({ q });
+  };
 
   const clearAll = () => {
     setQInput("");
@@ -361,6 +372,11 @@ function SearchPage() {
           )}
         </div>
       </div>
+
+      <RecentSearchChips
+        current={search.q}
+        onPick={(q) => { setQInput(q); update({ q }); }}
+      />
 
       <div className="mb-4 grid gap-3 rounded-2xl border border-white/40 bg-white/55 p-3 shadow-[var(--shadow-float)] backdrop-blur-xl lg:grid-cols-[1fr_160px_160px_160px_auto]">
         <Input
@@ -645,3 +661,71 @@ function ToggleRow({
     </label>
   );
 }
+
+function RecentSearchChips({
+  current,
+  onPick,
+}: {
+  current?: string;
+  onPick: (q: string) => void;
+}) {
+  const [items, setItems] = useState<string[]>([]);
+  // Re-read on mount + when current changes (so a new search refreshes the rail)
+  useMemo(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = JSON.parse(localStorage.getItem("recent_searches") || "[]");
+      setItems(Array.isArray(raw) ? raw.slice(0, 6) : []);
+    } catch { setItems([]); }
+  }, [current]);
+
+  const remove = (q: string) => {
+    const next = items.filter((x) => x !== q);
+    setItems(next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("recent_searches", JSON.stringify(next));
+    }
+  };
+  const clearAll = () => {
+    setItems([]);
+    if (typeof window !== "undefined") localStorage.removeItem("recent_searches");
+  };
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-1.5">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        Recent
+      </span>
+      {items.map((q) => (
+        <span
+          key={q}
+          className={`group inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/70 pl-3 pr-1 py-1 text-xs backdrop-blur transition hover:bg-white ${
+            q === current ? "ring-1 ring-primary text-primary" : "text-foreground/80"
+          }`}
+        >
+          <button type="button" onClick={() => onPick(q)} className="font-medium">
+            {q}
+          </button>
+          <button
+            type="button"
+            onClick={() => remove(q)}
+            aria-label={`Remove ${q}`}
+            className="grid h-5 w-5 place-items-center rounded-full hover:bg-black/10"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </span>
+      ))}
+      <button
+        type="button"
+        onClick={clearAll}
+        className="ml-1 text-[11px] text-muted-foreground hover:text-foreground"
+      >
+        Clear
+      </button>
+    </div>
+  );
+}
+
