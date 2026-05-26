@@ -566,9 +566,11 @@ function ListingDetail() {
                 <PromoteDialog listingId={listing.id} />
               </div>
             )}
-            <div className="mt-2 flex justify-end">
+            <div className="mt-2 flex items-center justify-between">
+              <BlockSellerButton sellerId={listing.user_id} />
               <ReportDialog listingId={listing.id} />
             </div>
+
           </div>
         </div>
       </div>
