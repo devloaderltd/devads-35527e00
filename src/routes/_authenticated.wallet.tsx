@@ -8,6 +8,7 @@ import { Wallet, Plus, ExternalLink, ArrowDownCircle, ArrowUpCircle } from "luci
 import { toast } from "sonner";
 import { getWallet, createTopupInvoice } from "@/lib/wallet.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { PanelShell } from "@/components/PanelShell";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({ meta: [{ title: "Wallet — CallEscort24" }, { name: "robots", content: "noindex" }] }),
@@ -79,11 +80,11 @@ function WalletPage() {
   const balance = data?.balance ?? 0;
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
-      <h1 className="font-display text-2xl sm:text-3xl font-bold">
-        <span className="gradient-text">Wallet</span> & top-ups
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">Top up with crypto, spend credits to promote your listings.</p>
+    <PanelShell
+      title="Wallet"
+      highlight="& top-ups"
+      subtitle="Top up with crypto, spend credits to promote your listings."
+    >
 
       {/* Balance card */}
       <div className="iridescent-border mt-6 rounded-3xl border border-white/50 bg-white/70 p-6 shadow-[var(--shadow-float-lg)] backdrop-blur-xl">
@@ -191,7 +192,7 @@ function WalletPage() {
           </div>
         )}
       </div>
-    </div>
+    </PanelShell>
   );
 }
 
