@@ -43,12 +43,13 @@ const run = async () => {
           link: "/my-listings",
           metadata: { listing_id: r.id },
         }));
-        if (notifs.length) await supabaseAdmin.from("notifications").insert(notifs);
+  if (notifs.length) await supabaseAdmin.from("notifications").insert(notifs);
 
-        return new Response(JSON.stringify({ ok: true, promoted: ids.length }), {
-          headers: { "Content-Type": "application/json" },
-        });
-      },
-    },
-  },
+  return new Response(JSON.stringify({ ok: true, promoted: ids.length }), {
+    headers: { "Content-Type": "application/json" },
+  });
+};
+
+export const Route = createFileRoute("/api/public/cron/auto-promote")({
+  server: { handlers: { GET: run, POST: run } },
 });
