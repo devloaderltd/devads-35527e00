@@ -76,12 +76,11 @@ export const adminListKyc = createServerFn({ method: "POST" })
         .limit(200);
       items = r.data as never;
     }
-    let rows = (items ?? []) as Array<Record<string, unknown>>;
-    if (data.status !== "all") rows = rows.filter((r) => r.status === data.status);
+    const rowsArr = (items ?? []) as Array<Record<string, unknown>>;
+    const filtered = data.status === "all" ? rowsArr : rowsArr.filter((r) => r.status === data.status);
 
-    // Hydrate signed URLs (1h) for documents
     const signed = await Promise.all(
-      rows.map(async (r) => {
+      filtered.map(async (r) => {
         const sign = async (path: string | null | undefined) => {
           if (!path) return null;
           const { data } = await supabaseAdmin.storage
@@ -98,8 +97,7 @@ export const adminListKyc = createServerFn({ method: "POST" })
       }),
     );
 
-    // Fetch profile display names in one go
-    const ids = [...new Set(signed.map((r) => r.user_id))] as string[];
+    const ids = [...new Set(signed.map((r) => r.user_id as string))];
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
       .select("id, display_name, avatar_url")
@@ -112,6 +110,7 @@ export const adminListKyc = createServerFn({ method: "POST" })
       })),
     };
   });
+
 
 export const adminReviewKyc = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
