@@ -203,7 +203,18 @@ function SearchPage() {
   const update = (patch: Partial<typeof search>, resetPage = true) =>
     navigate({ search: { ...search, ...patch, ...(resetPage ? { page: undefined } : {}) } as any });
 
-  const applyQ = () => update({ q: qInput.trim() || undefined });
+  const applyQ = () => {
+    const q = qInput.trim() || undefined;
+    if (q && typeof window !== "undefined") {
+      try {
+        const raw = JSON.parse(localStorage.getItem("recent_searches") || "[]");
+        const list = Array.isArray(raw) ? raw : [];
+        const next = [q, ...list.filter((x: string) => x !== q)].slice(0, 6);
+        localStorage.setItem("recent_searches", JSON.stringify(next));
+      } catch { /* ignore */ }
+    }
+    update({ q });
+  };
 
   const clearAll = () => {
     setQInput("");
