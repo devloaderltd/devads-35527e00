@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { verifyIpnSignature } from "@/lib/nowpayments.server";
+import { enqueueTransactionalEmail, getUserEmail, getUserDisplayName } from "@/lib/email/enqueue.server";
 
 let _supabase: any = null;
 function db() {
@@ -64,6 +65,26 @@ export const Route = createFileRoute("/api/public/payments/nowpayments-ipn")({
             return new Response("credit failed", { status: 500 });
           }
           await supabase.from("crypto_topups").update({ credited: true }).eq("id", orderId);
+
+          // Confirmation email (fire-and-forget, never blocks IPN response)
+          try {
+            const email = await getUserEmail(topup.user_id);
+            if (email) {
+              const name = await getUserDisplayName(topup.user_id);
+              await enqueueTransactionalEmail({
+                templateName: "topup-confirmed",
+                recipientEmail: email,
+                idempotencyKey: `topup-${orderId}`,
+                templateData: {
+                  recipientName: name ?? undefined,
+                  amountUsd: Number(topup.price_amount_usd),
+                  currency: payload.pay_currency ?? undefined,
+                  reference: orderId,
+                  walletUrl: "https://callescort.devloader.com/wallet",
+                },
+              });
+            }
+          } catch (e) { console.error("topup email failed", e); }
         }
 
         return Response.json({ ok: true });
