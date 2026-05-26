@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users as UsersIcon } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
-import { downloadCSV, toCSV } from "@/lib/csv";
+import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
+import { BulkActionBar } from "@/components/admin/BulkActionBar";
+import { EmptyState } from "@/components/admin/EmptyState";
 import {
   listUsersAdmin, setUserRole, banUser, unbanUser, deleteUserAdmin, sendPasswordReset,
   adminAdjustWallet,
