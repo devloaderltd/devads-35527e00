@@ -21,6 +21,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { AccountSettingsCard } from "@/components/AccountSettingsCard";
 import { PanelShell } from "@/components/PanelShell";
+import { QuickRepliesManager } from "@/components/QuickRepliesManager";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
