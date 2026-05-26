@@ -25,10 +25,20 @@ export function Header() {
   const { cityName, openPicker } = useCity();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate({ to: "/search", search: { q: q || undefined } as any });
+    const term = q.trim();
+    if (term && typeof window !== "undefined") {
+      try {
+        const prev: string[] = JSON.parse(localStorage.getItem("recent_searches") || "[]");
+        const next = [term, ...prev.filter((x) => x !== term)].slice(0, 6);
+        localStorage.setItem("recent_searches", JSON.stringify(next));
+      } catch {}
+    }
+    setMobileSearchOpen(false);
+    navigate({ to: "/search", search: { q: term || undefined } as any });
   };
 
   const signOut = async () => {
