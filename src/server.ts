@@ -3,6 +3,10 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
+// src/server.ts (Vercel-compatible)
+import handler from "@tanstack/react-start/server-entry";
+
+
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
