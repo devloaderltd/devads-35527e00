@@ -12,15 +12,13 @@ export function MessageTicks({ state, seenAt }: Props) {
       : state === "delivered"
       ? "Delivered"
       : "Sent";
-  if (state === "sent") {
-    return <Check className="h-3 w-3 text-white/70" aria-label={title}><title>{title}</title></Check>;
-  }
   return (
-    <CheckCheck
-      className={`h-3 w-3 ${state === "seen" ? "text-white" : "text-white/70"}`}
-      aria-label={title}
-    >
-      <title>{title}</title>
-    </CheckCheck>
+    <span title={title} className="inline-flex">
+      {state === "sent" ? (
+        <Check className="h-3 w-3 text-white/70" />
+      ) : (
+        <CheckCheck className={`h-3 w-3 ${state === "seen" ? "text-white" : "text-white/70"}`} />
+      )}
+    </span>
   );
 }
