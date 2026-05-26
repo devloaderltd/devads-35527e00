@@ -553,6 +553,33 @@ export type Database = {
           },
         ]
       }
+      message_quick_replies: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          label: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          label: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          label?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_threads: {
         Row: {
           archived_by: string[]
@@ -746,8 +773,10 @@ export type Database = {
           id_verified_at: string | null
           kyc_status: string
           kyc_verified_at: string | null
+          onboarding_done_at: string | null
           phone: string | null
           phone_verified_at: string | null
+          show_read_receipts: boolean
           updated_at: string
         }
         Insert: {
@@ -762,8 +791,10 @@ export type Database = {
           id_verified_at?: string | null
           kyc_status?: string
           kyc_verified_at?: string | null
+          onboarding_done_at?: string | null
           phone?: string | null
           phone_verified_at?: string | null
+          show_read_receipts?: boolean
           updated_at?: string
         }
         Update: {
@@ -778,8 +809,10 @@ export type Database = {
           id_verified_at?: string | null
           kyc_status?: string
           kyc_verified_at?: string | null
+          onboarding_done_at?: string | null
           phone?: string | null
           phone_verified_at?: string | null
+          show_read_receipts?: boolean
           updated_at?: string
         }
         Relationships: []

@@ -16,6 +16,7 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { ListingCard } from "@/components/ListingCard";
 import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 import { SellerReviews } from "@/components/SellerReviews";
+import { ShareSheet } from "@/components/ShareSheet";
 
 import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ function ListingDetail() {
   const [contacting, setContacting] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { data: listing, isLoading, error } = useQuery({
     queryKey: ["listing", id],
@@ -147,22 +149,7 @@ function ListingDetail() {
     navigate({ to: "/messages/$threadId", params: { threadId: threadId! } });
   };
 
-  const share = async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    const data = { title: listing.title, text: listing.title, url };
-    try {
-      if (typeof navigator !== "undefined" && (navigator as any).share) {
-        await (navigator as any).share(data);
-        return;
-      }
-    } catch { /* user cancelled */ }
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard");
-    } catch {
-      toast.error("Couldn't share this listing");
-    }
-  };
+  const share = () => setShareOpen(true);
 
   const images = (listing.listing_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
   const hero = images[activeIdx]?.url ?? listingPlaceholder;
@@ -563,6 +550,12 @@ function ListingDetail() {
             areaServed: listing.cities ? `${listing.cities.name}, ${listing.cities.region}` : undefined,
           }),
         }}
+      />
+      <ShareSheet
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        url={typeof window !== "undefined" ? window.location.href : ""}
+        title={listing.title}
       />
     </div>
   );

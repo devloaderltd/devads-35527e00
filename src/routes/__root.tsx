@@ -15,6 +15,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CookieConsent } from "@/components/CookieConsent";
+import { MobileTabBar } from "@/components/MobileTabBar";
+import { CompareBar } from "@/components/CompareBar";
+import { CompareProvider } from "@/lib/compare-context";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 
 import { CityProvider } from "@/lib/city-context";
@@ -142,23 +146,28 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <CityProvider>
-          <AuthInvalidator />
-          {isAdminArea ? (
-            <Outlet />
-          ) : (
-            <div className="relative flex min-h-screen flex-col">
-              <div className="aurora-mesh" aria-hidden />
-              <MaintenanceGate>
-                <Header />
-                <main className="flex-1">
-                  <Outlet />
-                </main>
-                <Footer />
-              </MaintenanceGate>
-            </div>
-          )}
-          {!isAdminArea && <CitySelectorDialog dismissable />}
-          {!isAdminArea && <CookieConsent />}
+          <CompareProvider>
+            <AuthInvalidator />
+            {isAdminArea ? (
+              <Outlet />
+            ) : (
+              <div className="relative flex min-h-screen flex-col">
+                <div className="aurora-mesh" aria-hidden />
+                <MaintenanceGate>
+                  <Header />
+                  <main className="flex-1 pb-16 md:pb-0">
+                    <Outlet />
+                  </main>
+                  <Footer />
+                  <MobileTabBar />
+                  <CompareBar />
+                  <OnboardingTour />
+                </MaintenanceGate>
+              </div>
+            )}
+            {!isAdminArea && <CitySelectorDialog dismissable />}
+            {!isAdminArea && <CookieConsent />}
+          </CompareProvider>
         </CityProvider>
       </ThemeProvider>
 
