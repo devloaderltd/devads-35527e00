@@ -2,5 +2,15 @@
   "buildCommand": "bun run build",
   "outputDirectory": ".output",
   "framework": null,
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/public/cron/auto-promote",
+      "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/public/cron/match-saved-searches",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }
