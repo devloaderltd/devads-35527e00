@@ -16,8 +16,9 @@ import { SeedDemoButton } from "@/components/admin/SeedDemoButton";
 import { panelCls, AdminPageHeader } from "@/components/admin/ui";
 import { KpiTile } from "@/components/admin/KpiTile";
 import {
-  getQuickStats, getRecentActivity, getDashboardSparklines, getFunnelStats,
+  getQuickStats, getRecentActivity, getDashboardSparklines, getFunnelStats, getDashboardOverview,
 } from "@/lib/admin.functions";
+
 
 export const Route = createFileRoute("/admin/")({
   component: DashboardPage,
