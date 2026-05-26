@@ -19,6 +19,7 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { CompareBar } from "@/components/CompareBar";
 import { CompareProvider } from "@/lib/compare-context";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { RouteProgress } from "@/components/RouteProgress";
 
 
 import { CityProvider } from "@/lib/city-context";
@@ -147,6 +148,7 @@ function RootComponent() {
       <ThemeProvider>
         <CityProvider>
           <CompareProvider>
+            <RouteProgress />
             <AuthInvalidator />
             {isAdminArea ? (
               <Outlet />

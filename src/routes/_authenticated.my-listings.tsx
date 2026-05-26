@@ -247,7 +247,7 @@ function MyListings() {
       </div>
 
       {isLoading ? (
-        <div className="text-muted-foreground">Loading…</div>
+        <ListingsSkeleton count={4} />
       ) : !visible.length ? (
         <div className="rounded-2xl glass p-10 text-center text-muted-foreground">
           {filter === "all"
