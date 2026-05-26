@@ -294,7 +294,7 @@ function AssetUploader({
             <span className="text-[10px] text-slate-500">None</span>
           )}
         </div>
-        <div className="flex flex-1 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex gap-1.5">
             <Button
               type="button"
