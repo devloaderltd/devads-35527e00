@@ -68,6 +68,12 @@ function DashboardPage() {
     queryFn: () => funnelFn({ data: { days: range } }),
     staleTime: 60_000,
   });
+  const health = useQuery({
+    queryKey: ["admin-system-health"],
+    queryFn: () => healthFn(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
 
   const charts = overview.data
     ? {
