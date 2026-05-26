@@ -114,7 +114,13 @@ function UsersPage() {
           </label>
         )}
         <div className="space-y-2">
-          {usersQ.isLoading && <div className="py-8 text-center text-sm text-slate-400">Loading…</div>}
+          {usersQ.isLoading && <RowSkeleton rows={6} />}
+          {usersQ.isError && (
+            <ErrorFallback
+              message={(usersQ.error as Error | undefined)?.message ?? "Could not load users."}
+              onRetry={() => usersQ.refetch()}
+            />
+          )}
           {!usersQ.isLoading && users.map(u => (
             <div key={u.id} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
               <input type="checkbox" checked={selected.has(u.id)} onChange={() => toggle(u.id)} className="mt-1 h-4 w-4" />
