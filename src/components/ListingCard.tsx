@@ -1,25 +1,39 @@
 import { Link } from "@tanstack/react-router";
-import { MapPin, Sparkles, Flame, Scale, Check } from "lucide-react";
+import { MapPin, Sparkles, Flame, Scale, Check, BadgeCheck, Eye } from "lucide-react";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { useCompare, COMPARE_MAX } from "@/lib/compare-context";
 import { toast } from "sonner";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
+import { formatDistanceToNow } from "date-fns";
 
 type Listing = {
   id: string;
   slug?: string | null;
   title: string;
+  description?: string | null;
   condition?: string;
   bumped_at?: string;
+  created_at?: string;
+  view_count?: number;
+  verified_at?: string | null;
   cities?: { name: string; region: string; country: string } | null;
   listing_images?: { url: string; sort_order: number }[];
   listing_promotions?: { type: string; ends_at: string }[] | null;
 };
 
-export function ListingCard({ listing, featured }: { listing: Listing; featured?: boolean }) {
+export function ListingCard({
+  listing,
+  featured,
+  variant = "grid",
+}: {
+  listing: Listing;
+  featured?: boolean;
+  variant?: "grid" | "list";
+}) {
   const img = listing.listing_images?.sort((a, b) => a.sort_order - b.sort_order)[0]?.url;
   const isFeatured = featured || listing.listing_promotions?.some((p) => new Date(p.ends_at) > new Date());
   const isBumped = !isFeatured && listing.bumped_at && (Date.now() - new Date(listing.bumped_at).getTime()) < 24 * 60 * 60 * 1000;
+  const isVerified = !!listing.verified_at;
   const { has, toggle, ids } = useCompare();
   const selected = has(listing.id);
 
@@ -32,6 +46,59 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
     }
     toggle(listing.id);
   };
+
+  if (variant === "list") {
+    return (
+      <Link
+        to="/listings/$id"
+        params={{ id: listing.slug ?? listing.id }}
+        className={`group hover-float flex gap-3 overflow-hidden rounded-2xl glass p-2 ${isFeatured ? "iridescent-border" : ""}`}
+      >
+        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl sm:h-28 sm:w-28">
+          <img
+            src={img ?? listingPlaceholder}
+            alt={listing.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          />
+          {isFeatured && (
+            <span className="absolute left-1 top-1 inline-flex items-center gap-1 rounded-full btn-gradient px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+              <Sparkles className="h-2.5 w-2.5" />
+            </span>
+          )}
+        </div>
+        <div className="flex flex-1 flex-col gap-1 py-1 pr-1">
+          <div className="flex items-start gap-2">
+            <div className="line-clamp-2 flex-1 text-sm font-medium text-foreground">{listing.title}</div>
+            {isVerified && (
+              <span title="Verified seller" className="shrink-0">
+                <BadgeCheck className="h-4 w-4 text-emerald-500" />
+              </span>
+            )}
+          </div>
+          {listing.description && (
+            <div className="line-clamp-2 text-xs text-muted-foreground">{listing.description}</div>
+          )}
+          <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-[11px] text-muted-foreground">
+            {listing.cities && (
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {listing.cities.name}
+              </span>
+            )}
+            {typeof listing.view_count === "number" && (
+              <span className="inline-flex items-center gap-1">
+                <Eye className="h-3 w-3" /> {listing.view_count}
+              </span>
+            )}
+            {listing.bumped_at && (
+              <span>{formatDistanceToNow(new Date(listing.bumped_at), { addSuffix: true })}</span>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <Link
@@ -58,6 +125,14 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
             style={{ background: "var(--gradient-warm)" }}
           >
             <Flame className="h-3 w-3" /> Bumped
+          </span>
+        )}
+        {isVerified && (
+          <span
+            title="Verified seller"
+            className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/95 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow"
+          >
+            <BadgeCheck className="h-3 w-3" /> Verified
           </span>
         )}
         <FavoriteButton listingId={listing.id} />
