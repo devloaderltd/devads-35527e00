@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Megaphone } from "lucide-react";
+import { Bell, Megaphone } from "lucide-react";
 import { adminBroadcastNotification, listBroadcasts } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/broadcasts")({ component: BroadcastsPage });
