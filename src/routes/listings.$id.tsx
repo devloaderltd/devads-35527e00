@@ -15,6 +15,7 @@ import { PromoteDialog } from "@/components/PromoteDialog";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ListingCard } from "@/components/ListingCard";
 import { SellerRatingBadge } from "@/components/SellerRatingBadge";
+import { SellerReviews } from "@/components/SellerReviews";
 
 import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
@@ -380,7 +381,7 @@ function ListingDetail() {
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <SellerRatingBadge sellerId={listing.user_id} />
-                  <a href={`/sellers/${listing.user_id}#reviews`} className="text-xs font-medium text-primary hover:underline">
+                  <a href="#reviews" className="text-xs font-medium text-primary hover:underline">
                     See all reviews →
                   </a>
                 </div>
@@ -466,6 +467,10 @@ function ListingDetail() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div id="reviews" className="scroll-mt-24">
+        <SellerReviews sellerId={listing.user_id} />
       </div>
 
       {similar && similar.length > 0 && (
