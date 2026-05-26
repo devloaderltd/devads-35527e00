@@ -119,7 +119,7 @@ function SellerPage() {
 
 
   if (isLoading) {
-    return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
+    return <div className="container mx-auto px-4 py-10"><BrandLoader variant="block" /></div>;
   }
   if (!profile) {
     return <div className="container mx-auto px-4 py-10">Seller not found.</div>;
