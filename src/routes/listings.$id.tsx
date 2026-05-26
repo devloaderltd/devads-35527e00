@@ -135,8 +135,25 @@ function ListingDetail() {
     staleTime: 60_000,
   });
 
-  if (isLoading) return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
-  if (error || !listing) return <div className="container mx-auto px-4 py-10">Listing not found.</div>;
+  if (isLoading) return (
+    <div className="container mx-auto px-4 py-6">
+      <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
+        <div className="aspect-square w-full animate-pulse rounded-2xl bg-white/50" />
+        <div className="space-y-4">
+          <div className="h-8 w-3/4 animate-pulse rounded-lg bg-white/50" />
+          <div className="h-4 w-1/2 animate-pulse rounded-lg bg-white/50" />
+          <div className="h-32 animate-pulse rounded-2xl bg-white/50" />
+        </div>
+      </div>
+    </div>
+  );
+  if (error || !listing) return (
+    <div className="container mx-auto px-4 py-16 text-center">
+      <h1 className="font-display text-2xl font-bold">Listing not found</h1>
+      <p className="mt-2 text-sm text-muted-foreground">It may have been removed or the link is incorrect.</p>
+      <Button asChild className="mt-4 rounded-full"><Link to="/search">Browse listings</Link></Button>
+    </div>
+  );
 
   const startThread = async () => {
     if (!user) { navigate({ to: "/login" }); return; }

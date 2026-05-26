@@ -1,44 +1,71 @@
-## Add WYSIWYG editor with emoji support to listing description
+# Polish & Completion Sweep
 
-Replace the plain `Textarea` for the description field on the post-listing page with a lightweight rich-text editor that supports basic formatting and emoji insertion. Render the resulting HTML safely on the listing details page.
+A medium-depth pass across the user-facing app: fix missing functionality, unify the visual language, and tighten every panel. Admin panel is left alone unless touched by a shared component.
 
-### 1. Editor choice
-Use **TipTap** (`@tiptap/react` + `@tiptap/starter-kit`) — small, headless, React-first, works with Tailwind, and easy to style with our design tokens. Add **`emoji-picker-react`** for the emoji panel (clean, no extra peer deps, supports native emoji insertion).
+## 1. Missing / broken functionality
 
-Packages to install:
-- `@tiptap/react`
-- `@tiptap/starter-kit`
-- `@tiptap/extension-link`
-- `@tiptap/extension-placeholder`
-- `emoji-picker-react`
-- `dompurify` (sanitize HTML on render)
+**Edit listing (currently broken)**
+- `my-listings` already links to `/post?edit={id}` and `ListingRowActions` uses a Pencil icon that just opens the public details page.
+- Add edit mode to `src/routes/_authenticated.post.tsx`:
+  - Add `validateSearch` for `{ edit?: uuid }`.
+  - When `edit` is present, prefill all fields (title, description HTML, price, category, phone, whatsapp, images, city) from the listing (must belong to current user, else redirect).
+  - Submit path: `UPDATE` instead of multi-city `INSERT`. City picker collapses to single-city select while editing. Image management: keep existing + add new, allow remove.
+  - Header switches to "Edit listing" + "Save changes" button.
+- Fix `ListingRowActions`: replace the Pencil→view button with a real "Edit" link to `/post?edit={id}` and add a separate eye-icon "View" link.
 
-### 2. New component: `src/components/RichTextEditor.tsx`
-- TipTap editor with StarterKit (bold, italic, lists, headings H2/H3, blockquote, code), Link, Placeholder.
-- Compact toolbar: **B**, *I*, H2, H3, • list, 1. list, link, clear formatting, and an 😀 emoji button that opens `EmojiPicker` in a `Popover`. Clicking an emoji inserts at cursor.
-- Props: `value: string`, `onChange: (html: string) => void`, `placeholder?: string`, `maxLength?: number`.
-- Enforce `maxLength` via the editor's character count (using plain text length); show counter under editor.
-- Styled with our existing tokens — rounded-2xl, `bg-white/70 backdrop-blur`, focus ring matching current inputs. ProseMirror content gets `prose prose-sm` styling.
+**Other small gaps**
+- `_authenticated.profile.tsx`: add a "Delete account" action (calls existing account function; confirm dialog).
+- `_authenticated.messages.index.tsx`: add empty-state CTA ("Browse listings") and search-filter input across threads.
+- `_authenticated.notifications.tsx`: add "Mark all as read" and per-row delete (uses existing notifications table).
+- `_authenticated.favorites.tsx`: add empty-state with CTA, plus "Clear all" action.
+- `_authenticated.saved-searches.tsx`: ensure run-button navigates with the saved filters; add delete confirm.
+- `_authenticated.wallet.tsx`: surface "Pending top-ups" section if any IPN is awaiting confirmation.
 
-### 3. Wire into `src/routes/_authenticated.post.tsx`
-- Replace the description `<Textarea>` with `<RichTextEditor value={description} onChange={setDescription} maxLength={4000} placeholder="…" />`.
-- Submission already passes `description` string straight to DB — now it stores HTML (no schema change; `description` is text). AI-generated description (plain text) is still assigned to the same state; TipTap will render it fine.
+## 2. Visual & UX consistency (medium polish)
 
-### 4. Render HTML safely on `src/routes/listings.$id.tsx`
-- Where description currently renders as plain text/whitespace-pre-wrap, switch to a `<div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(listing.description) }} />`.
-- DOMPurify config: allow basic tags (`p, br, strong, em, u, s, h2, h3, ul, ol, li, blockquote, code, a`) and only `href`, `target`, `rel` on links; force `rel="noopener noreferrer nofollow"` and `target="_blank"` on `<a>`.
+Shared patterns rolled out across every `_authenticated.*` page and key public pages (`index`, `search`, `listings.$id`, `sellers.$id`, `compare`):
 
-### 5. Backward compatibility
-Existing plain-text descriptions render correctly inside the `prose` div (text nodes). No migration required.
+- **Page shell**: every user panel uses `PanelShell` with consistent page title + subtitle + right-side primary action slot.
+- **Empty states**: standard component-level treatment (icon, headline, helper text, single CTA). Apply to favorites, saved-searches, messages list, notifications, my-listings (already partially done).
+- **Loading states**: replace remaining "Loading…" text with skeleton blocks (Skeleton component) matching final layout.
+- **Buttons & badges**: enforce the rounded-full + tonal palette already used in the dashboard for all CTAs in user panels.
+- **Forms**: standard label spacing, `text-sm font-medium`, inline help text, required marker, consistent error rendering under each field.
+- **Cards**: unify on `rounded-2xl border border-white/40 bg-white/70 backdrop-blur` surface used by the dashboard.
+- **Mobile**: verify 393px layout for each panel; ensure no horizontal overflow, tap targets ≥ 40px, sticky action bars don't cover MobileTabBar.
+- **Dark mode**: spot-check tokens; replace any stray `text-white`/`bg-black` with semantic tokens.
 
-### Technical notes
-- Keep `Textarea` import removed only if unused elsewhere in the file.
-- Character limit counts editor's plain text (`editor.storage.characterCount` via `@tiptap/extension-character-count` — add this too) to match the existing 4000 cap.
-- Emoji picker mounted inside a `Popover` so it doesn't blow up layout on mobile (393px viewport).
-- No backend / RLS / server function changes.
+## 3. Listing details page polish (`listings.$id.tsx`)
 
-### Files touched
-- add: `src/components/RichTextEditor.tsx`
-- edit: `src/routes/_authenticated.post.tsx` (swap Textarea → RichTextEditor)
-- edit: `src/routes/listings.$id.tsx` (sanitized HTML render)
-- install: tiptap packages, emoji-picker-react, dompurify
+- Tidy the new contact action cluster (Call / WhatsApp / Message) into one consistent button row, mobile sticky bar mirrors it.
+- Render `rte-content` HTML in a max-width container with proper typographic spacing.
+- Add a small "Report listing" link near the seller card (uses existing `ReportDialog`).
+- Add breadcrumb (Home › Category › City › Title) for SEO + nav.
+
+## 4. Header / nav
+
+- Make `Header` show the authenticated user's avatar + dropdown (Dashboard, My listings, Wallet, Profile, Sign out) when signed in, instead of the current "Sign in" button.
+- Wire `NotificationsBell` unread count to live data (it already exists; verify subscription).
+- Ensure `MobileTabBar` highlights the active tab via `useRouterState`.
+
+## 5. Runtime / build hygiene
+
+- Console shows repeated `Failed to fetch` from the Lovable preview shim — that's environmental, not our code; no action.
+- Audit each route file for missing `errorComponent` / `notFoundComponent`; add minimal boundaries where missing (per TanStack guards).
+- Quick lint sweep: remove unused imports introduced by recent edits.
+
+## Out of scope
+
+- Admin panel pages.
+- Email templates (already shipped).
+- Database schema changes (no migrations expected).
+- Adding entirely new features (chat translations, etc.).
+
+## Deliverables
+
+- Edit-listing works end-to-end from My Listings.
+- Every user panel has consistent shell, empty/loading/error states, and unified card/button styling.
+- Header shows authenticated user menu.
+- Notifications/favorites get bulk + delete actions.
+- Listing details page contact cluster + breadcrumbs polished.
+
+Estimated touched files: ~15–20 (mostly under `src/routes/_authenticated.*`, `src/components/`, plus `Header`, `ListingRowActions`, `listings.$id.tsx`).
