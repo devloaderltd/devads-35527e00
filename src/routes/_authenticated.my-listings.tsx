@@ -16,6 +16,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ListingSparkline } from "@/components/ThreadSparkline";
 import { BulkActionBar } from "@/components/BulkActionBar";
 import { PanelShell } from "@/components/PanelShell";
+import { ListingsSkeleton } from "@/components/ListingsSkeleton";
 
 export const Route = createFileRoute("/_authenticated/my-listings")({
   head: () => ({ meta: [{ title: "My listings — CallEscort24" }] }),
