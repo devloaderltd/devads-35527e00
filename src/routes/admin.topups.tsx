@@ -10,6 +10,7 @@ import { Wallet } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 import { listTopupsAdmin, retryTopupCredit } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/topups")({ component: TopupsPage });
