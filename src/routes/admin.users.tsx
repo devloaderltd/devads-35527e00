@@ -140,7 +140,13 @@ function UsersPage() {
               </div>
             </div>
           ))}
-          {!usersQ.isLoading && !users.length && <div className="py-10 text-center text-sm text-slate-400">No users.</div>}
+          {!usersQ.isLoading && !users.length && (
+            <EmptyState
+              icon={UsersIcon}
+              title={qInput || filter !== "all" ? "No users match" : "No users yet"}
+              description={qInput || filter !== "all" ? "Try clearing filters." : "User accounts will appear here as people sign up."}
+            />
+          )}
         </div>
 
         <div className="mt-4 flex items-center justify-between">
@@ -152,6 +158,16 @@ function UsersPage() {
           </div>
         </div>
       </Panel>
+
+      <BulkActionBar
+        count={selected.size}
+        onClear={() => setSelected(new Set())}
+        actions={[
+          { label: "Ban", onClick: () => { const d = Number(prompt("Ban for how many days?", "7") ?? "0"); if (d > 0) bulk.mutate({ action: "ban", days: d }); } },
+          { label: "Unban", onClick: () => bulk.mutate({ action: "unban" }) },
+          { label: "Delete", variant: "destructive", onClick: () => { if (confirm(`Permanently delete ${selected.size} users? This cannot be undone.`)) bulk.mutate({ action: "delete" }); } },
+        ]}
+      />
 
       <UserDetailSheet user={active} onClose={() => setActive(null)} onChanged={refresh} />
     </div>
