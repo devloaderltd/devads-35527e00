@@ -686,6 +686,7 @@ export type Database = {
           listing_id: string
           muted_by: string[]
           seller_id: string
+          starred_by: string[]
         }
         Insert: {
           archived_by?: string[]
@@ -696,6 +697,7 @@ export type Database = {
           listing_id: string
           muted_by?: string[]
           seller_id: string
+          starred_by?: string[]
         }
         Update: {
           archived_by?: string[]
@@ -706,6 +708,7 @@ export type Database = {
           listing_id?: string
           muted_by?: string[]
           seller_id?: string
+          starred_by?: string[]
         }
         Relationships: [
           {
