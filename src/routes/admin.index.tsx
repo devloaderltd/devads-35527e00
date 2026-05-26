@@ -34,6 +34,17 @@ const COLORS = ["#7c5cff", "#22c1c3", "#ff7a59", "#36c172", "#ffb454", "#e94aa8"
 function DashboardPage() {
   const quickStatsFn = useServerFn(getQuickStats);
   const activityFn = useServerFn(getRecentActivity);
+  const sparklinesFn = useServerFn(getDashboardSparklines);
+  const funnelFn = useServerFn(getFunnelStats);
+
+  const [range, setRange] = useState<RangeDays>(30);
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? window.localStorage.getItem(RANGE_KEY) : null;
+    if (saved === "7" || saved === "30" || saved === "90") setRange(Number(saved) as RangeDays);
+  }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(RANGE_KEY, String(range));
+  }, [range]);
 
   const overview = useQuery({
     queryKey: ["admin-overview"],
@@ -59,13 +70,23 @@ function DashboardPage() {
 
   const quick = useQuery({ queryKey: ["admin-quick-stats"], queryFn: () => quickStatsFn() });
   const activity = useQuery({ queryKey: ["admin-activity"], queryFn: () => activityFn() });
+  const sparks = useQuery({
+    queryKey: ["admin-sparklines", range],
+    queryFn: () => sparklinesFn({ data: { days: range } }),
+    staleTime: 60_000,
+  });
+  const funnel = useQuery({
+    queryKey: ["admin-funnel", range],
+    queryFn: () => funnelFn({ data: { days: range } }),
+    staleTime: 60_000,
+  });
 
   const data = overview.data;
 
   const charts = useMemo(() => {
     if (!data) return null;
     const days: { date: string; users: number; listings: number; revenue: number }[] = [];
-    for (let i = 29; i >= 0; i--) {
+    for (let i = range - 1; i >= 0; i--) {
       const d = startOfDay(subDays(new Date(), i));
       const t = d.getTime();
       days.push({
@@ -84,25 +105,55 @@ function DashboardPage() {
       byCategory: [...catMap.entries()].map(([name, value]) => ({ name, value })),
       byStatus: [...statusMap.entries()].map(([name, value]) => ({ name, value })),
     };
-  }, [data]);
+  }, [data, range]);
 
   const totalRevenue = (data?.payments ?? []).filter(p => p.status === "completed").reduce((s, p) => s + Number(p.amount ?? 0), 0);
   const active = (data?.listings ?? []).filter(l => l.status === "active").length;
   const newUsers7d = (data?.users ?? []).filter(u => new Date(u.created_at).getTime() > Date.now() - 7 * 86400000).length;
 
+  const s = sparks.data;
+  const fn = funnel.data;
+  const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
+
   return (
     <div>
-      <AdminPageHeader title="Dashboard" subtitle="At-a-glance view of the marketplace" actions={<SeedDemoButton />} />
+      <AdminPageHeader
+        title="Dashboard"
+        subtitle="At-a-glance view of the marketplace"
+        actions={
+          <div className="flex items-center gap-2">
+            <RangeToggle value={range} onChange={setRange} />
+            <SeedDemoButton />
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Kpi icon={<Users className="h-5 w-5" />} label="Users" value={data?.users.length ?? "—"} />
-        <Kpi icon={<Package className="h-5 w-5" />} label="Active listings" value={active} />
-        <Kpi icon={<DollarSign className="h-5 w-5" />} label="Revenue (USD)" value={`$${totalRevenue.toFixed(2)}`} />
-        <Kpi icon={<Flag className="h-5 w-5" />} label="Open reports" value={data?.openReports ?? "—"} />
-        <Kpi icon={<Wallet className="h-5 w-5" />} label="Total in wallets" value={`$${(quick.data?.totalWalletUsd ?? 0).toFixed(2)}`} />
-        <Kpi icon={<Bitcoin className="h-5 w-5" />} label="Pending top-ups" value={quick.data?.pendingTopups ?? "—"} />
-        <Kpi icon={<TrendingUp className="h-5 w-5" />} label="New users (7d)" value={newUsers7d} />
-        <Kpi icon={<AlertCircle className="h-5 w-5" />} label="Low-balance users" value={quick.data?.lowBalanceUsers.length ?? "—"} />
+        <KpiTile icon={<Users className="h-4 w-4" />} label={`Users (${range}d)`} value={s?.users.current ?? "—"} delta={s?.users} spark={s?.users.spark} accent="#7c5cff" loading={sparks.isLoading} />
+        <KpiTile icon={<Package className="h-4 w-4" />} label={`Listings (${range}d)`} value={s?.listings.current ?? "—"} delta={s?.listings} spark={s?.listings.spark} accent="#22c1c3" loading={sparks.isLoading} />
+        <KpiTile icon={<DollarSign className="h-4 w-4" />} label={`Revenue (${range}d)`} value={`$${(s?.revenue.current ?? 0).toFixed(2)}`} delta={s?.revenue} spark={s?.revenue.spark} accent="#ff7a59" loading={sparks.isLoading} />
+        <KpiTile icon={<Flag className="h-4 w-4" />} label={`Reports (${range}d)`} value={s?.reports.current ?? "—"} delta={s?.reports} spark={s?.reports.spark} accent="#e94aa8" loading={sparks.isLoading} />
+        <KpiTile icon={<Package className="h-4 w-4" />} label="Active listings" value={active} accent="#36c172" />
+        <KpiTile icon={<DollarSign className="h-4 w-4" />} label="Revenue (all-time)" value={`$${totalRevenue.toFixed(2)}`} accent="#ffb454" />
+        <KpiTile icon={<Wallet className="h-4 w-4" />} label="Total in wallets" value={`$${(quick.data?.totalWalletUsd ?? 0).toFixed(2)}`} accent="#5aa9ff" />
+        <KpiTile icon={<Bitcoin className="h-4 w-4" />} label="Pending top-ups" value={quick.data?.pendingTopups ?? "—"} accent="#ffb454" />
+        <KpiTile icon={<TrendingUp className="h-4 w-4" />} label="New users (7d)" value={newUsers7d} accent="#7c5cff" />
+        <KpiTile icon={<AlertCircle className="h-4 w-4" />} label="Low-balance users" value={quick.data?.lowBalanceUsers.length ?? "—"} accent="#e94aa8" />
+        <KpiTile icon={<Users className="h-4 w-4" />} label="Total users" value={data?.users.length ?? "—"} accent="#22c1c3" />
+        <KpiTile icon={<Flag className="h-4 w-4" />} label="Open reports" value={data?.openReports ?? "—"} accent="#ff7a59" />
+      </div>
+
+      {/* Funnel */}
+      <div className={panelCls + " mt-4 p-4"}>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-sm font-medium text-slate-100">Activation funnel ({range}d)</div>
+          <span className="text-[11px] text-slate-500">Signups in cohort → posted a listing → made a paid promotion</span>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <FunnelStep label="Signups" value={fn?.signups ?? 0} pct={100} accent="#7c5cff" />
+          <FunnelStep label="Posted listing" value={fn?.posted ?? 0} pct={pct(fn?.posted ?? 0, fn?.signups ?? 0)} accent="#22c1c3" />
+          <FunnelStep label="Paid promotion" value={fn?.paid ?? 0} pct={pct(fn?.paid ?? 0, fn?.signups ?? 0)} accent="#ff7a59" />
+        </div>
       </div>
 
       {/* Quick actions */}
@@ -110,8 +161,10 @@ function DashboardPage() {
         <Button asChild size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"><Link to="/admin/reports">Review reports ({quick.data?.openReports ?? 0})</Link></Button>
         <Button asChild size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"><Link to="/admin/topups">Pending top-ups ({quick.data?.pendingTopups ?? 0})</Link></Button>
         <Button asChild size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"><Link to="/admin/wallets">Manage wallets</Link></Button>
-        <Button asChild size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"><Link to="/admin/settings">Site settings</Link></Button>
+        <Button asChild size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"><Link to="/admin/activity">Open activity →</Link></Button>
       </div>
+
+
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard title="Signups & listings (30 days)">
