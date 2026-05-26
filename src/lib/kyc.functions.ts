@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-middleware";
+import { enqueueTransactionalEmail, getUserEmail, getUserDisplayName } from "./email/enqueue.server";
 
 const submitSchema = z.object({
   fullName: z.string().trim().min(2).max(120),
@@ -133,6 +134,10 @@ export const adminReviewKyc = createServerFn({ method: "POST" })
     return { submissionId: input.submissionId, action: input.action, note: input.note?.trim().slice(0, 1000) };
   })
   .handler(async ({ data }) => {
+    // Resolve submission → user before mutating, so we can email after.
+    const { data: sub } = await supabaseAdmin
+      .from("kyc_submissions").select("user_id").eq("id", data.submissionId).maybeSingle();
+
     if (data.action === "approve") {
       const { error } = await supabaseAdmin.rpc("approve_kyc", {
         _submission_id: data.submissionId,
@@ -147,5 +152,29 @@ export const adminReviewKyc = createServerFn({ method: "POST" })
       });
       if (error) throw new Error(error.message);
     }
+
+    // Email user about decision (fire-and-forget — never block the admin action)
+    try {
+      if (sub?.user_id) {
+        const email = await getUserEmail(sub.user_id);
+        if (email) {
+          const name = await getUserDisplayName(sub.user_id);
+          await enqueueTransactionalEmail({
+            templateName: "kyc-status",
+            recipientEmail: email,
+            idempotencyKey: `kyc-${data.submissionId}-${data.action}`,
+            templateData: {
+              recipientName: name ?? undefined,
+              status: data.action === "approve" ? "approved" : "rejected",
+              note: data.note,
+              url: data.action === "approve"
+                ? "https://callescort.devloader.com/wallet"
+                : "https://callescort.devloader.com/verify",
+            },
+          });
+        }
+      }
+    } catch (e) { console.error("kyc email failed", e); }
+
     return { ok: true };
   });
