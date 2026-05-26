@@ -97,16 +97,18 @@ function ListingsPage() {
         )}
         <div className="space-y-2">
           {filtered.map(l => (
-            <div key={l.id} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition hover:border-white/20">
-              <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggle(l.id)} className="mt-1 h-4 w-4" />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-slate-100">{l.title}</span>
-                  <Badge variant={l.status === "active" ? "default" : "secondary"} className="capitalize">{l.status}</Badge>
+            <div key={l.id} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition hover:border-white/20 sm:flex-row sm:items-start">
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggle(l.id)} className="mt-1 h-4 w-4 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="break-words font-medium text-slate-100">{l.title}</span>
+                    <Badge variant={l.status === "active" ? "default" : "secondary"} className="capitalize">{l.status}</Badge>
+                  </div>
+                  <div className="text-xs text-slate-400">{l.view_count} views · {format(new Date(l.created_at), "MMM d")}</div>
                 </div>
-                <div className="text-xs text-slate-400">{l.view_count} views · {format(new Date(l.created_at), "MMM d")}</div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 sm:shrink-0">
                 <Button asChild size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10"><a href={`/listings/${l.id}`} target="_blank" rel="noopener noreferrer">View</a></Button>
                 <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => promo.mutate({ listingId: l.id, type: "bump" })}>Gift bump</Button>
                 <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => promo.mutate({ listingId: l.id, type: "featured" })}>Gift featured</Button>

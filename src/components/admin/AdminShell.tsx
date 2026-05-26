@@ -44,7 +44,7 @@ export function AdminShell({ children, email }: { children: React.ReactNode; ema
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <div className="flex min-h-screen w-full bg-slate-950 text-slate-100">
         <AdminSidebar />
-        <SidebarInset className="bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
+        <SidebarInset className="min-w-0 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
           <header
             className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-white/10 bg-slate-950/80 px-3 backdrop-blur sm:px-5"
             style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
@@ -79,7 +79,7 @@ export function AdminShell({ children, email }: { children: React.ReactNode; ema
             </div>
           </header>
           <main
-            className="flex-1 px-3 py-5 sm:px-6 sm:py-6"
+            className="min-w-0 flex-1 overflow-x-hidden px-3 py-5 sm:px-6 sm:py-6"
             style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
           >
             {children}

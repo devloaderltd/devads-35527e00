@@ -81,12 +81,12 @@ function MaintenancePage() {
 
 function Action({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
-      <div>
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+      <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-slate-100">{title}</div>
         <p className="text-xs text-slate-400">{description}</p>
       </div>
-      {children}
+      <div className="shrink-0">{children}</div>
     </div>
   );
 }

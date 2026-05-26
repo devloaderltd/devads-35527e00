@@ -24,12 +24,14 @@ function DebugPage() {
       <AdminPageHeader title="Debug & error center" subtitle="Live errors, server logs, health checks, and database inspector" />
       <HealthStrip />
       <Tabs defaultValue="errors" className="w-full">
-        <TabsList className="bg-white/5">
-          <TabsTrigger value="errors"><Bug className="mr-1 h-4 w-4" />Client errors</TabsTrigger>
-          <TabsTrigger value="server"><Server className="mr-1 h-4 w-4" />Server logs</TabsTrigger>
-          <TabsTrigger value="health"><Activity className="mr-1 h-4 w-4" />Health</TabsTrigger>
-          <TabsTrigger value="inspector"><Database className="mr-1 h-4 w-4" />DB inspector</TabsTrigger>
-        </TabsList>
+        <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
+          <TabsList className="w-max bg-white/5">
+            <TabsTrigger value="errors" className="whitespace-nowrap"><Bug className="mr-1 h-4 w-4" />Client errors</TabsTrigger>
+            <TabsTrigger value="server" className="whitespace-nowrap"><Server className="mr-1 h-4 w-4" />Server logs</TabsTrigger>
+            <TabsTrigger value="health" className="whitespace-nowrap"><Activity className="mr-1 h-4 w-4" />Health</TabsTrigger>
+            <TabsTrigger value="inspector" className="whitespace-nowrap"><Database className="mr-1 h-4 w-4" />DB inspector</TabsTrigger>
+          </TabsList>
+        </div>
         <TabsContent value="errors" className="mt-4"><ClientErrorsTab /></TabsContent>
         <TabsContent value="server" className="mt-4"><ServerLogsTab /></TabsContent>
         <TabsContent value="health" className="mt-4"><HealthTab /></TabsContent>

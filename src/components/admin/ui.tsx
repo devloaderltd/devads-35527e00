@@ -5,8 +5,8 @@ export const panelCls = "rounded-2xl border border-white/10 bg-white/5 backdrop-
 export function AdminPageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) {
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-slate-100 sm:text-3xl">{title}</h1>
+      <div className="min-w-0 flex-1">
+        <h1 className="font-display text-2xl font-bold text-slate-100 break-words sm:text-3xl">{title}</h1>
         {subtitle && <p className="text-xs text-slate-400 sm:text-sm">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
