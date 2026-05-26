@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart, CheckSquare } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, RefreshCw, Sparkles, AlertTriangle, Plus, Eye, Heart, CheckSquare, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ListingSparkline } from "@/components/ThreadSparkline";
