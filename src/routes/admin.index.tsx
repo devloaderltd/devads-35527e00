@@ -283,15 +283,29 @@ function HealthStrip({
   loading,
   error,
   onRetry,
+  onRefresh,
+  isFetching,
   data,
 }: {
   loading: boolean;
   error?: string;
   onRetry: () => void;
+  onRefresh?: () => void;
+  isFetching?: boolean;
   data?: HealthData;
 }) {
   if (loading) return <div className="mb-1"><CardGridSkeleton tiles={4} /></div>;
-  if (error) return <div className="mb-1"><ErrorFallback message={error} onRetry={onRetry} /></div>;
+  if (error)
+    return (
+      <div className="mb-1">
+        <ErrorFallback
+          title="Couldn't load system health"
+          message={error}
+          onRetry={onRetry}
+          isRetrying={isFetching}
+        />
+      </div>
+    );
   if (!data) return null;
   const c = data.counts;
   const errorsTotal = c.serverErrors24h + c.unresolvedErrors;
@@ -318,34 +332,145 @@ function HealthStrip({
     bad: "bg-rose-400 animate-pulse",
   };
   return (
-    <div className="mb-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {items.map((it) => {
-        const inner = (
-          <>
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5">
-              <it.icon className="h-3.5 w-3.5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide opacity-80">
-                <span className={`h-1.5 w-1.5 rounded-full ${toneDot[it.tone]}`} />
-                <span className="truncate">{it.label}</span>
+    <div className="mb-1">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <Activity className="h-3 w-3" /> System health
+        </div>
+        {onRefresh && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onRefresh}
+            disabled={isFetching}
+            title="Refresh health"
+            className="h-7 rounded-full px-2 text-[11px] text-slate-400 hover:text-slate-100 disabled:opacity-50"
+          >
+            <RefreshCw className={`mr-1 h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
+            {isFetching ? "Refreshing" : "Refresh"}
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {items.map((it) => {
+          const inner = (
+            <>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5">
+                <it.icon className="h-3.5 w-3.5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide opacity-80">
+                  <span className={`h-1.5 w-1.5 rounded-full ${toneDot[it.tone]}`} />
+                  <span className="truncate">{it.label}</span>
+                </div>
+                <div className="mt-0.5 font-display text-base font-bold leading-tight text-slate-100 sm:text-lg">
+                  {it.value}
+                </div>
               </div>
-              <div className="mt-0.5 font-display text-base font-bold leading-tight text-slate-100 sm:text-lg">
-                {it.value}
-              </div>
-            </div>
-          </>
-        );
-        const cls = `group flex items-center gap-2.5 rounded-xl border border-white/10 px-3 py-2.5 ring-1 ring-inset transition-all hover:-translate-y-0.5 ${toneRing[it.tone]}`;
-        return it.to ? (
-          <Link key={it.label} to={it.to} className={cls}>{inner}</Link>
-        ) : (
-          <div key={it.label} className={cls}>{inner}</div>
-        );
-      })}
+            </>
+          );
+          const cls = `group flex items-center gap-2.5 rounded-xl border border-white/10 px-3 py-2.5 ring-1 ring-inset transition-all hover:-translate-y-0.5 ${toneRing[it.tone]}`;
+          return it.to ? (
+            <Link key={it.label} to={it.to} className={cls}>{inner}</Link>
+          ) : (
+            <div key={it.label} className={cls}>{inner}</div>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
+type ChartsData = {
+  days: Array<{ date: string; users: number; listings: number; revenue: number }>;
+  byCategory: Array<{ name: string; value: number }>;
+  byStatus: Array<{ name: string; value: number }>;
+} | null;
+
+function ChartsGrid({ charts }: { charts: ChartsData }) {
+  // Unique IDs per chart instance — avoids Recharts <defs> collisions
+  // when multiple charts share the same SVG layer.
+  const uid = useId().replace(/:/g, "");
+  const idUsers = `${uid}-users`;
+  const idListings = `${uid}-listings`;
+  const idRevenue = `${uid}-revenue`;
+  const idCat = `${uid}-cat`;
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <ChartCard title="Signups & listings">
+        <ResponsiveContainer width="100%" height={240}>
+          <ComposedChart data={charts?.days ?? []}>
+            <defs>
+              <linearGradient id={idUsers} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#7c5cff" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="#7c5cff" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id={idListings} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#22c1c3" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="#22c1c3" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="2 4" opacity={0.12} />
+            <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+            <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Area type="monotone" dataKey="users" stroke="none" fill={`url(#${idUsers})`} />
+            <Area type="monotone" dataKey="listings" stroke="none" fill={`url(#${idListings})`} />
+            <Line type="monotone" dataKey="users" stroke="#7c5cff" strokeWidth={2.5} dot={false} activeDot={{ r: 5, strokeWidth: 0, fill: "#a78bfa" }} />
+            <Line type="monotone" dataKey="listings" stroke="#22c1c3" strokeWidth={2.5} dot={false} activeDot={{ r: 5, strokeWidth: 0, fill: "#5eead4" }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </ChartCard>
+      <ChartCard title="Revenue per day">
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={charts?.days ?? []}>
+            <defs>
+              <linearGradient id={idRevenue} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ff7a59" stopOpacity={1} />
+                <stop offset="100%" stopColor="#ff7a59" stopOpacity={0.3} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+            <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
+            <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
+            <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
+            <Bar dataKey="revenue" fill={`url(#${idRevenue})`} radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+      <ChartCard title="Listings by category">
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={charts?.byCategory ?? []}>
+            <defs>
+              <linearGradient id={idCat} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#36c172" stopOpacity={1} />
+                <stop offset="100%" stopColor="#36c172" stopOpacity={0.3} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} interval={0} angle={-20} textAnchor="end" height={60} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+            <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
+            <Bar dataKey="value" fill={`url(#${idCat})`} radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+      <ChartCard title="Listing status">
+        <ResponsiveContainer width="100%" height={240}>
+          <PieChart>
+            <Pie data={charts?.byStatus ?? []} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} label>
+              {(charts?.byStatus ?? []).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+            </Pie>
+            <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </ChartCard>
+    </div>
+  );
+}
+
 
 function SectionDivider({ label }: { label: string }) {
   return (
