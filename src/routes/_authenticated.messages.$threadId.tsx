@@ -42,7 +42,7 @@ function ThreadView() {
         .from("listings").select("id, title, status").eq("id", data.listing_id).maybeSingle();
       const otherId = data.buyer_id === user?.id ? data.seller_id : data.buyer_id;
       const { data: other } = await supabase
-        .from("profiles").select("id, display_name, avatar_url").eq("id", otherId).maybeSingle();
+        .from("profiles").select("id, display_name, avatar_url, show_read_receipts").eq("id", otherId).maybeSingle();
       return { ...data, listing, other, otherId };
     },
   });
