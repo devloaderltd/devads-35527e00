@@ -216,9 +216,12 @@ function DashboardPage() {
       </div>
 
       <div className="mt-4">
-        <h2 className="mb-2 font-display text-lg font-semibold text-slate-100">Recent activity</h2>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold text-slate-100">Recent activity</h2>
+          <Link to="/admin/activity" className="text-xs text-indigo-300 hover:underline">Open full feed →</Link>
+        </div>
         <div className={panelCls + " divide-y divide-white/5"}>
-          {(activity.data?.items ?? []).map((item, i) => (
+          {(activity.data?.items ?? []).slice(0, 20).map((item, i) => (
             <div key={i} className="flex items-center gap-3 px-4 py-2.5 text-sm">
               <Badge variant="secondary" className="capitalize">{item.kind}</Badge>
               <span className="flex-1 truncate text-slate-300">
@@ -238,19 +241,41 @@ function DashboardPage() {
   );
 }
 
-function Kpi({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+function RangeToggle({ value, onChange }: { value: RangeDays; onChange: (v: RangeDays) => void }) {
+  const opts: RangeDays[] = [7, 30, 90];
   return (
-    <Card className={panelCls + " border-0"}>
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] uppercase tracking-wide sm:text-xs">{label}</span>
-          <span className="text-indigo-300">{icon}</span>
-        </div>
-        <div className="mt-1.5 font-display text-lg font-bold text-slate-100 sm:mt-2 sm:text-2xl">{value}</div>
-      </CardContent>
-    </Card>
+    <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-0.5 text-xs">
+      {opts.map((o) => (
+        <button
+          key={o}
+          onClick={() => onChange(o)}
+          className={`rounded-full px-3 py-1 transition ${
+            value === o ? "bg-indigo-500/30 text-indigo-100" : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          {o}d
+        </button>
+      ))}
+    </div>
   );
 }
+
+function FunnelStep({ label, value, pct, accent }: { label: string; value: number; pct: number; accent: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+      <div className="flex items-baseline justify-between">
+        <span className="text-[11px] uppercase tracking-wide text-slate-400">{label}</span>
+        <span className="text-[11px] font-medium" style={{ color: accent }}>{pct}%</span>
+      </div>
+      <div className="mt-1 font-display text-xl font-bold text-slate-100">{value}</div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
+        <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, background: accent }} />
+      </div>
+    </div>
+  );
+}
+
+
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
