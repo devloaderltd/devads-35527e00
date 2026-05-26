@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput,
   CommandItem, CommandList, CommandSeparator,
@@ -9,9 +11,10 @@ import {
   LayoutDashboard, BarChart3, Users, BadgeCheck, Flag, ShieldAlert,
   Star, MessagesSquare, Package, Sparkles, Bell, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, Wrench, Megaphone, FileClock,
-  Bug, Activity, Search,
+  Bug, Activity, Search, RefreshCw,
 } from "lucide-react";
 import { searchAdmin } from "@/lib/admin.functions";
+import { ADMIN_BADGES_QUERY_KEY } from "@/lib/admin-badges";
 
 const NAV = [
   { icon: LayoutDashboard, label: "Dashboard", url: "/admin" },
@@ -40,6 +43,7 @@ const NAV = [
 
 export function AdminCommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<{ users: { id: string; display_name: string }[]; listings: { id: string; title: string; slug: string }[]; payments: { id: string; amount: number; status: string }[] }>({ users: [], listings: [], payments: [] });
   const searchFn = useServerFn(searchAdmin);
@@ -110,6 +114,14 @@ export function AdminCommandPalette({ open, onOpenChange }: { open: boolean; onO
         )}
 
         <CommandGroup heading="Quick actions">
+          <CommandItem
+            onSelect={() => go(async () => {
+              await queryClient.invalidateQueries({ queryKey: ADMIN_BADGES_QUERY_KEY });
+              toast.success("Counts refreshed");
+            })}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Refresh badge counts
+          </CommandItem>
           <CommandItem onSelect={() => go(() => navigate({ to: "/admin/kyc" }))}>
             <BadgeCheck className="mr-2 h-4 w-4" /> Review next KYC submission
           </CommandItem>
