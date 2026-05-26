@@ -104,10 +104,11 @@ function ThreadView() {
     return () => { supabase.removeChannel(ch); };
   }, [threadId, thread?.otherId]);
 
-  // Presence-based typing indicator
+  // Presence-based typing indicator (single channel ref reused for track())
   useEffect(() => {
     if (!user) return;
     const ch = supabase.channel(`presence-${threadId}`, { config: { presence: { key: user.id } } });
+    presenceRef.current = ch;
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState() as Record<string, Array<{ typing?: boolean }>>;
       const others = Object.entries(state).filter(([k]) => k !== user.id);
@@ -116,12 +117,14 @@ function ThreadView() {
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") await ch.track({ typing: false });
     });
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+      presenceRef.current = null;
+    };
   }, [threadId, user]);
 
   const broadcastTyping = (isTyping: boolean) => {
-    if (!user) return;
-    supabase.channel(`presence-${threadId}`, { config: { presence: { key: user.id } } }).track({ typing: isTyping });
+    presenceRef.current?.track({ typing: isTyping });
   };
 
   useEffect(() => {
@@ -190,8 +193,8 @@ function ThreadView() {
     typingTimer.current = window.setTimeout(() => broadcastTyping(false), 2000);
   };
 
-  const myLastMsg = [...(messages ?? [])].reverse().find(m => m.sender_id === user?.id);
-  const seen = myLastMsg && otherLastRead && new Date(otherLastRead) >= new Date(myLastMsg.created_at);
+  const showReceipts = thread?.other?.show_read_receipts !== false;
+  const otherReadAt = otherLastRead ? new Date(otherLastRead) : null;
 
   return (
     <div className="flex h-[70vh] flex-col">
