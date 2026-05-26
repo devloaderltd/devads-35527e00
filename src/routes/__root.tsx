@@ -151,6 +151,7 @@ function RootComponent() {
           <CompareProvider>
             <RouteProgress />
             <AuthInvalidator />
+            <DynamicFavicon />
             {isAdminArea ? (
               <Outlet />
             ) : (
