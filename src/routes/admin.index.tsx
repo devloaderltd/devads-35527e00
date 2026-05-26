@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -135,8 +135,11 @@ function DashboardPage() {
         loading={health.isLoading}
         error={health.isError ? (health.error as Error)?.message : undefined}
         onRetry={() => health.refetch()}
+        onRefresh={() => health.refetch()}
+        isFetching={health.isFetching}
         data={health.data}
       />
+
 
       <SectionDivider label={`This period · ${range} days`} />
 
@@ -185,78 +188,8 @@ function DashboardPage() {
 
 
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard title="Signups & listings">
-          <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart data={charts?.days ?? []}>
-              <defs>
-                <linearGradient id="gradUsers" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#7c5cff" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#7c5cff" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gradListings" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c1c3" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#22c1c3" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="2 4" opacity={0.12} />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Area type="monotone" dataKey="users" stroke="none" fill="url(#gradUsers)" />
-              <Area type="monotone" dataKey="listings" stroke="none" fill="url(#gradListings)" />
-              <Line type="monotone" dataKey="users" stroke="#7c5cff" strokeWidth={2.5} dot={false} activeDot={{ r: 5, strokeWidth: 0, fill: "#a78bfa" }} />
-              <Line type="monotone" dataKey="listings" stroke="#22c1c3" strokeWidth={2.5} dot={false} activeDot={{ r: 5, strokeWidth: 0, fill: "#5eead4" }} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </ChartCard>
-        <ChartCard title="Revenue per day">
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={charts?.days ?? []}>
-              <defs>
-                <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ff7a59" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#ff7a59" stopOpacity={0.3} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={4} />
-              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
-              <Bar dataKey="revenue" fill="url(#gradRevenue)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-        <ChartCard title="Listings by category">
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={charts?.byCategory ?? []}>
-              <defs>
-                <linearGradient id="gradCat" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#36c172" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#36c172" stopOpacity={0.3} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} interval={0} angle={-20} textAnchor="end" height={60} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10 }} />
-              <Bar dataKey="value" fill="url(#gradCat)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-        <ChartCard title="Listing status">
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie data={charts?.byStatus ?? []} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} label>
-                {(charts?.byStatus ?? []).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)" }} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
+      <ChartsGrid charts={charts} />
+
 
       <div className="mt-4">
         <div className="mb-2 flex items-center justify-between">
