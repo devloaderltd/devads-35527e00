@@ -34,8 +34,9 @@ const run = async () => {
           }
           await supabaseAdmin.from("saved_searches").update({ last_notified_at: new Date().toISOString() }).eq("id", s.id);
         }
-        return new Response(JSON.stringify({ ok: true, searches: searches.length, notifs }), { headers: { "Content-Type": "application/json" } });
-      },
-    },
-  },
+  return new Response(JSON.stringify({ ok: true, searches: searches.length, notifs }), { headers: { "Content-Type": "application/json" } });
+};
+
+export const Route = createFileRoute("/api/public/cron/match-saved-searches")({
+  server: { handlers: { GET: run, POST: run } },
 });
