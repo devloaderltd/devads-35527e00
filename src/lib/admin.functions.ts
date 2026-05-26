@@ -30,8 +30,18 @@ export const getMyRoles = createServerFn({ method: "GET" })
 
 export const runDemoSeed = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .handler(async () => {
-    return await runSeedDemo();
+  .handler(async ({ context }) => {
+    const result = await runSeedDemo();
+    await audit(context.userId, "demo.seed_rotate", "auth", null, {
+      rotated: true,
+      rotated_at: result.rotated_at,
+      accounts: result.accounts.map(a => ({
+        email: a.email,
+        was_created: a.was_created,
+        listings_seeded: a.listings_seeded,
+      })),
+    });
+    return result;
   });
 
 /* ---------------- Users ---------------- */

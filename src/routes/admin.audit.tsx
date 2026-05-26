@@ -63,6 +63,14 @@ function humanize(e: Entry): string {
     case "listing.edit": return `Edited listing "${target}"`;
     case "settings.update": return `Updated site settings (${Object.keys(m).filter(k => k !== "updated_at").join(", ")})`;
     case "topup.retry_credit": return `Retried top-up credit for $${Number((m as any).amount ?? 0).toFixed(2)}`;
+    case "demo.seed_rotate":
+    case "demo.seed_rotate.public": {
+      const accounts = ((m as any).accounts ?? []) as Array<{ email: string; was_created: boolean; listings_seeded: number }>;
+      const created = accounts.filter(a => a.was_created).length;
+      const seeded = accounts.reduce((s, a) => s + (a.listings_seeded ?? 0), 0);
+      const via = e.action === "demo.seed_rotate.public" ? ` (public, via ${(m as any).via ?? "?"})` : "";
+      return `Rotated demo accounts — ${created} created, ${seeded} listing(s) seeded${via}`;
+    }
     default: {
       const tail = e.target_type ? ` on ${e.target_type}:${target}` : "";
       return `${e.action}${tail}`;
