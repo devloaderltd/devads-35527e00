@@ -1,0 +1,5 @@
+{
+  "buildCommand": "bun run build:vercel",
+  "framework": null,
+  "regions": ["iad1"]
+}
