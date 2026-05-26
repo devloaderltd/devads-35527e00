@@ -241,3 +241,95 @@ function Field({ label, error, className, children }: { label: string; error?: s
     </div>
   );
 }
+
+function AssetUploader({
+  label, kind, value, onChange, maxBytes, hint,
+}: {
+  label: string;
+  kind: "logo" | "favicon";
+  value: string;
+  onChange: (v: string) => void;
+  maxBytes: number;
+  hint: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const onPick = async (file: File) => {
+    if (file.size > maxBytes) {
+      toast.error(`File too large (max ${Math.round(maxBytes / 1024)} KB)`);
+      return;
+    }
+    if (!/^image\//.test(file.type) && !file.name.endsWith(".ico")) {
+      toast.error("Image files only");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${kind}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("branding").upload(path, file, {
+        cacheControl: "3600", upsert: false, contentType: file.type || undefined,
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from("branding").getPublicUrl(path);
+      onChange(data.publicUrl);
+      toast.success(`${label} uploaded — remember to publish`);
+    } catch (e) {
+      toast.error((e as Error).message || "Upload failed");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div>
+      <Label className="text-slate-300">{label}</Label>
+      <div className="mt-1 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-2">
+        <div className="grid h-14 w-14 flex-shrink-0 place-items-center overflow-hidden rounded-md bg-slate-950/40">
+          {value ? (
+            <img src={value} alt={label} className="h-full w-full object-contain" />
+          ) : (
+            <span className="text-[10px] text-slate-500">None</span>
+          )}
+        </div>
+        <div className="flex flex-1 flex-col gap-1">
+          <div className="flex gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="rounded-full border-white/15 bg-white/5 text-xs text-slate-100 hover:bg-white/10"
+              disabled={uploading}
+              onClick={() => inputRef.current?.click()}
+            >
+              <Upload className="mr-1 h-3 w-3" />
+              {uploading ? "Uploading…" : value ? "Replace" : "Upload"}
+            </Button>
+            {value && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-xs text-slate-400 hover:text-red-300"
+                onClick={() => onChange("")}
+              >
+                <X className="mr-1 h-3 w-3" /> Remove
+              </Button>
+            )}
+          </div>
+          <p className="text-[10px] text-slate-500">{hint}</p>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/svg+xml,image/webp,image/x-icon,.ico"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); }}
+        />
+      </div>
+    </div>
+  );
+}
+
