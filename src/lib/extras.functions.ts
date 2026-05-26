@@ -440,7 +440,7 @@ export const getModerationQueue = createServerFn({ method: "GET" })
   .handler(async () => {
     const { data: reports } = await supabaseAdmin
       .from("reports").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(100);
-    const listingIds = [...new Set((reports ?? []).map((r) => r.listing_id))];
+    const listingIds = [...new Set((reports ?? []).map((r) => r.listing_id).filter((x): x is string => !!x))];
     const reporterIds = [...new Set((reports ?? []).map((r) => r.reporter_id))];
     const [{ data: listings }, { data: profiles }] = await Promise.all([
       listingIds.length ? supabaseAdmin.from("listings").select("id, title, status, user_id").in("id", listingIds) : Promise.resolve({ data: [] }),
@@ -449,7 +449,7 @@ export const getModerationQueue = createServerFn({ method: "GET" })
     return {
       reports: (reports ?? []).map((r) => ({
         ...r,
-        listing: (listings ?? []).find((l: { id: string }) => l.id === r.listing_id) ?? null,
+        listing: r.listing_id ? ((listings ?? []).find((l: { id: string }) => l.id === r.listing_id) ?? null) : null,
         reporter: (profiles ?? []).find((p: { id: string }) => p.id === r.reporter_id) ?? null,
       })),
     };
