@@ -62,8 +62,8 @@ export function Header() {
     <header className="sticky top-3 z-40 mx-3 mt-3 md:mx-6">
       <div className="mx-auto flex max-w-6xl items-center gap-3 rounded-2xl glass-strong px-3 py-2.5">
         <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
-          <img src={logoUrl} alt="CallEscort24" width={36} height={36} className="h-9 w-9 rounded-xl object-contain" />
-          <span className="hidden sm:inline">CallEscort24</span>
+          <img src={customLogo || logoUrl} alt={siteName} width={36} height={36} className="h-9 w-9 rounded-xl object-contain" />
+          <span className="hidden sm:inline">{siteName}</span>
         </Link>
 
         <form onSubmit={onSearch} className="relative ml-2 hidden flex-1 max-w-md md:block">
