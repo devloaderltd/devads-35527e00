@@ -2,17 +2,12 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 const isVercel = process.env.BUILD_TARGET === "vercel";
 
-export default defineConfig({
-  tanstackStart: {
-    server: { entry: "server" },
-  },
-  cloudflare: isVercel ? false : undefined,
-  vite: isVercel
-    ? {
-        ssr: {
-          noExternal: true,
-          target: "node",
-        },
-      }
-    : undefined,
-});
+export default isVercel
+  ? defineConfig({
+      tanstackStart: { server: { entry: "server" } },
+      cloudflare: false,
+      vite: { ssr: { noExternal: true, target: "node" } },
+    })
+  : defineConfig({
+      tanstackStart: { server: { entry: "server" } },
+    });
