@@ -51,7 +51,7 @@ const ICONS: Record<InboxKind, { icon: React.ComponentType<{ className?: string 
   payment: { icon: CreditCard, tone: "bg-fuchsia-500/15 text-fuchsia-200" },
 };
 
-const EMPTY_COPY: Record<Tab, { icon: React.ComponentType<{ className?: string }>; title: string; description: string }> = {
+const EMPTY_COPY: Record<Tab, { icon: LucideIcon; title: string; description: string }> = {
   all: { icon: Inbox, title: "All clear", description: "Nothing needs attention right now. Pending reviews, failed payments, and errors will land here." },
   kyc: { icon: BadgeCheck, title: "No new KYC submissions", description: "Identity verification requests will appear here as users submit them." },
   report: { icon: Flag, title: "No open reports", description: "User-submitted reports about listings and accounts will show up here." },
