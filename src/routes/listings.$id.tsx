@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   MapPin, Calendar, Tag, ChevronLeft, ChevronRight, MessageSquare,
-  Share2, Eye, Package, Phone, Mail, Lock,
+  Share2, Eye, Package, Phone, Mail, Lock, MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
