@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { AdminTableToolbar, toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { BulkActionBar } from "@/components/admin/BulkActionBar";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 
 export const Route = createFileRoute("/admin/kyc")({
   head: () => ({ meta: [{ title: "KYC review — Admin" }, { name: "robots", content: "noindex" }] }),
