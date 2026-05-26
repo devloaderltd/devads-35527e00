@@ -67,6 +67,7 @@ import { Route as ApiPublicSeedDemoRouteImport } from './routes/api/public/seed-
 import { Route as ApiPublicClientErrorsRouteImport } from './routes/api/public/client-errors'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
 import { Route as AuthenticatedDebugSessionRouteImport } from './routes/_authenticated.debug.session'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicPaymentsNowpaymentsIpnRouteImport } from './routes/api/public/payments/nowpayments-ipn'
 import { Route as ApiPublicCronMatchSavedSearchesRouteImport } from './routes/api/public/cron/match-saved-searches'
 import { Route as ApiPublicCronAutoPromoteRouteImport } from './routes/api/public/cron/auto-promote'
@@ -365,6 +366,12 @@ const AuthenticatedDebugSessionRoute =
     path: '/debug/session',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsNowpaymentsIpnRoute =
   ApiPublicPaymentsNowpaymentsIpnRouteImport.update({
     id: '/api/public/payments/nowpayments-ipn',
@@ -445,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
   '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -505,6 +513,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
   '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -569,6 +578,7 @@ export interface FileRoutesById {
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
   '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -633,6 +643,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
     | '/api/public/payments/nowpayments-ipn'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -693,6 +704,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
     | '/api/public/payments/nowpayments-ipn'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -756,6 +768,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
     | '/api/public/payments/nowpayments-ipn'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -785,6 +798,7 @@ export interface RootRouteChildren {
   ApiPublicCronAutoPromoteRoute: typeof ApiPublicCronAutoPromoteRoute
   ApiPublicCronMatchSavedSearchesRoute: typeof ApiPublicCronMatchSavedSearchesRoute
   ApiPublicPaymentsNowpaymentsIpnRoute: typeof ApiPublicPaymentsNowpaymentsIpnRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1195,6 +1209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDebugSessionRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/nowpayments-ipn': {
       id: '/api/public/payments/nowpayments-ipn'
       path: '/api/public/payments/nowpayments-ipn'
@@ -1345,6 +1366,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronAutoPromoteRoute: ApiPublicCronAutoPromoteRoute,
   ApiPublicCronMatchSavedSearchesRoute: ApiPublicCronMatchSavedSearchesRoute,
   ApiPublicPaymentsNowpaymentsIpnRoute: ApiPublicPaymentsNowpaymentsIpnRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
