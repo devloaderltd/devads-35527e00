@@ -72,7 +72,14 @@ function TopupsPage() {
       />
       <Panel>
         <div className="space-y-2">
-          {filtered.map(t => (
+          {q.isLoading && <RowSkeleton rows={6} />}
+          {q.isError && (
+            <ErrorFallback
+              message={(q.error as Error | undefined)?.message ?? "Could not load top-ups."}
+              onRetry={() => q.refetch()}
+            />
+          )}
+          {!q.isLoading && !q.isError && filtered.map(t => (
             <div key={t.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
