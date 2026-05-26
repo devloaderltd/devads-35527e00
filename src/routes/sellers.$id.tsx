@@ -1,15 +1,19 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { ListingCard } from "@/components/ListingCard";
-import { MapPin, Calendar, Package, MessageSquare, Share2 } from "lucide-react";
+import { MapPin, Calendar, Package, MessageSquare, Share2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 import { SellerReviews } from "@/components/SellerReviews";
 import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 import { SellerFollowButton } from "@/components/SellerFollowButton";
 import { ShareSheet } from "@/components/ShareSheet";
+import { RatingDistribution } from "@/components/seller/RatingDistribution";
+
 
 
 export const Route = createFileRoute("/sellers/$id")({
