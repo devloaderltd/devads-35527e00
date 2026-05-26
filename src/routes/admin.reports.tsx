@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
+// Badge import removed — using StatusPill instead
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -218,8 +218,6 @@ function ReportsPage() {
         ]}
       />
 
-      {/* keep unused import-safe */}
-      <Badge className="hidden" />
     </div>
   );
 }
