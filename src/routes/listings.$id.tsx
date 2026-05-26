@@ -17,6 +17,9 @@ import { ListingCard } from "@/components/ListingCard";
 import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 import { SellerReviews } from "@/components/SellerReviews";
 import { ShareSheet } from "@/components/ShareSheet";
+import { PriceHistoryChart } from "@/components/listing/PriceHistoryChart";
+import { MakeOfferDialog } from "@/components/listing/MakeOfferDialog";
+import { BlockSellerButton } from "@/components/listing/BlockSellerButton";
 import DOMPurify from "dompurify";
 
 function sanitizeDescription(html: string): string {
