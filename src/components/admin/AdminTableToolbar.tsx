@@ -23,7 +23,7 @@ export function AdminTableToolbar({ q, onQ, placeholder = "Search…", filters =
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 backdrop-blur sm:px-3">
       {typeof q === "string" && (
-        <div className="relative min-w-[14rem] flex-1">
+        <div className="relative min-w-0 flex-1 basis-full sm:basis-auto">
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <Input
             value={q}
