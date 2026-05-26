@@ -1,31 +1,26 @@
-## Remaining admin polish
+## Goal
 
-The shell, command palette, sidebar (with persisted state), dashboard, activity feed, settings, broadcasts, and the Reports / Top-ups / Reviews / Listings / Payments / Threads list pages are done. Here's what's still open from the original plan.
+You can't get into the admin panel. The project already has a seeded admin account (`admin@callescort24.test`) and a public rotation endpoint (`/api/public/seed-demo`) that resets that account's password and re-confirms the email idempotently. We just need to call it.
 
-### 1. KYC page polish (`src/routes/admin.kyc.tsx`)
-- Add the shared `AdminTableToolbar` (search by full name / user id, status filter — keep the existing Tabs OR replace with the filter dropdown, pick one) and CSV export.
-- Wrap empty results in `<EmptyState>` instead of the inline "No submissions" line.
-- Add a `BulkActionBar` for approve / reject on selected pending submissions (reuses existing `adminReviewKyc` per-row mutation, batched).
+## What I'll do (no code changes)
 
-### 2. Users page (`src/routes/admin.users.tsx`)
-- Already has search/filter/CSV/bulk-select. Swap the bespoke toolbar for shared `AdminTableToolbar` and the bespoke bulk bar for the floating `BulkActionBar` so visuals match the other list pages. No behavior changes.
+1. POST to `https://devads.lovable.app/api/public/seed-demo` with the `x-seed-token` header set to `SUPABASE_SERVICE_ROLE_KEY` (already in project secrets).
+2. The endpoint will:
+   - Reset the password on `admin@callescort24.test` (creating it if missing).
+   - Reset the password on `demo@callescort24.test`.
+   - Re-confirm both emails so login works immediately.
+   - Ensure the `admin` row in `user_roles` exists for the admin account.
+   - Write an entry to `audit_log` (`demo.seed_rotate.public`).
+3. Return the freshly generated passwords to you in chat. You can then sign in at `/login` with `admin@callescort24.test` + the new password and reach `/admin`.
 
-### 3. Moderation / Reports queue (`src/routes/admin.moderation.tsx`)
-- Audit-only: if it duplicates `/admin/reports`, leave it. Otherwise apply the same toolbar + empty state treatment.
+## What this does NOT do
 
-### 4. Debug page health strip (`src/routes/admin.debug.tsx`)
-- The plan called for a top-of-page "System health" strip (DB ping, last cron, queue depth) that's always visible above the tabs, not buried in a tab. Promote `getSystemHealth` results into a 3-tile strip at the top, keep the existing Health tab as the detailed view.
+- No schema changes, no migration, no edits to seed code or RLS.
+- Does not touch any real user accounts — only the two seeded test accounts.
+- Does not change your email domain or auth provider config.
 
-### 5. Dashboard aggregation (open question from original plan)
-- Today `admin.index.tsx` pulls all rows of `profiles` / `listings` / `payments` to the client for chart math. Add a `getDashboardTimeseries` server fn that returns pre-bucketed series + totals, and switch the dashboard to consume it. This is the biggest scalability win left.
+## After you're back in
 
-### Out of scope
-- No schema changes, no new RLS, no public-facing UI changes.
+Once you're logged in as admin, you can change the admin email/password to something personal from the auth user management UI, or re-run the rotation any time from Admin → Maintenance ("Seed demo data").
 
-## Suggested order
-1. KYC polish (highest user value — visible queue)
-2. Users + Moderation toolbar swap (consistency)
-3. Debug health strip (small, high signal)
-4. Dashboard server-side aggregation (largest change — confirm before starting)
-
-Want me to proceed with all four, or stop after step 3 and treat the dashboard refactor as a separate pass?
+Confirm and I'll run the rotation.
