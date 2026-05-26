@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-export const DEMO_USER = { email: "demo@callescort24.test", password: "DemoUser123!", display_name: "Demo User" };
-export const ADMIN_USER = { email: "admin@callescort24.test", password: "Adm!n-CallEscort24-2026#Xq7", display_name: "Admin User" };
+export const DEMO_USER = { email: "demo@callescort24.test", display_name: "Demo User" };
+export const ADMIN_USER = { email: "admin@callescort24.test", display_name: "Admin User" };
 
 const SAMPLE_LISTINGS: { title: string; description: string; condition: "good" | "like_new" | "not_applicable" | "new" | "fair" | "poor" }[] = [
   { title: "Vintage road bike — Trek 520", description: "Lovingly maintained, ready to ride.", condition: "good" },
@@ -12,6 +12,29 @@ const SAMPLE_LISTINGS: { title: string; description: string; condition: "good" |
 ];
 
 /**
+ * Generate a cryptographically strong password with at least one of each
+ * character class (lower, upper, digit, symbol). 24 chars.
+ */
+function generatePassword(): string {
+  const lower = "abcdefghijklmnopqrstuvwxyz";
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const digit = "0123456789";
+  const symbol = "!@#$%^&*()-_=+[]{}";
+  const alphabet = lower + upper + digit + symbol;
+  for (let attempt = 0; attempt < 16; attempt++) {
+    const buf = new Uint32Array(24);
+    crypto.getRandomValues(buf);
+    let pw = "";
+    for (let i = 0; i < buf.length; i++) pw += alphabet[buf[i] % alphabet.length];
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw) && /[0-9]/.test(pw) && /[!@#$%^&*()\-_=+\[\]{}]/.test(pw)) {
+      return pw;
+    }
+  }
+  // Fallback (extremely unlikely): forcibly inject one of each class.
+  return "Aa1!" + Math.random().toString(36).slice(2, 22);
+}
+
+/**
  * Ensure a user exists with the given credentials. If the user already exists,
  * reset their password and confirm their email so re-running heals the account.
  */
@@ -20,7 +43,6 @@ async function ensureUser(email: string, password: string, display_name: string)
   const existing = list?.users.find(u => u.email === email);
 
   if (existing) {
-    // Heal: reset password + confirm email + ensure metadata
     await supabaseAdmin.auth.admin.updateUserById(existing.id, {
       password,
       email_confirm: true,
@@ -62,8 +84,11 @@ async function seedListingsFor(userId: string) {
 }
 
 export async function runSeedDemo() {
-  const demo = await ensureUser(DEMO_USER.email, DEMO_USER.password, DEMO_USER.display_name);
-  const admin = await ensureUser(ADMIN_USER.email, ADMIN_USER.password, ADMIN_USER.display_name);
+  const demoPassword = generatePassword();
+  const adminPassword = generatePassword();
+
+  const demo = await ensureUser(DEMO_USER.email, demoPassword, DEMO_USER.display_name);
+  const admin = await ensureUser(ADMIN_USER.email, adminPassword, ADMIN_USER.display_name);
 
   // Ensure admin role row
   const { data: existingRole } = await supabaseAdmin
@@ -75,11 +100,14 @@ export async function runSeedDemo() {
   const demoCount = await seedListingsFor(demo.id);
   const adminCount = await seedListingsFor(admin.id);
 
+  const rotated_at = new Date().toISOString();
+
   return {
     ok: true,
+    rotated_at,
     accounts: [
-      { email: DEMO_USER.email, password: DEMO_USER.password, id: demo.id, listings_seeded: demoCount, was_created: demo.created },
-      { email: ADMIN_USER.email, password: ADMIN_USER.password, id: admin.id, role: "admin", listings_seeded: adminCount, was_created: admin.created },
+      { email: DEMO_USER.email, password: demoPassword, id: demo.id, listings_seeded: demoCount, was_created: demo.created },
+      { email: ADMIN_USER.email, password: adminPassword, id: admin.id, role: "admin", listings_seeded: adminCount, was_created: admin.created },
     ],
   };
 }
