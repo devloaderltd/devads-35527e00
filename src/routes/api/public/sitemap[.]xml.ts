@@ -8,7 +8,7 @@ export const Route = createFileRoute("/api/public/sitemap.xml")({
     handlers: {
       GET: async () => {
         const [{ data: listings }, { data: categories }, { data: cities }] = await Promise.all([
-          supabaseAdmin.from("listings").select("id, updated_at").eq("status", "active").order("updated_at", { ascending: false }).limit(5000),
+          supabaseAdmin.from("listings").select("id, slug, updated_at").eq("status", "active").order("updated_at", { ascending: false }).limit(5000),
           supabaseAdmin.from("categories").select("slug"),
           supabaseAdmin.from("cities").select("slug, country"),
         ]);
