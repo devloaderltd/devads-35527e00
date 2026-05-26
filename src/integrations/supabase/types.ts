@@ -300,6 +300,57 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_submissions: {
+        Row: {
+          bonus_credited: boolean
+          created_at: string
+          doc_back_url: string | null
+          doc_front_url: string
+          doc_type: string
+          full_name: string
+          id: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          selfie_url: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bonus_credited?: boolean
+          created_at?: string
+          doc_back_url?: string | null
+          doc_front_url: string
+          doc_type: string
+          full_name: string
+          id?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          selfie_url: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bonus_credited?: boolean
+          created_at?: string
+          doc_back_url?: string | null
+          doc_front_url?: string
+          doc_type?: string
+          full_name?: string
+          id?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          selfie_url?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       listing_events: {
         Row: {
           created_at: string
@@ -693,6 +744,8 @@ export type Database = {
           email_verified_at: string | null
           id: string
           id_verified_at: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
           phone: string | null
           phone_verified_at: string | null
           updated_at: string
@@ -707,6 +760,8 @@ export type Database = {
           email_verified_at?: string | null
           id: string
           id_verified_at?: string | null
+          kyc_status?: string
+          kyc_verified_at?: string | null
           phone?: string | null
           phone_verified_at?: string | null
           updated_at?: string
@@ -721,6 +776,8 @@ export type Database = {
           email_verified_at?: string | null
           id?: string
           id_verified_at?: string | null
+          kyc_status?: string
+          kyc_verified_at?: string | null
           phone?: string | null
           phone_verified_at?: string | null
           updated_at?: string
@@ -1176,6 +1233,10 @@ export type Database = {
         Args: { _amount: number; _description: string; _user_id: string }
         Returns: number
       }
+      approve_kyc: {
+        Args: { _note?: string; _submission_id: string }
+        Returns: undefined
+      }
       credit_wallet: {
         Args: {
           _amount: number
@@ -1215,6 +1276,10 @@ export type Database = {
           _target_id: string
           _target_type: string
         }
+        Returns: undefined
+      }
+      reject_kyc: {
+        Args: { _note: string; _submission_id: string }
         Returns: undefined
       }
     }
