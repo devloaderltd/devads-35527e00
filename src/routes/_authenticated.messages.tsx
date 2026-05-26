@@ -72,7 +72,7 @@ function MessagesLayout() {
   useEffect(() => {
     if (!user) return;
     const ch = supabase
-      .channel("messages-overview")
+      .channel(`messages-overview-${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "message_threads" }, () => refetch())
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => refetch())
       .on("postgres_changes", { event: "*", schema: "public", table: "thread_reads", filter: `user_id=eq.${user.id}` }, () => refetch())
