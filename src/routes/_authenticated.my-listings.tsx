@@ -337,6 +337,11 @@ function MyListings() {
                   {l.status === "sold" && (
                     <Badge className="rounded-full bg-slate-200 text-slate-800 hover:bg-slate-200">Sold</Badge>
                   )}
+                  {l.auto_renew && l.status === "active" && (
+                    <Badge className="gap-1 rounded-full bg-primary/10 text-primary hover:bg-primary/10">
+                      <Zap className="h-3 w-3" /> Auto
+                    </Badge>
+                  )}
                   <span className="ml-auto text-muted-foreground">
                     {formatDistanceToNow(new Date(l.created_at), { addSuffix: true })}
                   </span>
