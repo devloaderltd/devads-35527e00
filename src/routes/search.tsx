@@ -362,6 +362,11 @@ function SearchPage() {
         </div>
       </div>
 
+      <RecentSearchChips
+        current={search.q}
+        onPick={(q) => { setQInput(q); update({ q }); }}
+      />
+
       <div className="mb-4 grid gap-3 rounded-2xl border border-white/40 bg-white/55 p-3 shadow-[var(--shadow-float)] backdrop-blur-xl lg:grid-cols-[1fr_160px_160px_160px_auto]">
         <Input
           placeholder="Search title, description…"
