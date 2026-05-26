@@ -55,7 +55,7 @@ function MaintenancePage() {
             </div>
             <div>
               <Label className="text-xs text-slate-400">Message shown to visitors</Label>
-              <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} className="bg-slate-900/50" />
+              <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} className="border-white/10 bg-slate-900/50 text-slate-100 placeholder:text-slate-500" />
             </div>
             <Button className="w-full rounded-full border-0 bg-gradient-to-r from-indigo-500 to-fuchsia-500" disabled={saveMut.isPending} onClick={() => saveMut.mutate()}>
               {saveMut.isPending ? "Saving…" : "Save"}
