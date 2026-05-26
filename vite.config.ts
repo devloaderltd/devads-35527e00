@@ -11,7 +11,7 @@ export default defineConfig({
     ? {
         ssr: {
           noExternal: true,
-          target: "webworker",
+          target: "node",
         },
       }
     : undefined,

@@ -1,11 +1,7 @@
 #!/usr/bin/env node
 /**
- * Builds the project for Vercel using the Build Output API (v3).
- *
- * 1. Runs `vite build` with BUILD_TARGET=vercel (Cloudflare plugin disabled).
- * 2. Copies dist/client/* -> .vercel/output/static/
- * 3. Copies dist/server/* -> .vercel/output/functions/_ssr.func/
- * 4. Writes the Edge function config and the output routing config.
+ * Builds the project for Vercel using the Build Output API (v3) as a
+ * Node.js serverless function with a Web-standard fetch handler.
  */
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
@@ -43,29 +39,36 @@ mkdirSync(fnDir, { recursive: true });
 // Static client assets
 cpSync(resolve(dist, "client"), staticDir, { recursive: true });
 
-// Server bundle as an Edge Function
+// Server bundle as a Node serverless function
 cpSync(resolve(dist, "server"), fnDir, { recursive: true });
 
-// Edge function config (Vercel Build Output API)
+// Web-standard entry: Vercel's Node runtime (nodejs20.x+) accepts a default
+// export of `(request: Request) => Response | Promise<Response>`.
+writeFileSync(
+  resolve(fnDir, "index.mjs"),
+  `import handler from "./server.js";\nexport default (request) => handler.fetch(request, {}, {});\n`,
+);
+
 writeFileSync(
   resolve(fnDir, ".vc-config.json"),
   JSON.stringify(
     {
-      runtime: "edge",
-      entrypoint: "server.js",
+      runtime: "nodejs20.x",
+      handler: "index.mjs",
+      launcherType: "Nodejs",
+      shouldAddHelpers: false,
+      supportsResponseStreaming: true,
     },
     null,
     2,
   ),
 );
 
-// Minimal package.json so Vercel recognises the function bundle
 writeFileSync(
   resolve(fnDir, "package.json"),
   JSON.stringify({ type: "module" }, null, 2),
 );
 
-// Top-level routing config: serve static files first, then SSR everything else
 writeFileSync(
   resolve(outDir, "config.json"),
   JSON.stringify(
