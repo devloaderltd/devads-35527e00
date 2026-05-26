@@ -249,7 +249,28 @@ function DashboardPage() {
           <WalletPanel userId={user?.id} />
         </TabsContent>
 
-        <TabsContent value="listings" className="mt-4">
+        <TabsContent value="listings" className="mt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">{(stats?.listings ?? []).length} listing{(stats?.listings ?? []).length === 1 ? "" : "s"}</div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full bg-white/70 backdrop-blur"
+              disabled={!stats?.listings?.length}
+              onClick={() => {
+                const rows = (stats?.listings ?? []).map((l) => ({
+                  id: l.id,
+                  title: l.title,
+                  status: l.status,
+                  views: l.view_count ?? 0,
+                  created_at: format(new Date(l.created_at), "yyyy-MM-dd"),
+                }));
+                downloadCSV(`listings-${format(new Date(), "yyyy-MM-dd")}.csv`, toCSV(rows));
+              }}
+            >
+              <Download className="mr-1 h-4 w-4" /> Export CSV
+            </Button>
+          </div>
           <Card className="rounded-2xl border-0 bg-white/70 backdrop-blur dark:bg-white/5">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
