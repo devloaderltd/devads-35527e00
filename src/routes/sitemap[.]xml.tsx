@@ -31,7 +31,7 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         const staticEntries = urls.map((u) => `  <url><loc>${u}</loc></url>`);
         const listingEntries = (listings ?? []).map(
-          (l) => `  <url><loc>${BASE}/listings/${l.id}</loc><lastmod>${new Date(l.updated_at).toISOString()}</lastmod></url>`,
+          (l: any) => `  <url><loc>${BASE}/listings/${l.slug ?? l.id}</loc><lastmod>${new Date(l.updated_at).toISOString()}</lastmod></url>`,
         );
 
         const body = `<?xml version="1.0" encoding="UTF-8"?>
