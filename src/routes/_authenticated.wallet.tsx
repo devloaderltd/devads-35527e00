@@ -192,7 +192,7 @@ function WalletPage() {
           </div>
         )}
       </div>
-    </div>
+    </PanelShell>
   );
 }
 
