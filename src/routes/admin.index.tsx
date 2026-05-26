@@ -367,44 +367,107 @@ function HealthStrip({
     label: string;
     value: number | string;
     tone: "ok" | "warn" | "bad";
+    to?: string;
   }> = [
-    { icon: Wrench, label: "Maintenance", value: data.maintenanceMode ? "ON" : "off", tone: data.maintenanceMode ? "warn" : "ok" },
-    { icon: ServerCrash, label: "Errors (24h)", value: errorsTotal, tone: errorsTotal === 0 ? "ok" : errorsTotal < 10 ? "warn" : "bad" },
-    { icon: ShieldAlert, label: "Failed payments (24h)", value: c.failedPayments24h, tone: c.failedPayments24h === 0 ? "ok" : c.failedPayments24h < 5 ? "warn" : "bad" },
-    { icon: Activity, label: "Pending top-ups", value: c.pendingTopups, tone: c.pendingTopups === 0 ? "ok" : c.pendingTopups < 10 ? "warn" : "bad" },
+    { icon: Wrench, label: "Maintenance", value: data.maintenanceMode ? "ON" : "off", tone: data.maintenanceMode ? "warn" : "ok", to: "/admin/maintenance" },
+    { icon: ServerCrash, label: "Errors (24h)", value: errorsTotal, tone: errorsTotal === 0 ? "ok" : errorsTotal < 10 ? "warn" : "bad", to: "/admin/debug" },
+    { icon: ShieldAlert, label: "Failed payments (24h)", value: c.failedPayments24h, tone: c.failedPayments24h === 0 ? "ok" : c.failedPayments24h < 5 ? "warn" : "bad", to: "/admin/payments" },
+    { icon: Activity, label: "Pending top-ups", value: c.pendingTopups, tone: c.pendingTopups === 0 ? "ok" : c.pendingTopups < 10 ? "warn" : "bad", to: "/admin/topups" },
   ];
   const toneRing: Record<"ok" | "warn" | "bad", string> = {
-    ok: "ring-emerald-400/20 bg-emerald-500/[0.06] text-emerald-200",
-    warn: "ring-amber-400/30 bg-amber-500/[0.08] text-amber-200",
-    bad: "ring-rose-400/40 bg-rose-500/[0.1] text-rose-200",
+    ok: "ring-emerald-400/20 bg-emerald-500/[0.06] text-emerald-200 hover:ring-emerald-400/40",
+    warn: "ring-amber-400/30 bg-amber-500/[0.08] text-amber-200 hover:ring-amber-400/50",
+    bad: "ring-rose-400/40 bg-rose-500/[0.1] text-rose-200 hover:ring-rose-400/60",
   };
   const toneDot: Record<"ok" | "warn" | "bad", string> = {
     ok: "bg-emerald-400",
-    warn: "bg-amber-400",
+    warn: "bg-amber-400 animate-pulse",
     bad: "bg-rose-400 animate-pulse",
   };
   return (
     <div className="mb-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {items.map((it) => (
-        <div
-          key={it.label}
-          className={`group flex items-center gap-2.5 rounded-xl border border-white/10 px-3 py-2.5 ring-1 ring-inset transition-all hover:-translate-y-0.5 ${toneRing[it.tone]}`}
-        >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5">
-            <it.icon className="h-3.5 w-3.5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide opacity-80">
-              <span className={`h-1.5 w-1.5 rounded-full ${toneDot[it.tone]}`} />
-              <span className="truncate">{it.label}</span>
+      {items.map((it) => {
+        const inner = (
+          <>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5">
+              <it.icon className="h-3.5 w-3.5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide opacity-80">
+                <span className={`h-1.5 w-1.5 rounded-full ${toneDot[it.tone]}`} />
+                <span className="truncate">{it.label}</span>
+              </div>
+              <div className="mt-0.5 font-display text-base font-bold leading-tight text-slate-100 sm:text-lg">
+                {it.value}
+              </div>
             </div>
-            <div className="mt-0.5 font-display text-base font-bold leading-tight text-slate-100 sm:text-lg">
-              {it.value}
-            </div>
-          </div>
-        </div>
-      ))}
+          </>
+        );
+        const cls = `group flex items-center gap-2.5 rounded-xl border border-white/10 px-3 py-2.5 ring-1 ring-inset transition-all hover:-translate-y-0.5 ${toneRing[it.tone]}`;
+        return it.to ? (
+          <Link key={it.label} to={it.to} className={cls}>{inner}</Link>
+        ) : (
+          <div key={it.label} className={cls}>{inner}</div>
+        );
+      })}
     </div>
   );
 }
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="mt-5 mb-3 flex items-center gap-3">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</span>
+      <span className="h-px flex-1 bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
+    </div>
+  );
+}
+
+function HeroStrip({
+  lastUpdated,
+  onRefresh,
+  loading,
+}: {
+  lastUpdated: number;
+  onRefresh: () => void;
+  loading: boolean;
+}) {
+  const hour = new Date().getHours();
+  const greeting = hour < 5 ? "Working late" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  return (
+    <div className="relative mb-4 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-500/10 via-fuchsia-500/[0.06] to-transparent p-4 sm:p-5">
+      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-indigo-500/15 blur-3xl" />
+      <div className="pointer-events-none absolute -left-8 bottom-0 h-32 w-32 rounded-full bg-fuchsia-500/10 blur-3xl" />
+      <div className="relative flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-indigo-200/80">
+            <Sparkles className="h-3 w-3" />
+            <span>Mission control</span>
+          </div>
+          <div className="mt-1 font-display text-lg font-semibold text-slate-100 sm:text-xl">
+            {greeting}, admin
+          </div>
+          <div className="mt-0.5 text-xs text-slate-400">
+            {lastUpdated > 0 ? (
+              <>Last refresh {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })}</>
+            ) : (
+              <>Live data</>
+            )}
+          </div>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onRefresh}
+          disabled={loading}
+          className="h-8 shrink-0 rounded-full border-white/15 bg-white/5 text-xs text-slate-100 hover:bg-white/10 disabled:opacity-50"
+        >
+          <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          {loading ? "Refreshing…" : "Refresh all"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 
