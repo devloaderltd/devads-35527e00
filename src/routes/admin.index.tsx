@@ -1,12 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "@tanstack/react-router";
 import { format, subDays, startOfDay, formatDistanceToNow } from "date-fns";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -15,7 +14,18 @@ import {
 import { Users, Package, DollarSign, Flag, Wallet, Bitcoin, TrendingUp, AlertCircle } from "lucide-react";
 import { SeedDemoButton } from "@/components/admin/SeedDemoButton";
 import { panelCls, AdminPageHeader } from "@/components/admin/ui";
-import { getQuickStats, getRecentActivity } from "@/lib/admin.functions";
+import { KpiTile } from "@/components/admin/KpiTile";
+import {
+  getQuickStats, getRecentActivity, getDashboardSparklines, getFunnelStats,
+} from "@/lib/admin.functions";
+
+export const Route = createFileRoute("/admin/")({
+  component: DashboardPage,
+});
+
+type RangeDays = 7 | 30 | 90;
+const RANGE_KEY = "admin.dashboard.range";
+
 
 export const Route = createFileRoute("/admin/")({
   component: DashboardPage,
