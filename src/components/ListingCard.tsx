@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { MapPin, Sparkles, Flame } from "lucide-react";
+import { MapPin, Sparkles, Flame, Scale, Check } from "lucide-react";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { useCompare, COMPARE_MAX } from "@/lib/compare-context";
+import { toast } from "sonner";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 
 type Listing = {
@@ -18,6 +20,18 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
   const img = listing.listing_images?.sort((a, b) => a.sort_order - b.sort_order)[0]?.url;
   const isFeatured = featured || listing.listing_promotions?.some((p) => new Date(p.ends_at) > new Date());
   const isBumped = !isFeatured && listing.bumped_at && (Date.now() - new Date(listing.bumped_at).getTime()) < 24 * 60 * 60 * 1000;
+  const { has, toggle, ids } = useCompare();
+  const selected = has(listing.id);
+
+  const onCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selected && ids.length >= COMPARE_MAX) {
+      toast.error(`You can compare up to ${COMPARE_MAX} listings`);
+      return;
+    }
+    toggle(listing.id);
+  };
 
   return (
     <Link
@@ -47,6 +61,19 @@ export function ListingCard({ listing, featured }: { listing: Listing; featured?
           </span>
         )}
         <FavoriteButton listingId={listing.id} />
+        <button
+          type="button"
+          onClick={onCompare}
+          aria-label={selected ? "Remove from compare" : "Add to compare"}
+          title={selected ? "Remove from compare" : "Add to compare"}
+          className={`absolute bottom-2 left-2 grid h-8 w-8 place-items-center rounded-full border backdrop-blur transition ${
+            selected
+              ? "border-primary bg-primary text-primary-foreground shadow"
+              : "border-white/60 bg-white/70 text-foreground opacity-0 group-hover:opacity-100 hover:bg-white"
+          }`}
+        >
+          {selected ? <Check className="h-4 w-4" /> : <Scale className="h-4 w-4" />}
+        </button>
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
         <div className="line-clamp-2 text-sm font-medium text-foreground">{listing.title}</div>
