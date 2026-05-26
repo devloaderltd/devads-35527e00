@@ -17,6 +17,15 @@ import { ListingCard } from "@/components/ListingCard";
 import { SellerRatingBadge } from "@/components/SellerRatingBadge";
 import { SellerReviews } from "@/components/SellerReviews";
 import { ShareSheet } from "@/components/ShareSheet";
+import DOMPurify from "dompurify";
+
+function sanitizeDescription(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "s", "h2", "h3", "ul", "ol", "li", "blockquote", "code", "a"],
+    ALLOWED_ATTR: ["href", "target", "rel"],
+    ADD_ATTR: ["target", "rel"],
+  });
+}
 
 import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
