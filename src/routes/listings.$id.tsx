@@ -469,6 +469,10 @@ function ListingDetail() {
         </div>
       </div>
 
+      <div id="reviews" className="scroll-mt-24">
+        <SellerReviews sellerId={listing.user_id} />
+      </div>
+
       {similar && similar.length > 0 && (
         <section className="mt-12">
           <h2 className="font-display text-xl font-bold">
