@@ -97,18 +97,20 @@ export const adminListKyc = createServerFn({ method: "POST" })
       }),
     );
 
-    const ids = [...new Set(signed.map((r) => r.user_id as string))];
+    const signedAny = signed as Array<Record<string, unknown>>;
+    const ids = [...new Set(signedAny.map((r) => r.user_id as string))];
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
       .select("id, display_name, avatar_url")
       .in("id", ids);
     const map = new Map((profiles ?? []).map((p) => [p.id, p]));
     return {
-      items: signed.map((r) => ({
+      items: signedAny.map((r) => ({
         ...r,
         profile: map.get(r.user_id as string) ?? null,
       })),
     };
+
   });
 
 
