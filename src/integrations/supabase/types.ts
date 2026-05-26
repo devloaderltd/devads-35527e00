@@ -1220,9 +1220,11 @@ export type Database = {
         Row: {
           bump_days: number
           bump_price_usd: number
+          favicon_url: string
           featured_days: number
           featured_price_usd: number
           id: string
+          logo_url: string
           maintenance_message: string
           maintenance_mode: boolean
           site_name: string
@@ -1232,9 +1234,11 @@ export type Database = {
         Insert: {
           bump_days?: number
           bump_price_usd?: number
+          favicon_url?: string
           featured_days?: number
           featured_price_usd?: number
           id?: string
+          logo_url?: string
           maintenance_message?: string
           maintenance_mode?: boolean
           site_name?: string
@@ -1244,9 +1248,11 @@ export type Database = {
         Update: {
           bump_days?: number
           bump_price_usd?: number
+          favicon_url?: string
           featured_days?: number
           featured_price_usd?: number
           id?: string
+          logo_url?: string
           maintenance_message?: string
           maintenance_mode?: boolean
           site_name?: string
