@@ -13,7 +13,7 @@ export function OnboardingChecklist({ userId }: { userId: string | undefined }) 
     queryFn: async () => {
       const uid = userId!;
       const [profileRes, listingsRes, walletRes] = await Promise.all([
-        supabase.from("profiles").select("avatar_url, phone, phone_verified_at, bio").eq("id", uid).maybeSingle(),
+        supabase.from("profiles").select("avatar_url, phone_verified_at, bio").eq("id", uid).maybeSingle(),
         supabase.from("listings").select("id", { count: "exact", head: true }).eq("user_id", uid),
         supabase.from("wallets").select("balance_usd").eq("user_id", uid).maybeSingle(),
       ]);
