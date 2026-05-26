@@ -329,6 +329,9 @@ function MyListings() {
                             <Pencil className="mr-2 h-4 w-4" /> Edit
                           </Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => duplicate(l.id)}>
+                          <Copy className="mr-2 h-4 w-4" /> Duplicate
+                        </DropdownMenuItem>
                         {(isExpired || expiringSoon) && (
                           <DropdownMenuItem onClick={() => renew(l.id)}>
                             <RefreshCw className="mr-2 h-4 w-4" /> Renew 30 days
