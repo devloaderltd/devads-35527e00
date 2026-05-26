@@ -551,6 +551,12 @@ function ListingDetail() {
           }),
         }}
       />
+      <ShareSheet
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        url={typeof window !== "undefined" ? window.location.href : ""}
+        title={listing.title}
+      />
     </div>
   );
 }

@@ -1,11 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
-import { MapPin, Calendar, Package, MessageSquare } from "lucide-react";
+import { MapPin, Calendar, Package, MessageSquare, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { SellerReviews } from "@/components/SellerReviews";
 import { SellerRatingBadge } from "@/components/SellerRatingBadge";
+import { SellerFollowButton } from "@/components/SellerFollowButton";
+import { ShareSheet } from "@/components/ShareSheet";
 
 
 export const Route = createFileRoute("/sellers/$id")({
@@ -26,6 +30,7 @@ export const Route = createFileRoute("/sellers/$id")({
 
 function SellerPage() {
   const { id } = Route.useParams();
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["seller", id],
@@ -114,6 +119,17 @@ function SellerPage() {
             {profile.bio && (
               <p className="mt-3 whitespace-pre-wrap text-[0.95rem] leading-relaxed">{profile.bio}</p>
             )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <SellerFollowButton sellerId={id} />
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full bg-white/70"
+                onClick={() => setShareOpen(true)}
+              >
+                <Share2 className="mr-1 h-4 w-4" /> Share
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -138,6 +154,13 @@ function SellerPage() {
       <div id="reviews" className="scroll-mt-24">
         <SellerReviews sellerId={id} />
       </div>
+
+      <ShareSheet
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        url={typeof window !== "undefined" ? window.location.href : ""}
+        title={`${profile.display_name} on CallEscort24`}
+      />
     </div>
   );
 }
