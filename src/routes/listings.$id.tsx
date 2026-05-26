@@ -246,11 +246,16 @@ function ListingDetail() {
           {/* Description */}
           <div className="iridescent-border mt-6 rounded-2xl border border-white/40 bg-white/65 p-5 shadow-[var(--shadow-float)] backdrop-blur-xl">
             <h2 className="font-display text-lg font-bold">Description</h2>
-            <div className="mt-3 whitespace-pre-wrap text-[0.95rem] leading-relaxed text-foreground/90">
-              {listing.description?.trim()
-                ? listing.description
-                : "The seller hasn't added a description for this listing yet. Use the Message button to ask for more details."}
-            </div>
+            {listing.description?.trim() ? (
+              <div
+                className="rte-content mt-3 text-[0.95rem] leading-relaxed text-foreground/90"
+                dangerouslySetInnerHTML={{ __html: sanitizeDescription(listing.description) }}
+              />
+            ) : (
+              <div className="mt-3 text-[0.95rem] leading-relaxed text-foreground/90">
+                The seller hasn't added a description for this listing yet. Use the Message button to ask for more details.
+              </div>
+            )}
           </div>
 
           {/* Details */}
