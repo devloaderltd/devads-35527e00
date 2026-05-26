@@ -112,8 +112,9 @@ function DashboardPage() {
         <KpiTile icon={<Bitcoin className="h-4 w-4" />} label="Pending top-ups" value={quick.data?.pendingTopups ?? "—"} accent="#ffb454" />
         <KpiTile icon={<TrendingUp className="h-4 w-4" />} label="New users (7d)" value={newUsers7d} accent="#7c5cff" />
         <KpiTile icon={<AlertCircle className="h-4 w-4" />} label="Low-balance users" value={quick.data?.lowBalanceUsers.length ?? "—"} accent="#e94aa8" />
-        <KpiTile icon={<Users className="h-4 w-4" />} label="Total users" value={data?.users.length ?? "—"} accent="#22c1c3" />
-        <KpiTile icon={<Flag className="h-4 w-4" />} label="Open reports" value={data?.openReports ?? "—"} accent="#ff7a59" />
+        <KpiTile icon={<Users className="h-4 w-4" />} label="Total users" value={totals?.totalUsers ?? "—"} accent="#22c1c3" />
+        <KpiTile icon={<Flag className="h-4 w-4" />} label="Open reports" value={totals?.openReports ?? "—"} accent="#ff7a59" />
+
       </div>
 
       {/* Funnel */}
