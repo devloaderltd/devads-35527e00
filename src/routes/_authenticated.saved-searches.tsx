@@ -15,6 +15,7 @@ import {
   toggleSavedSearchAlert,
   renameSavedSearch,
 } from "@/lib/extras.functions";
+import { PanelShell } from "@/components/PanelShell";
 
 export const Route = createFileRoute("/_authenticated/saved-searches")({
   head: () => ({ meta: [{ title: "Saved searches — CallEscort24" }, { name: "robots", content: "noindex" }] }),
