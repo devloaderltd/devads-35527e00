@@ -69,14 +69,18 @@ export function AdminSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string, exact?: boolean) => (exact ? path === url : path === url || path.startsWith(url + "/"));
 
-  const kycCountFn = useServerFn(getKycPendingCount);
-  const { data: kycData } = useQuery({
-    queryKey: ["admin-kyc-pending-count"],
-    queryFn: () => kycCountFn(),
+  const badgesFn = useServerFn(getAdminBadges);
+  const { data: badgesData } = useQuery({
+    queryKey: ["admin-badges"],
+    queryFn: () => badgesFn(),
     staleTime: 60_000,
     refetchInterval: 60_000,
   });
-  const badges: Record<string, number> = { kyc: kycData?.count ?? 0 };
+  const badges: Record<string, number> = {
+    kyc: badgesData?.kyc ?? 0,
+    reports: badgesData?.reports ?? 0,
+    moderation: badgesData?.moderation ?? 0,
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-white/10 bg-slate-950">
