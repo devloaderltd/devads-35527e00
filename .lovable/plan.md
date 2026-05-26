@@ -1,18 +1,26 @@
-## Fix mobile footer alignment
+## Problem
 
-**Problem:** On mobile, the footer renders as a single column. The link sections (Marketplace, Company, Legal, Stay in touch) each contain short text that only fills the left side, leaving a large empty area on the right.
+The dashboard wraps its content in a `SidebarProvider` + `DashboardWorkspaceSidebar` (left rail) plus a "Workspace" trigger bar at the top. On mobile this looks broken:
+- The "Workspace" strip sits awkwardly between the header/search and the page heading
+- Opening it shows a sidebar that duplicates links already in the main `Header` (New listing, Messages, Wallet, Favorites, Saved searches, Profile, Notifications)
+- The dashboard already exposes its own sub-sections via the tabs at the bottom (Overview, Performance, My Listings, Reviews)
 
-**Fix:** Update `src/components/Footer.tsx` grid layout so mobile uses a 2-column grid for the link sections while the brand block spans full width on top.
+So the sidebar adds visual noise without giving the user anything they don't already have one tap away.
 
-### Changes
+## Fix
 
-1. Outer grid: `grid gap-10 md:grid-cols-12` → `grid gap-8 grid-cols-2 md:grid-cols-12`
-2. Brand block (logo + tagline + socials): add `col-span-2 md:col-span-4` so it spans the full width on mobile and 4/12 on desktop.
-3. Each link section (`Marketplace`, `Company`, `Legal`): keep `md:col-span-2`, add nothing extra — they naturally take 1 of 2 columns on mobile.
-4. "Stay in touch" block: `md:col-span-2` + `col-span-2 md:col-span-2` so it spans both columns on mobile (since it has a longer paragraph + CTA) — or keep single column; will pick whichever looks cleaner.
-5. Bottom bar (`© …` + legal links row): no changes needed; already flex-wraps.
+Remove the workspace sidebar from the dashboard route entirely.
 
-### Files
-- `src/components/Footer.tsx` (single edit to the grid wrapper + column-span classes)
+### `src/routes/_authenticated.dashboard.tsx`
+- Drop the `SidebarProvider` / `SidebarInset` / `SidebarTrigger` / `DashboardWorkspaceSidebar` imports
+- Replace `DashboardShell` with a plain wrapper that just renders `<DashboardPage />`
+- Remove the "Workspace" strip (the `<div>` with the trigger + label)
 
-No business logic, no other components touched.
+### Cleanup
+- Delete `src/components/DashboardWorkspaceSidebar.tsx` (no other importers)
+
+No other routes use this sidebar, and the main site `Header` + dashboard tabs already cover navigation, so nothing else needs to change.
+
+## Out of scope
+- Admin sidebar (`/admin/*`) — unrelated, stays as is
+- Header / tabs styling — not what the user flagged
