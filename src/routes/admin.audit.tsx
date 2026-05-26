@@ -92,7 +92,7 @@ function AuditPage() {
   const [exporting, setExporting] = useState(false);
   const perPage = 50;
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, error, refetch } = useQuery({
     queryKey: ["audit-log", category, q, actor, from, to, page],
     queryFn: () => fn({ data: { category, q, actor, from, to, page, perPage } }),
   });

@@ -22,7 +22,7 @@ function ReportsPage() {
   const [status, setStatus] = useState("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const { data: reports, isLoading, isError, error, refetch } = useQuery({
+  const { data: reports, isLoading, isError, isFetching, error, refetch } = useQuery({
     queryKey: ["admin-reports"],
     queryFn: async () => {
       const { data: rs, error } = await supabase.from("reports").select("*").order("created_at", { ascending: false }).limit(500);
