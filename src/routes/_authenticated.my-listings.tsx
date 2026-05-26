@@ -91,6 +91,8 @@ function MyListings() {
   const visible = useMemo(() => {
     let rows = [...(data ?? [])];
     if (filter !== "all") rows = rows.filter(r => r.status === filter);
+    const q = query.trim().toLowerCase();
+    if (q) rows = rows.filter(r => r.title.toLowerCase().includes(q));
     rows.sort((a, b) => {
       if (sort === "views") return b.view_count - a.view_count;
       if (sort === "favorites") return (b.favCount ?? 0) - (a.favCount ?? 0);
@@ -98,7 +100,7 @@ function MyListings() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     return rows;
-  }, [data, filter, sort]);
+  }, [data, filter, sort, query]);
 
   const remove = async (id: string) => {
     if (!confirm("Delete this listing? This cannot be undone.")) return;
