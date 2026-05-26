@@ -1,54 +1,55 @@
 ## Goal
-Upgrade `/messages` with richer filter tabs, instant-send canned replies, polished typing indicators, and per-message read receipts. Most plumbing already exists — this is a focused enhancement pass.
+Make the admin panel feel like a real ops console: cleaner shell, faster nav, smarter dashboard, and a few high-value missing utilities. Scope is UI/UX polish + small additive features — no schema changes, no destructive refactors.
 
-## Current state (what's already built)
-- Tabs: `Inbox`, `Archived` ✓
-- Realtime typing via Supabase presence ✓ (basic italic line)
-- Read receipts via `thread_reads` table ✓ (single "Seen" marker under last message)
-- Quick replies: `message_quick_replies` table + `QuickRepliesManager` in Profile, chips in chat that *populate* the input ✓
+## What changes
 
-## Gaps → changes
+### 1. Shell polish (`AdminShell`, `AdminSidebar`)
+- Sticky header gets: breadcrumbs (derived from route), an environment chip (Live / Preview), a notifications bell that opens a popover of pending items (KYC, reports, top-ups, open broadcasts) and a "Jump to…" button that opens the command palette (⌘K).
+- Sidebar: pinned "Quick" group at top with smart links (Pending KYC, Open reports, Pending top-ups) whose counts come from a single `getAdminBadges` server fn (one query, replaces today's KYC-only fetch). Each People/Content/Finance/System item that has an actionable backlog gets the same badge treatment.
+- Active-item indicator gets a left accent bar; collapsed mini-rail keeps tooltips and badges.
+- Subtle gradient + grain on the dark surface, refined spacing (px-4 → px-5, header height 56px), section divider lines lightened. Mobile drawer keeps current behavior.
 
-### 1. Filter tabs: Inbox · Unread · Favorites · Archived
-- **DB migration**: add `starred_by uuid[] not null default '{}'` to `message_threads` (mirrors `archived_by`/`muted_by`).
-- `_authenticated.messages.tsx`:
-  - Add `Unread` tab → filters inbox to threads where `unread > 0`.
-  - Add `Favorites` tab → filters threads where `starred_by` contains `user.id`.
-  - Show counts in each pill (`Inbox 12 · Unread 3 · ★ 4 · Archived 2`).
-  - Add `toggleStar(thread)` action in the thread row dropdown menu (Star / Unstar) and a star icon overlay on starred rows.
+### 2. Command palette (`⌘K` / `Ctrl+K`)
+- New `AdminCommandPalette` (cmdk-based, reuses the public `CommandPalette` pattern).
+- Sources: every admin route, the 8 "quick action" verbs (approve next KYC, review next report, broadcast…), recent users/listings (live search via `searchAdmin` server fn that does limited `ilike` over `profiles`, `listings`, `payments.provider_session_id`).
+- Keyboard: ⌘K to open, ↑↓ + Enter to navigate. Mobile floating "Search" button in the header opens the same palette.
 
-### 2. Quick-send canned replies from each chat
-- `_authenticated.messages.$threadId.tsx`:
-  - Change quick-reply chip behavior: **click = send immediately** (current behavior only fills the input). Add a small caret affordance on each chip → opens a tiny menu with *Send now* / *Edit then send*.
-  - Add a "＋ Manage templates" chip at the end of the row that links to `/profile#quick-replies` (anchor scroll) so users can author new templates without leaving the flow.
-  - Keep the existing custom-vs-default visual distinction.
+### 3. Dashboard upgrades (`/admin`)
+- Add date-range toggle (7d / 30d / 90d) that drives all charts + KPIs (today they're hardcoded to 30d).
+- KPI tiles gain trend deltas vs the previous period (▲ +12% green / ▼ red) and a tiny sparkline under the value.
+- New "Funnel" mini-card: signups → first listing → first paid promotion (last 30d, with conversion %).
+- "Recent activity" feed: virtualize / cap at 20 with "Open full feed →" linking to the new Activity page.
+- Empty-state and skeleton loaders for every card (today shows "—").
 
-### 3. Typing indicator polish
-- Replace the static italic text with a small bubble containing animated dots (matching message bubble style), left-aligned like an incoming message. Auto-hide 3s after last keystroke (already throttled).
-- Fix: presence track currently re-creates the channel on each `broadcastTyping` call — refactor to keep one channel ref and call `.track({ typing })` on it, so typing actually propagates reliably.
+### 4. New page: `/admin/activity`
+- Full unified activity stream merging signups, listings, payments, top-ups, reports, KYC events, broadcasts, admin actions (from `audit_log`).
+- Filters: type chips, actor search, date range, "only admin actions".
+- Server fn `getAdminActivityFeed({ types, q, from, to, cursor })` with cursor pagination.
+- Each row clickable → deep link to the relevant admin sub-page.
 
-### 4. Read receipts per message
-- Today: one "Seen" marker under the whole thread.
-- New: for each of *my* outgoing messages, render a tick state at the bottom-right of the bubble:
-  - single check `✓` = sent
-  - double check `✓✓` (muted) = delivered (other party has an active thread_reads row)
-  - double check `✓✓` (primary color) = seen (other party's `last_read_at` ≥ message `created_at`)
-- Hover tooltip shows exact "Seen 3:42 PM" timestamp.
-- Respect `profiles.show_read_receipts` of the *other* party — if false, fall back to delivered ticks only.
+### 5. Cross-cutting list/table polish
+Applied to `admin.users`, `admin.listings`, `admin.payments`, `admin.topups`, `admin.reports`, `admin.kyc`, `admin.reviews`, `admin.threads`:
+- Shared `<AdminTableToolbar>` with: text search, status filter, date range, export CSV button.
+- Sticky table header, zebra rows, row hover, row count + page size selector (25/50/100), keyboard `j/k` to move selection, `Enter` to open detail drawer.
+- Bulk-select with a floating action bar (approve / reject / archive where the action already exists on that page — no new mutations, just batched).
+- Toast confirmations + optimistic UI on existing row mutations.
 
-## Technical notes
-- All RLS already permits the needed reads/writes; the `starred_by` column reuses the existing "Participants update own thread flags" policy (no policy change needed since the column is on the same row).
-- Migration must include GRANT recheck — only the new column, no new table.
-- Typing channel ref: store in `useRef`, subscribe once in the existing `useEffect`, reuse for `track()`.
-- Per-message ticks: derive from `messages[]` + `otherLastRead` + presence (for delivered hint); pure client computation, no extra queries.
+### 6. Misc additive features
+- `/admin/settings`: add "Copy site config as JSON" + "Export DB stats" buttons.
+- `/admin/broadcasts`: preview pane showing how the broadcast renders in the notification dropdown.
+- `/admin/debug`: add a "System health" strip (DB ping, last cron run, queue depth from `pgmq` via `getAdminHealth` server fn).
+- Persist sidebar collapsed state and dashboard date range in `localStorage`.
 
-## Files touched
-- `supabase/migrations/<new>.sql` — add `message_threads.starred_by`.
-- `src/routes/_authenticated.messages.tsx` — tabs, star toggle, counts.
-- `src/routes/_authenticated.messages.$threadId.tsx` — quick-send chips, typing bubble, per-message receipts, fetch other party's `show_read_receipts`.
-- `src/components/messages/TypingBubble.tsx` *(new, small)* — animated dots.
-- `src/components/messages/MessageTicks.tsx` *(new, small)* — tick state renderer.
+## Files touched (additive-first)
+- New: `src/components/admin/AdminCommandPalette.tsx`, `src/components/admin/AdminTableToolbar.tsx`, `src/components/admin/Breadcrumbs.tsx`, `src/components/admin/NotificationsBell.tsx`, `src/components/admin/KpiTile.tsx`, `src/components/admin/Sparkline.tsx`, `src/components/admin/BulkActionBar.tsx`, `src/components/admin/EmptyState.tsx`, `src/routes/admin.activity.tsx`.
+- New server fns in `src/lib/admin.functions.ts`: `getAdminBadges`, `searchAdmin`, `getAdminActivityFeed`, `getAdminHealth`, `getFunnelStats`, `getKpiTrends`.
+- Edited: `AdminShell.tsx`, `AdminSidebar.tsx`, `ui.tsx`, `admin.index.tsx`, each list route (toolbar swap + bulk-bar wiring), `admin.settings.tsx`, `admin.broadcasts.tsx`, `admin.debug.tsx`.
 
 ## Out of scope
-- No changes to email notifications, push, or moderation.
-- No changes to the quick-replies CRUD UI (it already lives in Profile and works).
+- No DB migrations (everything reads existing tables).
+- No new permissions / RLS changes.
+- No redesign of public-facing pages.
+- No payment provider changes.
+
+## Open question
+The dashboard currently fetches all rows of `profiles` / `listings` / `payments` client-side for chart math, which won't scale. Want me to also move that aggregation into server fns (`getDashboardTimeseries`) as part of this pass, or leave it for a follow-up?
