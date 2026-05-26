@@ -169,10 +169,43 @@ function SettingsPage() {
             </div>
           )}
         </Panel>
+
+        <Panel title="Utilities" className="lg:col-span-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              className="rounded-full border-white/15 bg-white/5 text-slate-100 hover:bg-white/10"
+              onClick={() => {
+                const json = JSON.stringify(form, null, 2);
+                navigator.clipboard.writeText(json).then(
+                  () => toast.success("Site config copied to clipboard"),
+                  () => toast.error("Clipboard unavailable"),
+                );
+              }}
+            >
+              Copy site config as JSON
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-full border-white/15 bg-white/5 text-slate-100 hover:bg-white/10"
+              onClick={() => {
+                const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), settings: form }, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = `site-config-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}
+            >
+              Download config
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">Useful for backups, sharing config across environments, or pasting into a support ticket.</p>
+        </Panel>
       </div>
     </div>
   );
 }
+
 
 function Field({ label, error, className, children }: { label: string; error?: string; className?: string; children: React.ReactNode }) {
   return (
