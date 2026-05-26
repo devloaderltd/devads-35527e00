@@ -12,7 +12,7 @@ export function TrendingInCityRail({ cityId, cityName }: { cityId: string | null
       const sinceIso = new Date(Date.now() - 7 * 86400000).toISOString();
       const { data } = await supabase
         .from("listings")
-        .select(`id, title, view_count, bumped_at, condition,
+        .select(`id, slug, title, view_count, bumped_at, condition, verified_at,
           categories(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),
