@@ -464,9 +464,11 @@ export const moderateReport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: report } = await supabaseAdmin.from("reports").select("*").eq("id", data.reportId).maybeSingle();
     if (!report) throw new Error("Report not found");
-    const { data: listing } = await supabaseAdmin.from("listings").select("user_id, title").eq("id", report.listing_id).maybeSingle();
+    const { data: listing } = report.listing_id
+      ? await supabaseAdmin.from("listings").select("user_id, title").eq("id", report.listing_id).maybeSingle()
+      : { data: null as { user_id: string; title: string } | null };
     if (data.action === "remove_listing") {
-      await supabaseAdmin.from("listings").update({ status: "removed" }).eq("id", report.listing_id);
+      if (report.listing_id) await supabaseAdmin.from("listings").update({ status: "removed" }).eq("id", report.listing_id);
       await supabaseAdmin.from("reports").update({ status: "resolved" }).eq("id", data.reportId);
       if (listing) await supabaseAdmin.from("notifications").insert({
         user_id: listing.user_id, type: "moderation",
