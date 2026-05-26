@@ -4,18 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Sparkles, Pause, Play, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
 import { PromoteDialog } from "@/components/PromoteDialog";
 
 export function ListingRowActions({ listing, onChange }: { listing: { id: string; slug?: string; status: string }; onChange?: () => void }) {
   const qc = useQueryClient();
-  const [promoteOpen, setPromoteOpen] = useState(false);
 
   const bump = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("listings").update({ bumped_at: new Date().toISOString() }).eq("id", listing.id);
       if (error) throw error;
     },
+
     onSuccess: () => { toast.success("Listing bumped"); qc.invalidateQueries({ queryKey: ["dashboard-stats"] }); onChange?.(); },
     onError: (e: Error) => toast.error(e.message),
   });
