@@ -125,8 +125,28 @@ function SettingsPage() {
             <Field label="Support email" error={errors.support_email}>
               <Input type="email" value={form.support_email} onChange={(e) => set("support_email", e.target.value)} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" maxLength={120} />
             </Field>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <AssetUploader
+                label="Logo"
+                kind="logo"
+                value={form.logo_url}
+                onChange={(v) => set("logo_url", v)}
+                maxBytes={1024 * 1024}
+                hint="PNG/SVG/WebP, ≤ 1 MB"
+              />
+              <AssetUploader
+                label="Favicon"
+                kind="favicon"
+                value={form.favicon_url}
+                onChange={(v) => set("favicon_url", v)}
+                maxBytes={256 * 1024}
+                hint="ICO/PNG/SVG, ≤ 256 KB"
+              />
+            </div>
           </div>
         </Panel>
+
+
 
         <Panel title="Promotion pricing">
           <div className="grid grid-cols-2 gap-3">
