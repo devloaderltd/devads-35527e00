@@ -34,17 +34,18 @@ function WalletPage() {
 
   // Realtime updates on wallet + topups
   useEffect(() => {
+    if (!user) return;
     const ch = supabase
-      .channel("wallet-rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "wallets" }, () => {
+      .channel(`wallet-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "wallets", filter: `user_id=eq.${user.id}` }, () => {
         qc.invalidateQueries({ queryKey: ["wallet"] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "crypto_topups" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "crypto_topups", filter: `user_id=eq.${user.id}` }, () => {
         qc.invalidateQueries({ queryKey: ["wallet"] });
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [qc]);
+  }, [qc, user]);
 
   // Toast on success return
   useEffect(() => {
