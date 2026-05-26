@@ -43,6 +43,7 @@ const NAV = [
 
 export function AdminCommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<{ users: { id: string; display_name: string }[]; listings: { id: string; title: string; slug: string }[]; payments: { id: string; amount: number; status: string }[] }>({ users: [], listings: [], payments: [] });
   const searchFn = useServerFn(searchAdmin);
@@ -113,6 +114,14 @@ export function AdminCommandPalette({ open, onOpenChange }: { open: boolean; onO
         )}
 
         <CommandGroup heading="Quick actions">
+          <CommandItem
+            onSelect={() => go(async () => {
+              await queryClient.invalidateQueries({ queryKey: ADMIN_BADGES_QUERY_KEY });
+              toast.success("Counts refreshed");
+            })}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Refresh badge counts
+          </CommandItem>
           <CommandItem onSelect={() => go(() => navigate({ to: "/admin/kyc" }))}>
             <BadgeCheck className="mr-2 h-4 w-4" /> Review next KYC submission
           </CommandItem>
