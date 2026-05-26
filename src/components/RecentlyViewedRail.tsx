@@ -17,7 +17,7 @@ export function RecentlyViewedRail() {
     queryFn: async () => {
       const { data } = await supabase
         .from("listings")
-        .select(`id, title, bumped_at, condition,
+        .select(`id, slug, title, bumped_at, condition, verified_at,
           categories(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),

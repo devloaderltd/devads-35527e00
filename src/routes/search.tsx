@@ -11,11 +11,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bookmark, BookmarkCheck, X, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bookmark, BookmarkCheck, X, SlidersHorizontal, ChevronLeft, ChevronRight, LayoutGrid, List, BadgeCheck, ImageIcon, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { createSavedSearch, listSavedSearches } from "@/lib/extras.functions";
 import { useAuth } from "@/hooks/use-auth";
@@ -36,6 +37,10 @@ const CONDITIONS = [
 const SORTS = [
   { value: "recent", label: "Most recent" },
   { value: "oldest", label: "Oldest" },
+  { value: "price_asc", label: "Price: low → high" },
+  { value: "price_desc", label: "Price: high → low" },
+  { value: "views", label: "Most viewed" },
+  { value: "ending", label: "Ending soon" },
 ] as const;
 
 const searchSchema = z.object({
@@ -44,7 +49,15 @@ const searchSchema = z.object({
   country: z.string().optional(),
   city: z.string().optional(),
   condition: z.string().optional(),
-  sort: z.enum(["recent", "oldest"]).optional(),
+  minPrice: z.coerce.number().min(0).optional(),
+  maxPrice: z.coerce.number().min(0).optional(),
+  minAge: z.coerce.number().min(0).max(120).optional(),
+  maxAge: z.coerce.number().min(0).max(120).optional(),
+  verified: z.coerce.boolean().optional(),
+  hasPhotos: z.coerce.boolean().optional(),
+  promoted: z.coerce.boolean().optional(),
+  sort: z.enum(["recent", "oldest", "price_asc", "price_desc", "views", "ending"]).optional(),
+  view: z.enum(["grid", "list"]).optional(),
   page: z.coerce.number().min(1).optional(),
 });
 
@@ -74,12 +87,37 @@ function SearchPage() {
   const listFn = useServerFn(listSavedSearches);
   const page = search.page ?? 1;
   const sort = search.sort ?? "recent";
+  const view = search.view ?? "grid";
 
   const [qInput, setQInput] = useState(search.q ?? "");
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [saveNotify, setSaveNotify] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Draft state for the filters sheet (apply on save)
+  const [draftMinPrice, setDraftMinPrice] = useState<string>(search.minPrice?.toString() ?? "");
+  const [draftMaxPrice, setDraftMaxPrice] = useState<string>(search.maxPrice?.toString() ?? "");
+  const [draftMinAge, setDraftMinAge] = useState<string>(search.minAge?.toString() ?? "");
+  const [draftMaxAge, setDraftMaxAge] = useState<string>(search.maxAge?.toString() ?? "");
+  const [draftCondition, setDraftCondition] = useState<string>(search.condition ?? "");
+  const [draftVerified, setDraftVerified] = useState<boolean>(!!search.verified);
+  const [draftHasPhotos, setDraftHasPhotos] = useState<boolean>(!!search.hasPhotos);
+  const [draftPromoted, setDraftPromoted] = useState<boolean>(!!search.promoted);
+
+  const openFilters = (open: boolean) => {
+    if (open) {
+      setDraftMinPrice(search.minPrice?.toString() ?? "");
+      setDraftMaxPrice(search.maxPrice?.toString() ?? "");
+      setDraftMinAge(search.minAge?.toString() ?? "");
+      setDraftMaxAge(search.maxAge?.toString() ?? "");
+      setDraftCondition(search.condition ?? "");
+      setDraftVerified(!!search.verified);
+      setDraftHasPhotos(!!search.hasPhotos);
+      setDraftPromoted(!!search.promoted);
+    }
+    setFiltersOpen(open);
+  };
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -103,15 +141,15 @@ function SearchPage() {
     },
   });
 
-  const { data: result, isLoading } = useQuery({
+  const { data: result, isLoading, isFetching } = useQuery({
     queryKey: ["listings", "search", search],
     queryFn: async () => {
-      const from = (page - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
+      const from = 0;
+      const to = page * PAGE_SIZE - 1;
       let q = supabase
         .from("listings")
         .select(`
-          id, title, created_at, bumped_at, condition,
+          id, slug, title, description, created_at, bumped_at, condition, view_count, price, verified_at, item_age, expires_at,
           categories!inner(name, slug),
           cities!inner(name, region, country, slug),
           listing_images(url, sort_order),
@@ -124,15 +162,41 @@ function SearchPage() {
       if (search.country) q = q.eq("cities.country", search.country);
       if (search.city) q = q.eq("cities.slug", search.city);
       if (search.condition) q = q.eq("condition", search.condition);
+      if (typeof search.minPrice === "number") q = q.gte("price", search.minPrice);
+      if (typeof search.maxPrice === "number") q = q.lte("price", search.maxPrice);
+      if (search.verified) q = q.not("verified_at", "is", null);
 
       switch (sort) {
         case "oldest": q = q.order("created_at", { ascending: true }); break;
+        case "price_asc": q = q.order("price", { ascending: true, nullsFirst: false }); break;
+        case "price_desc": q = q.order("price", { ascending: false, nullsFirst: false }); break;
+        case "views": q = q.order("view_count", { ascending: false }); break;
+        case "ending": q = q.order("expires_at", { ascending: true }); break;
         default: q = q.order("bumped_at", { ascending: false });
       }
 
       const { data, error, count } = await q.range(from, to);
       if (error) throw error;
-      return { listings: data ?? [], count: count ?? 0 };
+
+      // Client-side post-filters for fields that don't translate cleanly to SQL filters
+      let rows = (data ?? []) as any[];
+      if (search.hasPhotos) {
+        rows = rows.filter((l) => Array.isArray(l.listing_images) && l.listing_images.length > 0);
+      }
+      if (search.promoted) {
+        const now = Date.now();
+        rows = rows.filter((l) => l.listing_promotions?.some((p: any) => new Date(p.ends_at).getTime() > now));
+      }
+      if (typeof search.minAge === "number" || typeof search.maxAge === "number") {
+        rows = rows.filter((l) => {
+          const n = Number(String(l.item_age ?? "").match(/\d+/)?.[0] ?? NaN);
+          if (Number.isNaN(n)) return false;
+          if (typeof search.minAge === "number" && n < search.minAge) return false;
+          if (typeof search.maxAge === "number" && n > search.maxAge) return false;
+          return true;
+        });
+      }
+      return { listings: rows, count: count ?? 0 };
     },
   });
 
@@ -146,8 +210,33 @@ function SearchPage() {
     navigate({ search: {} as any });
   };
 
+  const applyDraftFilters = () => {
+    const numOrUndef = (s: string) => {
+      const n = Number(s);
+      return s.trim() && !Number.isNaN(n) ? n : undefined;
+    };
+    update({
+      minPrice: numOrUndef(draftMinPrice),
+      maxPrice: numOrUndef(draftMaxPrice),
+      minAge: numOrUndef(draftMinAge),
+      maxAge: numOrUndef(draftMaxAge),
+      condition: draftCondition || undefined,
+      verified: draftVerified || undefined,
+      hasPhotos: draftHasPhotos || undefined,
+      promoted: draftPromoted || undefined,
+    });
+    setFiltersOpen(false);
+  };
+
+  const resetDraft = () => {
+    setDraftMinPrice(""); setDraftMaxPrice("");
+    setDraftMinAge(""); setDraftMaxAge("");
+    setDraftCondition(""); setDraftVerified(false);
+    setDraftHasPhotos(false); setDraftPromoted(false);
+  };
+
   const currentFilters = useMemo(
-    () => Object.fromEntries(Object.entries(search).filter(([k, v]) => k !== "page" && v != null && v !== "")) as Record<string, unknown>,
+    () => Object.fromEntries(Object.entries(search).filter(([k, v]) => k !== "page" && k !== "view" && v != null && v !== "")) as Record<string, unknown>,
     [search],
   );
 
@@ -192,22 +281,37 @@ function SearchPage() {
 
   const listings = result?.listings ?? [];
   const totalCount = result?.count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const hasMore = listings.length < totalCount;
+  const activeFilterCount = Object.keys(currentFilters).length;
+
   const activeFilters = [
     search.q && { key: "q", label: `"${search.q}"` },
     search.category && { key: "category", label: search.category },
     search.country && { key: "country", label: search.country },
     search.city && { key: "city", label: search.city },
     search.condition && { key: "condition", label: CONDITIONS.find(c => c.value === search.condition)?.label ?? search.condition },
+    (typeof search.minPrice === "number" || typeof search.maxPrice === "number") && {
+      key: "_price",
+      label: `${search.minPrice ?? 0}–${search.maxPrice ?? "∞"} $`,
+    },
+    (typeof search.minAge === "number" || typeof search.maxAge === "number") && {
+      key: "_age",
+      label: `Age ${search.minAge ?? 0}–${search.maxAge ?? "∞"}`,
+    },
+    search.verified && { key: "verified", label: "Verified" },
+    search.hasPhotos && { key: "hasPhotos", label: "With photos" },
+    search.promoted && { key: "promoted", label: "Promoted" },
   ].filter(Boolean) as { key: string; label: string }[];
 
   const clearKey = (k: string) => {
-    if (k === "q") { setQInput(""); update({ q: undefined }); }
-    else update({ [k]: undefined } as any);
+    if (k === "q") { setQInput(""); update({ q: undefined }); return; }
+    if (k === "_price") { update({ minPrice: undefined, maxPrice: undefined }); return; }
+    if (k === "_age") { update({ minAge: undefined, maxAge: undefined }); return; }
+    update({ [k]: undefined } as any);
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 pb-24">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
@@ -218,8 +322,28 @@ function SearchPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex rounded-full border bg-white/70 p-0.5">
+            <button
+              type="button"
+              onClick={() => update({ view: "grid" }, false)}
+              aria-label="Grid view"
+              aria-pressed={view === "grid"}
+              className={`grid h-8 w-8 place-items-center rounded-full ${view === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => update({ view: "list" }, false)}
+              aria-label="List view"
+              aria-pressed={view === "list"}
+              className={`grid h-8 w-8 place-items-center rounded-full ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
           <Select value={sort} onValueChange={(v) => update({ sort: v as any })}>
-            <SelectTrigger className="w-[180px] bg-white/70"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[170px] bg-white/70"><SelectValue /></SelectTrigger>
             <SelectContent>
               {SORTS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
             </SelectContent>
@@ -235,11 +359,10 @@ function SearchPage() {
               </Button>
             )
           )}
-
         </div>
       </div>
 
-      <div className="mb-4 grid gap-3 rounded-2xl border border-white/40 bg-white/55 p-3 shadow-[var(--shadow-float)] backdrop-blur-xl lg:grid-cols-[1fr_160px_160px_160px_160px]">
+      <div className="mb-4 grid gap-3 rounded-2xl border border-white/40 bg-white/55 p-3 shadow-[var(--shadow-float)] backdrop-blur-xl lg:grid-cols-[1fr_160px_160px_160px_auto]">
         <Input
           placeholder="Search title, description…"
           value={qInput}
@@ -275,6 +398,86 @@ function SearchPage() {
             {cities?.map((c) => <SelectItem key={c.id} value={c.slug}>{c.name}, {c.region}</SelectItem>)}
           </SelectContent>
         </Select>
+
+        <Sheet open={filtersOpen} onOpenChange={openFilters}>
+          <SheetTrigger asChild>
+            <Button variant="outline" className="relative gap-2 rounded-full bg-white/70">
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="font-display">More filters</SheetTitle>
+              <SheetDescription>Refine your results.</SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-6 space-y-6">
+              <div>
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Price range (USD)</Label>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input inputMode="numeric" type="number" min={0} placeholder="Min" value={draftMinPrice} onChange={(e) => setDraftMinPrice(e.target.value)} />
+                  <span className="text-muted-foreground">—</span>
+                  <Input inputMode="numeric" type="number" min={0} placeholder="Max" value={draftMaxPrice} onChange={(e) => setDraftMaxPrice(e.target.value)} />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Age range</Label>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input inputMode="numeric" type="number" min={0} max={120} placeholder="Min" value={draftMinAge} onChange={(e) => setDraftMinAge(e.target.value)} />
+                  <span className="text-muted-foreground">—</span>
+                  <Input inputMode="numeric" type="number" min={0} max={120} placeholder="Max" value={draftMaxAge} onChange={(e) => setDraftMaxAge(e.target.value)} />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Condition</Label>
+                <Select value={draftCondition || "any"} onValueChange={(v) => setDraftCondition(v === "any" ? "" : v)}>
+                  <SelectTrigger className="mt-2 bg-white/70"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any condition</SelectItem>
+                    {CONDITIONS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3 rounded-xl border bg-white/60 p-3">
+                <ToggleRow
+                  icon={<BadgeCheck className="h-4 w-4 text-emerald-500" />}
+                  label="Verified sellers only"
+                  description="Identity-verified accounts."
+                  checked={draftVerified}
+                  onChange={setDraftVerified}
+                />
+                <ToggleRow
+                  icon={<ImageIcon className="h-4 w-4 text-primary" />}
+                  label="With photos only"
+                  description="Hide listings that have no photos."
+                  checked={draftHasPhotos}
+                  onChange={setDraftHasPhotos}
+                />
+                <ToggleRow
+                  icon={<Sparkles className="h-4 w-4 text-primary" />}
+                  label="Promoted only"
+                  description="Show only featured / boosted listings."
+                  checked={draftPromoted}
+                  onChange={setDraftPromoted}
+                />
+              </div>
+            </div>
+
+            <SheetFooter className="mt-6 flex-row gap-2">
+              <Button variant="ghost" onClick={resetDraft} className="rounded-full">Reset</Button>
+              <Button onClick={applyDraftFilters} className="btn-gradient ml-auto rounded-full border-0">Apply filters</Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {activeFilters.length > 0 && (
@@ -295,9 +498,9 @@ function SearchPage() {
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className={view === "list" ? "space-y-3" : "grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"}>
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted" />
+            <div key={i} className={view === "list" ? "h-28 animate-pulse rounded-2xl bg-muted" : "aspect-[4/5] animate-pulse rounded-xl bg-muted"} />
           ))}
         </div>
       ) : !listings.length ? (
@@ -327,20 +530,57 @@ function SearchPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {listings.map((l: any) => {
-              const isFeatured = l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date());
-              return <ListingCard key={l.id} listing={l} featured={isFeatured} />;
-            })}
-          </div>
-          {totalPages > 1 && (
+          {view === "list" ? (
+            <div className="space-y-3">
+              {listings.map((l: any) => {
+                const isFeatured = l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date());
+                return <ListingCard key={l.id} listing={l} featured={isFeatured} variant="list" />;
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {listings.map((l: any) => {
+                const isFeatured = l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date());
+                return <ListingCard key={l.id} listing={l} featured={isFeatured} />;
+              })}
+            </div>
+          )}
+
+          {hasMore && (
             <div className="mt-8 flex items-center justify-center gap-2">
-              <Button variant="outline" size="sm" className="rounded-full bg-white/70" disabled={page <= 1} onClick={() => update({ page: page - 1 }, false)}>
-                <ChevronLeft className="h-4 w-4" /> Prev
+              <Button
+                variant="outline"
+                className="rounded-full bg-white/70"
+                disabled={isFetching}
+                onClick={() => update({ page: page + 1 }, false)}
+              >
+                {isFetching ? "Loading…" : "Load more"}
               </Button>
-              <span className="px-3 text-sm text-muted-foreground">Page {page} of {totalPages}</span>
-              <Button variant="outline" size="sm" className="rounded-full bg-white/70" disabled={page >= totalPages} onClick={() => update({ page: page + 1 }, false)}>
-                Next <ChevronRight className="h-4 w-4" />
+            </div>
+          )}
+
+          {page > 1 && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full"
+                disabled={page <= 1 || isFetching}
+                onClick={() => update({ page: page - 1 }, false)}
+              >
+                <ChevronLeft className="h-3 w-3" /> Show fewer
+              </Button>
+              <span>
+                Showing {listings.length} of {totalCount.toLocaleString()}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full"
+                disabled={!hasMore || isFetching}
+                onClick={() => update({ page: page + 1 }, false)}
+              >
+                Next <ChevronRight className="h-3 w-3" />
               </Button>
             </div>
           )}
@@ -382,5 +622,26 @@ function SearchPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function ToggleRow({
+  icon, label, description, checked, onChange,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3">
+      <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/70">{icon}</span>
+      <span className="flex-1">
+        <span className="block text-sm font-medium">{label}</span>
+        <span className="block text-xs text-muted-foreground">{description}</span>
+      </span>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </label>
   );
 }

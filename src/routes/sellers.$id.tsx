@@ -56,7 +56,7 @@ function SellerPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("listings")
-        .select(`id, title, bumped_at,
+        .select(`id, slug, title, bumped_at, verified_at,
           cities(name, region, country),
           listing_images(url, sort_order),
           listing_promotions(type, ends_at)`)
