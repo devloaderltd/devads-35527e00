@@ -301,6 +301,12 @@ function MyListings() {
                             <Sparkles className="mr-2 h-4 w-4" /> Mark as sold
                           </DropdownMenuItem>
                         )}
+                        {l.status === "active" && (
+                          <DropdownMenuItem onClick={() => toggleAutoRenew(l.id, !l.auto_renew)}>
+                            <Zap className={`mr-2 h-4 w-4 ${l.auto_renew ? "text-primary" : ""}`} />
+                            {l.auto_renew ? "Disable auto-renew" : "Enable auto-renew"}
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => remove(l.id)} className="text-red-600 focus:text-red-600">
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
