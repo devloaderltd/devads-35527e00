@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { format, formatDistanceToNow } from "date-fns";
-import { Wallet, Shield, Ban, Sparkles, Settings as SettingsIcon, Coins, User as UserIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wallet, Shield, Ban, Sparkles, Settings as SettingsIcon, Coins, User as UserIcon, ChevronLeft, ChevronRight, Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
+import { toCsv, downloadCsv } from "@/components/admin/AdminTableToolbar";
+import { RowSkeleton, ErrorFallback } from "@/components/admin/Skeletons";
 import { getAuditLog } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/audit")({ component: AuditPage });
@@ -82,14 +85,16 @@ function AuditPage() {
   const fn = useServerFn(getAuditLog);
   const [category, setCategory] = useState<Category>("all");
   const [q, setQ] = useState("");
+  const [actor, setActor] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
+  const [exporting, setExporting] = useState(false);
   const perPage = 50;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["audit-log", category, q, from, to, page],
-    queryFn: () => fn({ data: { category, q, from, to, page, perPage } }),
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["audit-log", category, q, actor, from, to, page],
+    queryFn: () => fn({ data: { category, q, actor, from, to, page, perPage } }),
   });
 
   const entries = (data?.entries ?? []) as Entry[];
@@ -98,9 +103,58 @@ function AuditPage() {
 
   const reset = () => setPage(1);
 
+  const exportCsv = async (all: boolean) => {
+    try {
+      setExporting(true);
+      let rows: Entry[] = entries;
+      if (all && total > entries.length) {
+        // Fetch up to 2000 matching entries across pages
+        const cap = Math.min(total, 2000);
+        const perFetch = 500;
+        const pages = Math.ceil(cap / perFetch);
+        rows = [];
+        for (let p = 1; p <= pages; p++) {
+          const r = await fn({ data: { category, q, actor, from, to, page: p, perPage: perFetch } });
+          rows.push(...(r.entries as Entry[]));
+          if (rows.length >= cap) break;
+        }
+      }
+      const csvRows = rows.map((e) => ({
+        created_at: e.created_at,
+        action: e.action,
+        actor_id: e.actor_id ?? "",
+        actor_name: e.actor_name ?? "",
+        target_type: e.target_type ?? "",
+        target_id: e.target_id ?? "",
+        target_name: e.target_name ?? "",
+        metadata: JSON.stringify(e.metadata ?? {}),
+      }));
+      downloadCsv(`audit-${new Date().toISOString().slice(0, 10)}${all ? "-all" : "-page"}.csv`, toCsv(csvRows));
+      toast.success(`Exported ${csvRows.length.toLocaleString()} entries`);
+    } catch (err) {
+      toast.error((err as Error).message ?? "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div>
-      <AdminPageHeader title="Audit log" subtitle={`${total.toLocaleString()} entries · page ${page} of ${totalPages}`} />
+      <AdminPageHeader
+        title="Audit log"
+        subtitle={`${total.toLocaleString()} entries · page ${page} of ${totalPages}`}
+        actions={
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" disabled={exporting || total === 0} onClick={() => exportCsv(false)} className="h-8 rounded-full border-white/15 bg-white/5 text-xs">
+              <Download className="mr-1.5 h-3.5 w-3.5" /> Export page
+            </Button>
+            <Button size="sm" disabled={exporting || total === 0} onClick={() => exportCsv(true)} className="h-8 rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-xs">
+              {exporting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
+              Export all matching
+            </Button>
+          </div>
+        }
+      />
 
       <Panel className="mb-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -109,6 +163,7 @@ function AuditPage() {
           ))}
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <Input placeholder="Search action or target id…" value={q} onChange={(e) => { setQ(e.target.value); reset(); }} className="w-56 rounded-full border-white/10 bg-white/5 text-slate-100" />
+            <Input placeholder="Filter by actor name…" value={actor} onChange={(e) => { setActor(e.target.value); reset(); }} className="w-48 rounded-full border-white/10 bg-white/5 text-slate-100" />
             <Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); reset(); }} className="rounded-full border-white/10 bg-white/5 text-slate-100" />
             <Input type="date" value={to} onChange={(e) => { setTo(e.target.value); reset(); }} className="rounded-full border-white/10 bg-white/5 text-slate-100" />
           </div>
@@ -116,11 +171,19 @@ function AuditPage() {
       </Panel>
 
       <Panel>
-        <div className="space-y-2">
-          {isLoading && <div className="py-10 text-center text-sm text-slate-400">Loading…</div>}
-          {!isLoading && entries.map(e => <AuditRow key={e.id} entry={e} />)}
-          {!isLoading && !entries.length && <div className="py-10 text-center text-sm text-slate-400">No audit entries match these filters.</div>}
-        </div>
+        {isLoading && <RowSkeleton rows={8} />}
+        {isError && !isLoading && (
+          <ErrorFallback
+            message={(error as Error | undefined)?.message ?? "Audit log failed to load."}
+            onRetry={() => refetch()}
+          />
+        )}
+        {!isLoading && !isError && (
+          <div className="space-y-2">
+            {entries.map(e => <AuditRow key={e.id} entry={e} />)}
+            {!entries.length && <div className="py-10 text-center text-sm text-slate-400">No audit entries match these filters.</div>}
+          </div>
+        )}
 
         <div className="mt-4 flex items-center justify-between">
           <div className="text-xs text-slate-500">{total.toLocaleString()} total</div>

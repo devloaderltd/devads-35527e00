@@ -26,11 +26,24 @@ export function KpiTile({ icon, label, value, delta, spark, accent = "#7c5cff", 
   const DeltaIcon = deltaPct === null ? Minus : deltaPct > 0 ? ArrowUpRight : deltaPct < 0 ? ArrowDownRight : Minus;
 
   return (
-    <Card className={panelCls + " border-0 overflow-hidden"}>
-      <CardContent className="p-3 sm:p-4">
+    <Card
+      className={
+        panelCls +
+        " group relative overflow-hidden border-0 transition-all duration-300 hover:-translate-y-0.5 hover:ring-1 hover:ring-white/15"
+      }
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-60"
+        style={{ background: accent }}
+      />
+      <CardContent className="relative p-3 sm:p-4">
         <div className="flex items-center justify-between text-slate-400">
           <span className="text-[10px] uppercase tracking-wide sm:text-xs">{label}</span>
-          <span className="grid h-7 w-7 place-items-center rounded-md" style={{ background: `${accent}22`, color: accent }}>
+          <span
+            className="grid h-7 w-7 place-items-center rounded-md ring-1 ring-inset"
+            style={{ background: `${accent}1f`, color: accent, boxShadow: `inset 0 0 0 1px ${accent}33` }}
+          >
             {icon}
           </span>
         </div>

@@ -547,19 +547,34 @@ const AUDIT_CATEGORIES = {
 
 export const getAuditLog = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((input: { q?: string; category?: keyof typeof AUDIT_CATEGORIES | "all"; from?: string; to?: string; page?: number; perPage?: number }) => ({
+  .inputValidator((input: { q?: string; category?: keyof typeof AUDIT_CATEGORIES | "all"; actor?: string; from?: string; to?: string; page?: number; perPage?: number }) => ({
     q: (input.q ?? "").slice(0, 100).trim(),
     category: input.category ?? "all",
+    actor: (input.actor ?? "").slice(0, 100).trim(),
     from: input.from ?? "",
     to: input.to ?? "",
     page: Math.max(1, Math.floor(input.page ?? 1)),
-    perPage: Math.min(100, Math.max(10, Math.floor(input.perPage ?? 50))),
+    perPage: Math.min(500, Math.max(10, Math.floor(input.perPage ?? 50))),
   }))
   .handler(async ({ data }) => {
+    // Resolve actor filter to a list of actor ids first
+    let actorIdFilter: string[] | null = null;
+    if (data.actor) {
+      const like = `%${data.actor.replace(/[%_]/g, "")}%`;
+      const { data: matchActors } = await supabaseAdmin
+        .from("profiles").select("id").ilike("display_name", like).limit(50);
+      actorIdFilter = (matchActors ?? []).map((p) => p.id);
+      if (actorIdFilter.length === 0) {
+        return { entries: [], total: 0, page: data.page, perPage: data.perPage, hasMore: false };
+      }
+    }
+
     let query = supabaseAdmin
       .from("audit_log")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false });
+
+    if (actorIdFilter) query = query.in("actor_id", actorIdFilter);
 
     if (data.category !== "all") {
       const prefixes = AUDIT_CATEGORIES[data.category];
@@ -1150,21 +1165,131 @@ export const safeTablesList = Object.keys(SAFE_TABLES);
 export const getAdminBadges = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async (): Promise<import("./admin-badges").AdminBadges> => {
-    const [kyc, reports, topups, broadcasts, mod] = await Promise.all([
+    const dayAgo = new Date(Date.now() - 86400000).toISOString();
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    const [kyc, reports, topups, broadcasts, mod, errors, failedPayments] = await Promise.all([
       supabaseAdmin.from("kyc_submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabaseAdmin.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
       supabaseAdmin.from("crypto_topups").select("id", { count: "exact", head: true }).in("status", ["waiting", "confirming"]),
-      supabaseAdmin.from("admin_broadcasts").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 86400000).toISOString()),
+      supabaseAdmin.from("admin_broadcasts").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
       // Moderation = active listings still awaiting verification
       supabaseAdmin.from("listings").select("id", { count: "exact", head: true }).eq("status", "active").is("verified_at", null),
+      supabaseAdmin.from("client_error_logs").select("id", { count: "exact", head: true }).eq("resolved", false),
+      supabaseAdmin.from("payments").select("id", { count: "exact", head: true }).eq("status", "failed").gte("created_at", dayAgo),
     ]);
+    const kycN = kyc.count ?? 0;
+    const reportsN = reports.count ?? 0;
+    const topupsN = topups.count ?? 0;
+    const broadcastsN = broadcasts.count ?? 0;
+    const modN = mod.count ?? 0;
+    const errorsN = (errors.count ?? 0) + (failedPayments.count ?? 0);
     return {
-      kyc: kyc.count ?? 0,
-      reports: reports.count ?? 0,
-      topups: topups.count ?? 0,
-      broadcasts: broadcasts.count ?? 0,
-      moderation: mod.count ?? 0,
+      kyc: kycN,
+      reports: reportsN,
+      topups: topupsN,
+      broadcasts: broadcastsN,
+      moderation: modN,
+      errors: errorsN,
+      // Inbox = everything that needs attention
+      inbox: kycN + reportsN + topupsN + errorsN,
     };
+  });
+
+/* ---------------- Admin notifications inbox ---------------- */
+
+type InboxKind = "kyc" | "report" | "topup" | "error" | "broadcast" | "payment";
+type InboxSeverity = "info" | "warning" | "danger";
+type InboxItem = {
+  id: string;
+  kind: InboxKind;
+  title: string;
+  body: string | null;
+  link: string;
+  at: string;
+  severity: InboxSeverity;
+};
+
+export const getAdminInbox = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { kinds?: string[]; limit?: number }) => ({
+    kinds: Array.isArray(input.kinds) ? input.kinds.filter((k) => typeof k === "string").slice(0, 12) : [],
+    limit: Math.min(200, Math.max(20, Math.floor(input.limit ?? 80))),
+  }))
+  .handler(async ({ data }): Promise<{ items: InboxItem[] }> => {
+    const want = (k: InboxKind) => data.kinds.length === 0 || data.kinds.includes(k);
+    const dayAgo = new Date(Date.now() - 86400000).toISOString();
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    const N = data.limit;
+
+    const [kycRes, reportsRes, topupsRes, errorsRes, broadcastsRes, paymentsRes] = await Promise.all([
+      want("kyc")
+        ? supabaseAdmin.from("kyc_submissions").select("id, full_name, created_at, status").eq("status", "pending").order("created_at", { ascending: false }).limit(N)
+        : Promise.resolve({ data: [] as { id: string; full_name: string; created_at: string; status: string }[] }),
+      want("report")
+        ? supabaseAdmin.from("reports").select("id, reason, details, listing_id, created_at, status").eq("status", "open").order("created_at", { ascending: false }).limit(N)
+        : Promise.resolve({ data: [] as { id: string; reason: string; details: string | null; listing_id: string | null; created_at: string; status: string }[] }),
+      want("topup")
+        ? supabaseAdmin.from("crypto_topups").select("id, price_amount_usd, pay_currency, status, created_at").in("status", ["waiting", "confirming"]).order("created_at", { ascending: false }).limit(N)
+        : Promise.resolve({ data: [] as { id: string; price_amount_usd: number; pay_currency: string | null; status: string; created_at: string }[] }),
+      want("error")
+        ? supabaseAdmin.from("client_error_logs").select("id, message, route, severity, created_at, resolved").eq("resolved", false).in("severity", ["error", "fatal"]).order("created_at", { ascending: false }).limit(N)
+        : Promise.resolve({ data: [] as { id: string; message: string; route: string | null; severity: string; created_at: string; resolved: boolean }[] }),
+      want("broadcast")
+        ? supabaseAdmin.from("admin_broadcasts").select("id, title, body, recipient_count, audience, created_at").gte("created_at", weekAgo).order("created_at", { ascending: false }).limit(N)
+        : Promise.resolve({ data: [] as { id: string; title: string; body: string | null; recipient_count: number; audience: string; created_at: string }[] }),
+      want("payment")
+        ? supabaseAdmin.from("payments").select("id, amount, currency, status, provider, created_at").eq("status", "failed").gte("created_at", dayAgo).order("created_at", { ascending: false }).limit(N)
+        : Promise.resolve({ data: [] as { id: string; amount: number; currency: string; status: string; provider: string; created_at: string }[] }),
+    ]);
+
+    const items: InboxItem[] = [];
+    (kycRes.data ?? []).forEach((r) =>
+      items.push({
+        id: `kyc:${r.id}`, kind: "kyc",
+        title: `KYC pending — ${r.full_name}`,
+        body: null, link: "/admin/kyc", at: r.created_at, severity: "warning",
+      }),
+    );
+    (reportsRes.data ?? []).forEach((r) =>
+      items.push({
+        id: `report:${r.id}`, kind: "report",
+        title: `Report: ${r.reason}`,
+        body: r.details ?? null, link: "/admin/reports", at: r.created_at, severity: "warning",
+      }),
+    );
+    (topupsRes.data ?? []).forEach((r) =>
+      items.push({
+        id: `topup:${r.id}`, kind: "topup",
+        title: `Top-up ${r.status} — $${Number(r.price_amount_usd).toFixed(2)}${r.pay_currency ? ` (${r.pay_currency.toUpperCase()})` : ""}`,
+        body: null, link: "/admin/topups", at: r.created_at, severity: "info",
+      }),
+    );
+    (errorsRes.data ?? []).forEach((r) =>
+      items.push({
+        id: `error:${r.id}`, kind: "error",
+        title: r.message.slice(0, 140),
+        body: r.route ?? null, link: "/admin/debug", at: r.created_at,
+        severity: r.severity === "fatal" ? "danger" : "warning",
+      }),
+    );
+    (broadcastsRes.data ?? []).forEach((r) =>
+      items.push({
+        id: `broadcast:${r.id}`, kind: "broadcast",
+        title: r.title,
+        body: r.body ? r.body.slice(0, 160) : `${r.recipient_count} recipients · ${r.audience}`,
+        link: "/admin/broadcasts", at: r.created_at, severity: "info",
+      }),
+    );
+    (paymentsRes.data ?? []).forEach((r) =>
+      items.push({
+        id: `payment:${r.id}`, kind: "payment",
+        title: `Failed payment — ${r.currency.toUpperCase()} ${Number(r.amount).toFixed(2)}`,
+        body: `Provider: ${r.provider}`, link: "/admin/payments", at: r.created_at, severity: "danger",
+      }),
+    );
+
+    items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+    return { items: items.slice(0, N) };
   });
 
 export const searchAdmin = createServerFn({ method: "POST" })

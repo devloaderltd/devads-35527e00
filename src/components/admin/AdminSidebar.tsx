@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Flag, Package, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, FileClock, ShieldCheck,
   ShieldAlert, Sparkles, BarChart3, Megaphone, Star, MessagesSquare, Bug, Wrench, Bell, BadgeCheck,
-  RefreshCw, AlertCircle,
+  RefreshCw, AlertCircle, Inbox,
 } from "lucide-react";
 
 import {
@@ -28,6 +28,7 @@ type Item = {
   icon: ComponentType<{ className?: string }>;
   exact?: boolean;
   badgeKey?: BadgeKey;
+  dotKey?: BadgeKey;
 };
 type Group = { label: string; items: ReadonlyArray<Item> };
 
@@ -36,9 +37,10 @@ const groups: ReadonlyArray<Group> = [
     label: "Overview",
     items: [
       { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
+      { title: "Inbox", url: "/admin/notifications", icon: Inbox, badgeKey: "inbox" },
       { title: "Activity", url: "/admin/activity", icon: FileClock },
       { title: "Insights", url: "/admin/insights", icon: BarChart3 },
-      { title: "Debug center", url: "/admin/debug", icon: Bug },
+      { title: "Debug center", url: "/admin/debug", icon: Bug, dotKey: "errors" },
     ],
   },
   {
@@ -149,17 +151,33 @@ export function AdminSidebar() {
               <SidebarMenu>
                 {g.items.map((it) => {
                   const badgeCount = it.badgeKey ? badges[it.badgeKey] : 0;
+                  const dotCount = it.dotKey ? badges[it.dotKey] : 0;
                   const showSkeleton = it.badgeKey && isLoading;
+                  const active = isActive(it.url, it.exact);
                   return (
                     <SidebarMenuItem key={it.url}>
                       <SidebarMenuButton
                         asChild
-                        isActive={isActive(it.url, it.exact)}
+                        isActive={active}
                         tooltip={it.title}
-                        className="data-[active=true]:bg-white/10 data-[active=true]:text-white hover:bg-white/5"
+                        className="relative data-[active=true]:bg-gradient-to-r data-[active=true]:from-indigo-500/20 data-[active=true]:to-fuchsia-500/5 data-[active=true]:text-white hover:bg-white/5"
                       >
                         <Link to={it.url} className="flex w-full items-center gap-2 text-slate-300">
-                          <it.icon className="h-4 w-4" />
+                          {active && (
+                            <span
+                              aria-hidden
+                              className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r bg-gradient-to-b from-indigo-400 to-fuchsia-400"
+                            />
+                          )}
+                          <span className="relative">
+                            <it.icon className="h-4 w-4" />
+                            {dotCount > 0 && (
+                              <span
+                                aria-hidden
+                                className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 animate-pulse rounded-full bg-rose-400 ring-1 ring-slate-950"
+                              />
+                            )}
+                          </span>
                           {!collapsed && <span className="flex-1 truncate">{it.title}</span>}
                           {showSkeleton ? (
                             !collapsed && <span className="h-4 w-6 animate-pulse rounded-full bg-white/10" aria-label="Loading count" />

@@ -1,27 +1,44 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { Bell, BadgeCheck, Flag, Bitcoin, Megaphone, ShieldAlert } from "lucide-react";
+import { useEffect, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import { Bell, Inbox, BadgeCheck, Flag, Bitcoin, AlertCircle, Megaphone, CreditCard } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { getAdminBadges } from "@/lib/admin.functions";
+import { getAdminInbox } from "@/lib/admin.functions";
+
+const ICONS: Record<string, { icon: React.ComponentType<{ className?: string }>; tone: string }> = {
+  kyc: { icon: BadgeCheck, tone: "text-amber-300" },
+  report: { icon: Flag, tone: "text-rose-300" },
+  topup: { icon: Bitcoin, tone: "text-orange-300" },
+  error: { icon: AlertCircle, tone: "text-red-300" },
+  broadcast: { icon: Megaphone, tone: "text-indigo-300" },
+  payment: { icon: CreditCard, tone: "text-fuchsia-300" },
+};
+
+const LAST_SEEN_KEY = "admin.inbox.lastSeenAt";
 
 export function NotificationsBell() {
-  const fn = useServerFn(getAdminBadges);
+  const fn = useServerFn(getAdminInbox);
+  const [lastSeen, setLastSeen] = useState<number>(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const v = window.localStorage.getItem(LAST_SEEN_KEY);
+    setLastSeen(v ? Number(v) : 0);
+  }, []);
+
   const { data } = useQuery({
-    queryKey: ["admin-badges"],
-    queryFn: () => fn(),
+    queryKey: ["admin-inbox", "all"],
+    queryFn: () => fn({ data: { kinds: [], limit: 30 } }),
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
-  const total = (data?.kyc ?? 0) + (data?.reports ?? 0) + (data?.topups ?? 0) + (data?.moderation ?? 0);
-  const items = [
-    { key: "kyc", label: "KYC awaiting review", count: data?.kyc ?? 0, href: "/admin/kyc", icon: BadgeCheck, color: "text-amber-300" },
-    { key: "reports", label: "Open user reports", count: data?.reports ?? 0, href: "/admin/reports", icon: Flag, color: "text-rose-300" },
-    { key: "topups", label: "Pending crypto top-ups", count: data?.topups ?? 0, href: "/admin/topups", icon: Bitcoin, color: "text-orange-300" },
-    { key: "moderation", label: "Listings in draft", count: data?.moderation ?? 0, href: "/admin/moderation", icon: ShieldAlert, color: "text-fuchsia-300" },
-    { key: "broadcasts", label: "Broadcasts (7d)", count: data?.broadcasts ?? 0, href: "/admin/broadcasts", icon: Megaphone, color: "text-indigo-300" },
-  ];
+
+  const items = data?.items ?? [];
+  const unseen = items.filter((i) => new Date(i.at).getTime() > lastSeen).length;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -29,12 +46,12 @@ export function NotificationsBell() {
           variant="ghost"
           size="icon"
           className="relative h-8 w-8 rounded-full text-slate-300 hover:bg-white/10"
-          aria-label={`${total} pending items`}
+          aria-label={`${unseen} new notifications`}
         >
           <Bell className="h-4 w-4" />
-          {total > 0 && (
+          {unseen > 0 && (
             <span className="absolute right-0.5 top-0.5 grid h-4 min-w-[1rem] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
-              {total > 99 ? "99+" : total}
+              {unseen > 99 ? "99+" : unseen}
             </span>
           )}
         </Button>
@@ -42,31 +59,62 @@ export function NotificationsBell() {
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-80 border-white/10 bg-slate-900 p-0 text-slate-100"
+        className="w-96 border-white/10 bg-slate-900 p-0 text-slate-100"
       >
-        <div className="border-b border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          Operations queue
+        <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <Inbox className="h-3.5 w-3.5" /> Inbox
+          </div>
+          {unseen > 0 && (
+            <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-semibold text-rose-200">
+              {unseen} new
+            </span>
+          )}
         </div>
-        <div className="divide-y divide-white/5">
-          {items.map((it) => (
-            <Link
-              key={it.key}
-              to={it.href}
-              className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-white/5"
-            >
-              <span className={`grid h-7 w-7 place-items-center rounded-md bg-white/5 ${it.color}`}>
-                <it.icon className="h-3.5 w-3.5" />
-              </span>
-              <span className="flex-1 truncate text-slate-200">{it.label}</span>
-              <span className={`min-w-[1.5rem] rounded-full px-1.5 text-center text-[11px] font-semibold ${it.count > 0 ? "bg-rose-500/20 text-rose-200" : "bg-white/5 text-slate-400"}`}>
-                {it.count}
-              </span>
-            </Link>
-          ))}
+        <div className="max-h-96 overflow-y-auto divide-y divide-white/5">
+          {items.length === 0 && (
+            <div className="px-3 py-10 text-center text-xs text-slate-400">All clear.</div>
+          )}
+          {items.slice(0, 12).map((it) => {
+            const meta = ICONS[it.kind] ?? ICONS.broadcast;
+            const isNew = new Date(it.at).getTime() > lastSeen;
+            return (
+              <Link
+                key={it.id}
+                to={it.link}
+                className="flex items-start gap-2.5 px-3 py-2 hover:bg-white/5"
+              >
+                <span className={`mt-0.5 grid h-7 w-7 place-items-center rounded-md bg-white/5 ${meta.tone}`}>
+                  <meta.icon className="h-3.5 w-3.5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm text-slate-100">{it.title}</span>
+                    {isNew && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" />}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    {formatDistanceToNow(new Date(it.at), { addSuffix: true })}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
-        <div className="border-t border-white/10 px-3 py-2 text-right">
-          <Link to="/admin/activity" className="text-xs text-indigo-300 hover:text-indigo-200">
-            Open full activity →
+        <div className="flex items-center justify-between border-t border-white/10 px-3 py-2">
+          <button
+            type="button"
+            className="text-xs text-slate-400 hover:text-slate-100"
+            onClick={() => {
+              const now = Date.now();
+              setLastSeen(now);
+              if (typeof window !== "undefined")
+                window.localStorage.setItem(LAST_SEEN_KEY, String(now));
+            }}
+          >
+            Mark as seen
+          </button>
+          <Link to="/admin/notifications" className="text-xs text-indigo-300 hover:text-indigo-200">
+            Open inbox →
           </Link>
         </div>
       </PopoverContent>
