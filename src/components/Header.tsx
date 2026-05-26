@@ -133,19 +133,6 @@ export function Header() {
         </div>
       </div>
 
-      <form onSubmit={onSearch} className="relative mx-auto mt-2 max-w-6xl md:hidden">
-        <div className="rounded-2xl glass px-3 py-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search listings…"
-              className="rounded-full border-white/60 bg-white/70 pl-9"
-            />
-          </div>
-        </div>
-      </form>
     </header>
   );
 }
