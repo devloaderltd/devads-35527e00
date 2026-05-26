@@ -85,23 +85,26 @@ function UsersPage() {
   return (
     <div>
       <AdminPageHeader title="Users" subtitle={`${total.toLocaleString()} match · page ${page} of ${totalPages}`} />
-      <div className="mb-3 flex flex-wrap gap-2">
-        {(["all", "admins", "moderators", "banned"] as const).map(f => (
-          <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} className="rounded-full capitalize" onClick={() => setFilter(f)}>{f}</Button>
-        ))}
-        <Input placeholder="Search name or email…" value={qInput} onChange={(e) => setQInput(e.target.value)} className="ml-auto w-full max-w-xs rounded-full border-white/10 bg-white/5 text-slate-100" />
-        <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => downloadCSV(`users-${new Date().toISOString().slice(0,10)}`, toCSV(users.map(u => ({ ...u, roles: u.roles.join("|") }))))}><Download className="mr-1 h-3.5 w-3.5" /> CSV</Button>
-      </div>
 
-      {selected.size > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3">
-          <span className="text-sm text-slate-200">{selected.size} selected</span>
-          <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => { const d = Number(prompt("Ban for how many days?", "7") ?? "0"); if (d > 0) bulk.mutate({ action: "ban", days: d }); }}>Ban</Button>
-          <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => bulk.mutate({ action: "unban" })}>Unban</Button>
-          <Button size="sm" variant="destructive" className="rounded-full" onClick={() => { if (confirm(`Permanently delete ${selected.size} users? This cannot be undone.`)) bulk.mutate({ action: "delete" }); }}>Delete</Button>
-          <Button size="sm" variant="ghost" className="ml-auto rounded-full text-slate-300" onClick={() => setSelected(new Set())}>Clear</Button>
-        </div>
-      )}
+      <AdminTableToolbar
+        q={qInput}
+        onQ={setQInput}
+        placeholder="Search name or email…"
+        filters={[{
+          value: filter, onChange: (v) => setFilter(v as typeof filter), label: "Filter",
+          options: [
+            { value: "all", label: "All users" },
+            { value: "admins", label: "Admins" },
+            { value: "moderators", label: "Moderators" },
+            { value: "banned", label: "Banned" },
+          ],
+        }]}
+        total={total}
+        onExportCsv={() => downloadCsv(
+          `users-${new Date().toISOString().slice(0, 10)}.csv`,
+          toCsv(users.map((u) => ({ ...u, roles: u.roles.join("|") }))),
+        )}
+      />
 
       <Panel>
         {users.length > 0 && (
