@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getWallet, createTopupInvoice } from "@/lib/wallet.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PanelShell } from "@/components/PanelShell";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({ meta: [{ title: "Wallet — CallEscort24" }, { name: "robots", content: "noindex" }] }),
