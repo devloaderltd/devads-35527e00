@@ -65,10 +65,11 @@ function SellerPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("listings")
-        .select(`id, slug, title, bumped_at, verified_at,
+        .select(`id, slug, title, bumped_at, verified_at, category_id, user_id,
           cities(name, region, country),
           listing_images(url, sort_order),
-          listing_promotions(type, ends_at)`)
+          listing_promotions(type, ends_at),
+          categories(id, slug, name)`)
         .eq("user_id", id)
         .eq("status", "active")
         .order("bumped_at", { ascending: false })
@@ -76,6 +77,45 @@ function SellerPage() {
       return data ?? [];
     },
   });
+
+  const categoryChips = useMemo(() => {
+    const map = new Map<string, { slug: string; name: string; count: number }>();
+    (listings ?? []).forEach((l: any) => {
+      const c = l.categories;
+      if (!c) return;
+      const cur = map.get(c.id) ?? { slug: c.slug, name: c.name, count: 0 };
+      cur.count += 1;
+      map.set(c.id, cur);
+    });
+    return [...map.values()].sort((a, b) => b.count - a.count).slice(0, 8);
+  }, [listings]);
+
+  const contactSeller = async () => {
+    if (!user) { navigate({ to: "/login" }); return; }
+    if (user.id === id) { toast.error("That's you."); return; }
+    const latest = listings?.[0];
+    if (!latest) { toast.error("This seller has no active listings to message about."); return; }
+    setContacting(true);
+    const { data: existing } = await supabase
+      .from("message_threads")
+      .select("id")
+      .eq("listing_id", latest.id)
+      .eq("buyer_id", user.id)
+      .eq("seller_id", id)
+      .maybeSingle();
+    let threadId = existing?.id;
+    if (!threadId) {
+      const { data: created, error } = await supabase
+        .from("message_threads")
+        .insert({ listing_id: latest.id, buyer_id: user.id, seller_id: id })
+        .select("id").single();
+      if (error) { setContacting(false); toast.error(error.message); return; }
+      threadId = created.id;
+    }
+    setContacting(false);
+    navigate({ to: "/messages/$threadId", params: { threadId: threadId! } });
+  };
+
 
   if (isLoading) {
     return <div className="container mx-auto px-4 py-10 text-muted-foreground">Loading…</div>;
