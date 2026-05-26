@@ -10,13 +10,14 @@ import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
-import { Users, Package, DollarSign, Flag, Wallet, Bitcoin, TrendingUp, AlertCircle } from "lucide-react";
+import { Users, Package, DollarSign, Flag, Wallet, Bitcoin, TrendingUp, AlertCircle, Activity, ShieldAlert, Wrench, ServerCrash } from "lucide-react";
 
 import { SeedDemoButton } from "@/components/admin/SeedDemoButton";
 import { panelCls, AdminPageHeader } from "@/components/admin/ui";
 import { KpiTile } from "@/components/admin/KpiTile";
+import { ErrorFallback, CardGridSkeleton } from "@/components/admin/Skeletons";
 import {
-  getQuickStats, getRecentActivity, getDashboardSparklines, getFunnelStats, getDashboardOverview,
+  getQuickStats, getRecentActivity, getDashboardSparklines, getFunnelStats, getDashboardOverview, getSystemHealth,
 } from "@/lib/admin.functions";
 
 
