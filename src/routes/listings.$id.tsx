@@ -15,6 +15,7 @@ import { PromoteDialog } from "@/components/PromoteDialog";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ListingCard } from "@/components/ListingCard";
 import { SellerRatingBadge } from "@/components/SellerRatingBadge";
+import { SellerReviews } from "@/components/SellerReviews";
 
 import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
