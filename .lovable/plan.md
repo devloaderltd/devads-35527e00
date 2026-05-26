@@ -1,45 +1,72 @@
-# Fix admin mobile overflow
+# Admin badges: refresh, type safety, loading/error states + small gaps
 
-## Root cause
+## Scope
 
-All four screenshots show the same symptom: the admin content is shifted/clipped on the left with empty space on the right. That's horizontal scroll on the main content area. A few children are wider than the 393px viewport and there's no overflow guard, so the whole page scrolls sideways and every header/title looks cut.
+Concrete asks I can do without further input:
 
-The widest offenders:
-- `AdminShell` → `SidebarInset` / `<main>` have no `min-w-0` or `overflow-x` guard, so any oversized child stretches the column.
-- `admin/listings`: action buttons row (`View · Gift bump · Gift featured`) is in the same flex row as the title; with three pill buttons it pushes total width past the viewport and squeezes the title to one-char-per-line.
-- `admin/debug`: shadcn `TabsList` with 4 icon+label triggers (`Client errors`, `Server logs`, `Health`, `DB inspector`) is wider than 393px and doesn't scroll.
-- `AdminTableToolbar`: search input has `min-w-[14rem]` (224px) + filter + `Export CSV` in one row → overflows on narrow phones.
-- `admin/settings`: `AdminPageHeader` actions (`Discard` + `Publish changes`) sit beside a long title; the Publish button doesn't shrink.
-- `admin/maintenance`: "Demo accounts" `SeedDemoButton` lives inside an `Action` row whose left text doesn't truncate, so the trigger pill gets shoved off.
+1. **Type-safe `BadgeKey`** — single source of truth shared by `getAdminBadges` and the sidebar.
+2. **Manual "Refresh counts"** action in sidebar header + command palette.
+3. **Loading skeleton + error fallback** for the badges query in the sidebar.
+4. **Wire up the badges already returned but unused** (`topups`, `broadcasts`) — `getAdminBadges` already returns them; sidebar throws them away. Hook them into Crypto top-ups and Broadcasts entries.
 
-## Fix
+The last ask — *"Add more functionality and features to the admin. Find any missing function."* — is too open-ended to bundle into this plan. I'll list candidate gaps I noticed at the bottom and ask you to pick which (if any) to ship in a follow-up. **This plan does NOT implement them.**
 
-1. `src/components/admin/AdminShell.tsx`
-   - Add `min-w-0` to `SidebarInset` and to `<main>`, plus `overflow-x-hidden` on `<main>` as a safety net so a single oversized child can't break the layout.
+## Implementation
 
-2. `src/components/admin/ui.tsx` (`AdminPageHeader`)
-   - Wrap the title block in `min-w-0 flex-1` and add `break-words` so long titles wrap instead of forcing width.
-   - Let the actions row shrink (`shrink-0` only on individual buttons, container `flex-wrap`).
+### 1. `src/lib/admin-badges.ts` (new, client-safe)
 
-3. `src/routes/admin.listings.tsx`
-   - Change the list-row layout: stack title and action buttons vertically on mobile (`flex-col sm:flex-row`), and put the actions on their own wrapping row below. Add `min-w-0` + `break-words` on the title cell so "Vintage Ford Escort MK2 …" no longer renders one character per line.
+```ts
+export const BADGE_KEYS = ["kyc", "reports", "moderation", "topups", "broadcasts"] as const;
+export type BadgeKey = typeof BADGE_KEYS[number];
+export type AdminBadges = Record<BadgeKey, number>;
+export const EMPTY_BADGES: AdminBadges = { kyc: 0, reports: 0, moderation: 0, topups: 0, broadcasts: 0 };
+export const ADMIN_BADGES_QUERY_KEY = ["admin-badges"] as const;
+```
 
-4. `src/routes/admin.debug.tsx`
-   - Make `TabsList` horizontally scrollable on small screens: wrap it in `<div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">` and add `w-max` / `whitespace-nowrap` to triggers so they don't wrap or clip.
+### 2. `src/lib/admin.functions.ts`
 
-5. `src/components/admin/AdminTableToolbar.tsx`
-   - Drop `min-w-[14rem]` on the search wrapper (use `min-w-0 flex-1 basis-full sm:basis-auto`) so it takes a full row on mobile and the filter + Export CSV wrap to a second row cleanly.
+- Type `getAdminBadges`'s handler return as `AdminBadges` (import from the new file). This forces a compile error if the handler stops returning a key.
+- Replace the `listings … eq("status","draft")` query (no `draft` status exists on `listings`) with `listings … eq("status","active").eq("verified_at", null)` so the `moderation` count reflects unverified active listings — or, simpler, count `reports` of type `listing` with `status='open'`. I'll pick the unverified-listings option since it matches the existing "Moderation" page semantics; flag in code with a short comment.
 
-6. `src/routes/admin.settings.tsx`
-   - In the header `actions`, allow buttons to wrap: `flex flex-wrap gap-2`, and make `Publish changes` not force width (no fixed min-width). Title already wraps once header is fixed (step 2).
+### 3. `src/components/admin/AdminSidebar.tsx`
 
-7. `src/routes/admin.maintenance.tsx` (`Action` helper)
-   - Switch to `flex-wrap` with `min-w-0 flex-1` on the text block so the trigger button drops to a new line on narrow screens instead of overflowing.
+- Replace inline `badges` object with `AdminBadges` typed from the new module.
+- Constrain each sidebar item's `badgeKey` to `BadgeKey` via a typed `Item` type so a typo or stale key fails the build.
+- Add `badgeKey: "topups"` to Crypto top-ups, `badgeKey: "broadcasts"` to Broadcasts.
+- Query: keep `useQuery({ queryKey: ADMIN_BADGES_QUERY_KEY, … })`, expose `isLoading`, `isError`, `refetch`.
+  - Loading: render small pulsing pills (`h-4 w-6 animate-pulse bg-white/10 rounded-full`) in place of badge numbers on items with a `badgeKey`.
+  - Error: tiny `AlertCircle` icon at the top of the sidebar with a tooltip "Counts unavailable — click to retry" that calls `refetch()`.
+- Add a header refresh button (small `RefreshCw` icon button next to the logo, hidden when collapsed) that calls `refetch()` and shows `animate-spin` while `isFetching`.
 
-No changes to data, server functions, routing, auth, or seed logic. Pure CSS / layout fixes scoped to the admin shell and the four affected pages.
+### 4. `src/components/admin/AdminCommandPalette.tsx`
+
+- Add a "Refresh badge counts" entry under **Quick actions** that uses `useQueryClient().invalidateQueries({ queryKey: ADMIN_BADGES_QUERY_KEY })` and shows a `toast.success("Counts refreshed")`.
+
+### 5. No DB / RLS changes. No new server functions.
+
+## Files touched
+
+- new: `src/lib/admin-badges.ts`
+- edit: `src/lib/admin.functions.ts` (typed return + corrected moderation count)
+- edit: `src/components/admin/AdminSidebar.tsx`
+- edit: `src/components/admin/AdminCommandPalette.tsx`
 
 ## QA
-- After edits, recheck at 393px viewport: each page should fit with no horizontal scrollbar, titles fully visible, tabs scrollable, listing titles wrapping as words.
 
-## Out of scope
-- Visual redesign of cards, dashboard data, KPI tiles, sidebar, or any non-admin route.
+- Throttle network → confirm skeleton pills appear, then numbers fill in.
+- Force a 500 (temp throw in `getAdminBadges`) → confirm error icon + tooltip + retry works.
+- Click sidebar refresh and palette "Refresh badge counts" → counts re-fetch, spinner shows.
+- Rename a `BadgeKey` in `admin-badges.ts` → TypeScript fails in both the server function and the sidebar item that references it.
+
+## Out of scope (please confirm)
+
+You also asked to "add more functionality and features to the admin. Find any missing function." That's open-ended. Candidates I spotted while exploring, but will **not** build in this plan:
+
+- Admin route `/admin/notifications` — no global outbox view of `notifications` table.
+- Bulk actions on KYC and Reports tables (only single-row actions exist).
+- Server fn for exporting `audit_log` to CSV (currently UI only).
+- `crypto_topups.raw_last_ipn` viewer per top-up.
+- A "user impersonation / view as" action (security-sensitive; would need an approval flow).
+- `getAdminBadges` extra counts: failed payments 24h, unresolved client errors, server errors 24h — already exposed via `getSystemHealth`; could be surfaced as sidebar badges on Debug center.
+
+Tell me which of those (or anything else) you want, and I'll plan that work separately.
