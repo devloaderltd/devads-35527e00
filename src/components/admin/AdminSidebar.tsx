@@ -11,7 +11,7 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
-import { getKycPendingCount } from "@/lib/kyc.functions";
+import { getAdminBadges } from "@/lib/admin.functions";
 
 const groups = [
   {
@@ -27,6 +27,8 @@ const groups = [
     items: [
       { title: "Users", url: "/admin/users", icon: Users },
       { title: "KYC verification", url: "/admin/kyc", icon: BadgeCheck, badgeKey: "kyc" as const },
+      { title: "Reports", url: "/admin/reports", icon: Flag, badgeKey: "reports" as const },
+      { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert, badgeKey: "moderation" as const },
       { title: "Reports", url: "/admin/reports", icon: Flag },
       { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert },
       { title: "Reviews", url: "/admin/reviews", icon: Star },
