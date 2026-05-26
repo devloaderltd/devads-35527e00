@@ -66,6 +66,7 @@ import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedDebugSessionRouteImport } from './routes/_authenticated.debug.session'
 import { Route as ApiPublicPaymentsNowpaymentsIpnRouteImport } from './routes/api/public/payments/nowpayments-ipn'
 import { Route as ApiPublicCronMatchSavedSearchesRouteImport } from './routes/api/public/cron/match-saved-searches'
+import { Route as ApiPublicCronAutoPromoteRouteImport } from './routes/api/public/cron/auto-promote'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -358,6 +359,12 @@ const ApiPublicCronMatchSavedSearchesRoute =
     path: '/api/public/cron/match-saved-searches',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronAutoPromoteRoute =
+  ApiPublicCronAutoPromoteRouteImport.update({
+    id: '/api/public/cron/auto-promote',
+    path: '/api/public/cron/auto-promote',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -414,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
   '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
@@ -470,6 +478,7 @@ export interface FileRoutesByTo {
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
+  '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
   '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
@@ -530,6 +539,7 @@ export interface FileRoutesById {
   '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
   '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
@@ -590,6 +600,7 @@ export interface FileRouteTypes {
     | '/api/public/seed-demo'
     | '/api/public/sitemap.xml'
     | '/messages/'
+    | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
     | '/api/public/payments/nowpayments-ipn'
   fileRoutesByTo: FileRoutesByTo
@@ -646,6 +657,7 @@ export interface FileRouteTypes {
     | '/api/public/seed-demo'
     | '/api/public/sitemap.xml'
     | '/messages'
+    | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
     | '/api/public/payments/nowpayments-ipn'
   id:
@@ -705,6 +717,7 @@ export interface FileRouteTypes {
     | '/api/public/seed-demo'
     | '/api/public/sitemap.xml'
     | '/_authenticated/messages/'
+    | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
     | '/api/public/payments/nowpayments-ipn'
   fileRoutesById: FileRoutesById
@@ -730,6 +743,7 @@ export interface RootRouteChildren {
   ApiPublicClientErrorsRoute: typeof ApiPublicClientErrorsRoute
   ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
+  ApiPublicCronAutoPromoteRoute: typeof ApiPublicCronAutoPromoteRoute
   ApiPublicCronMatchSavedSearchesRoute: typeof ApiPublicCronMatchSavedSearchesRoute
   ApiPublicPaymentsNowpaymentsIpnRoute: typeof ApiPublicPaymentsNowpaymentsIpnRoute
 }
@@ -1135,6 +1149,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronMatchSavedSearchesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/auto-promote': {
+      id: '/api/public/cron/auto-promote'
+      path: '/api/public/cron/auto-promote'
+      fullPath: '/api/public/cron/auto-promote'
+      preLoaderRoute: typeof ApiPublicCronAutoPromoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1258,6 +1279,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicClientErrorsRoute: ApiPublicClientErrorsRoute,
   ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
+  ApiPublicCronAutoPromoteRoute: ApiPublicCronAutoPromoteRoute,
   ApiPublicCronMatchSavedSearchesRoute: ApiPublicCronMatchSavedSearchesRoute,
   ApiPublicPaymentsNowpaymentsIpnRoute: ApiPublicPaymentsNowpaymentsIpnRoute,
 }
