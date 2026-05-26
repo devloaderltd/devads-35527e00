@@ -1,16 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Upload, X } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { getSiteSettings, updateSiteSettings } from "@/lib/admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/settings")({ component: SettingsPage });
 
@@ -23,6 +24,8 @@ type FormState = {
   maintenance_message: string;
   site_name: string;
   support_email: string;
+  logo_url: string;
+  favicon_url: string;
 };
 
 function validate(f: FormState) {
@@ -54,6 +57,8 @@ function SettingsPage() {
     maintenance_message: s.maintenance_message,
     site_name: s.site_name,
     support_email: s.support_email,
+    logo_url: (s as any).logo_url ?? "",
+    favicon_url: (s as any).favicon_url ?? "",
   } : null, [s]);
 
   const [form, setForm] = useState<FormState | null>(null);
@@ -120,8 +125,28 @@ function SettingsPage() {
             <Field label="Support email" error={errors.support_email}>
               <Input type="email" value={form.support_email} onChange={(e) => set("support_email", e.target.value)} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" maxLength={120} />
             </Field>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <AssetUploader
+                label="Logo"
+                kind="logo"
+                value={form.logo_url}
+                onChange={(v) => set("logo_url", v)}
+                maxBytes={1024 * 1024}
+                hint="PNG/SVG/WebP, ≤ 1 MB"
+              />
+              <AssetUploader
+                label="Favicon"
+                kind="favicon"
+                value={form.favicon_url}
+                onChange={(v) => set("favicon_url", v)}
+                maxBytes={256 * 1024}
+                hint="ICO/PNG/SVG, ≤ 256 KB"
+              />
+            </div>
           </div>
         </Panel>
+
+
 
         <Panel title="Promotion pricing">
           <div className="grid grid-cols-2 gap-3">
@@ -216,3 +241,95 @@ function Field({ label, error, className, children }: { label: string; error?: s
     </div>
   );
 }
+
+function AssetUploader({
+  label, kind, value, onChange, maxBytes, hint,
+}: {
+  label: string;
+  kind: "logo" | "favicon";
+  value: string;
+  onChange: (v: string) => void;
+  maxBytes: number;
+  hint: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const onPick = async (file: File) => {
+    if (file.size > maxBytes) {
+      toast.error(`File too large (max ${Math.round(maxBytes / 1024)} KB)`);
+      return;
+    }
+    if (!/^image\//.test(file.type) && !file.name.endsWith(".ico")) {
+      toast.error("Image files only");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${kind}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("branding").upload(path, file, {
+        cacheControl: "3600", upsert: false, contentType: file.type || undefined,
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from("branding").getPublicUrl(path);
+      onChange(data.publicUrl);
+      toast.success(`${label} uploaded — remember to publish`);
+    } catch (e) {
+      toast.error((e as Error).message || "Upload failed");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div>
+      <Label className="text-slate-300">{label}</Label>
+      <div className="mt-1 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-2">
+        <div className="grid h-14 w-14 flex-shrink-0 place-items-center overflow-hidden rounded-md bg-slate-950/40">
+          {value ? (
+            <img src={value} alt={label} className="h-full w-full object-contain" />
+          ) : (
+            <span className="text-[10px] text-slate-500">None</span>
+          )}
+        </div>
+        <div className="flex flex-1 flex-col gap-1">
+          <div className="flex gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="rounded-full border-white/15 bg-white/5 text-xs text-slate-100 hover:bg-white/10"
+              disabled={uploading}
+              onClick={() => inputRef.current?.click()}
+            >
+              <Upload className="mr-1 h-3 w-3" />
+              {uploading ? "Uploading…" : value ? "Replace" : "Upload"}
+            </Button>
+            {value && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-xs text-slate-400 hover:text-red-300"
+                onClick={() => onChange("")}
+              >
+                <X className="mr-1 h-3 w-3" /> Remove
+              </Button>
+            )}
+          </div>
+          <p className="text-[10px] text-slate-500">{hint}</p>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/svg+xml,image/webp,image/x-icon,.ico"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); }}
+        />
+      </div>
+    </div>
+  );
+}
+

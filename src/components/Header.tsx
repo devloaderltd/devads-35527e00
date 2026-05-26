@@ -19,6 +19,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoUrl from "@/assets/logo.png";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getSiteSettings } from "@/lib/admin.functions";
 
 export function Header() {
   const { user } = useAuth();
@@ -26,6 +29,14 @@ export function Header() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const fetchSettings = useServerFn(getSiteSettings);
+  const { data: settingsData } = useQuery({
+    queryKey: ["site-settings-public"],
+    queryFn: () => fetchSettings(),
+    staleTime: 60_000,
+  });
+  const customLogo = (settingsData?.settings as any)?.logo_url as string | undefined;
+  const siteName = (settingsData?.settings as any)?.site_name || "CallEscort24";
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +62,8 @@ export function Header() {
     <header className="sticky top-3 z-40 mx-3 mt-3 md:mx-6">
       <div className="mx-auto flex max-w-6xl items-center gap-3 rounded-2xl glass-strong px-3 py-2.5">
         <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
-          <img src={logoUrl} alt="CallEscort24" width={36} height={36} className="h-9 w-9 rounded-xl object-contain" />
-          <span className="hidden sm:inline">CallEscort24</span>
+          <img src={customLogo || logoUrl} alt={siteName} width={36} height={36} className="h-9 w-9 rounded-xl object-contain" />
+          <span className="hidden sm:inline">{siteName}</span>
         </Link>
 
         <form onSubmit={onSearch} className="relative ml-2 hidden flex-1 max-w-md md:block">
