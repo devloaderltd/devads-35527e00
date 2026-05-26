@@ -40,10 +40,11 @@ function AdminKycPage() {
   const review = useServerFn(adminReviewKyc);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
-  const { data, isLoading } = useQuery({
+  const kycQ = useQuery({
     queryKey: ["admin-kyc", status],
     queryFn: () => list({ data: { status } }),
   });
+  const { data, isLoading } = kycQ;
 
   const reviewMut = useMutation({
     mutationFn: async (v: { id: string; action: "approve" | "reject"; note?: string }) =>
