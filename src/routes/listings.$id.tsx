@@ -410,7 +410,15 @@ function ListingDetail() {
                 </Link>
               ) : (
                 <div className="space-y-1.5">
-                  {contact?.phone ? (
+                  {(listing as any).phone ? (
+                    <a
+                      href={`tel:${String((listing as any).phone).replace(/[^\d+]/g, "")}`}
+                      className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
+                    >
+                      <Phone className="h-4 w-4 text-primary" />
+                      {(listing as any).phone}
+                    </a>
+                  ) : contact?.phone ? (
                     <a
                       href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
                       className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
@@ -423,6 +431,17 @@ function ListingDetail() {
                       <Phone className="h-4 w-4" />
                       Phone not provided
                     </div>
+                  )}
+                  {(listing as any).whatsapp && (
+                    <a
+                      href={`https://wa.me/${String((listing as any).whatsapp).replace(/[^\d]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
+                    >
+                      <MessageCircle className="h-4 w-4 text-[#25D366]" />
+                      WhatsApp: {(listing as any).whatsapp}
+                    </a>
                   )}
                   {contact?.email ? (
                     <a
