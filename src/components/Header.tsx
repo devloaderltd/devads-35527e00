@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet, BookmarkCheck, Star } from "lucide-react";
+import { Search, Plus, User as UserIcon, LogOut, Heart, Package, MessageSquare, MapPin, LayoutDashboard, Bug, Wallet, BookmarkCheck, Star, BadgeCheck } from "lucide-react";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCity } from "@/lib/city-context";
@@ -104,6 +104,10 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" /> Profile</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/verify"><BadgeCheck className="mr-2 h-4 w-4 text-emerald-500" /> Verify identity · +$5</Link>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem asChild>
                   <Link to="/my-listings"><Package className="mr-2 h-4 w-4" /> My listings</Link>
                 </DropdownMenuItem>

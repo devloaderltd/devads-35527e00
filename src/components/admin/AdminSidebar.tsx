@@ -2,8 +2,9 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Flag, Package, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, FileClock, ShieldCheck,
-  ShieldAlert, Sparkles, BarChart3, Megaphone, Star, MessagesSquare, Bug, Wrench, Bell,
+  ShieldAlert, Sparkles, BarChart3, Megaphone, Star, MessagesSquare, Bug, Wrench, Bell, BadgeCheck,
 } from "lucide-react";
+
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
@@ -22,12 +23,14 @@ const groups = [
     label: "People",
     items: [
       { title: "Users", url: "/admin/users", icon: Users },
+      { title: "KYC verification", url: "/admin/kyc", icon: BadgeCheck },
       { title: "Reports", url: "/admin/reports", icon: Flag },
       { title: "Moderation", url: "/admin/moderation", icon: ShieldAlert },
       { title: "Reviews", url: "/admin/reviews", icon: Star },
       { title: "Threads", url: "/admin/threads", icon: MessagesSquare },
     ],
   },
+
   {
     label: "Content",
     items: [
