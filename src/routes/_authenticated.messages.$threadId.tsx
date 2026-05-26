@@ -236,50 +236,66 @@ function ThreadView() {
           </Link>
         )}
       </div>
-      {typing && (
-        <div className="px-4 py-1 text-xs italic text-muted-foreground">
-          {thread?.other?.display_name ?? "User"} is typing…
-        </div>
-      )}
       <div className="flex-1 space-y-2 overflow-y-auto p-3">
         {messages?.map((m) => {
           const mine = m.sender_id === user?.id;
+          const tickState: "sent" | "delivered" | "seen" =
+            !mine ? "sent"
+            : !showReceipts ? "delivered"
+            : otherReadAt && otherReadAt >= new Date(m.created_at) ? "seen"
+            : otherReadAt ? "delivered"
+            : "sent";
           return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
               <div
                 className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm ${mine ? "text-white" : "bg-white/70 backdrop-blur"}`}
                 style={mine ? { background: "var(--gradient-primary)", backgroundSize: "200% 200%" } : undefined}
               >
-                {m.body}
+                <div>{m.body}</div>
+                {mine && (
+                  <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] opacity-90">
+                    <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
+                    <MessageTicks state={tickState} seenAt={tickState === "seen" ? otherLastRead : null} />
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
-        {seen && (
-          <div className="flex justify-end pr-1 text-[10px] text-muted-foreground">
-            <CheckCheck className="mr-0.5 h-3 w-3 text-primary" /> Seen
-          </div>
-        )}
+        {typing && <TypingBubble name={thread?.other?.display_name} />}
         <div ref={endRef} />
       </div>
       <div className="border-t border-white/40 p-3">
-        <div className="mb-2 flex flex-wrap gap-1.5">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
           {QUICK_REPLIES.map((q, i) => (
             <button
               key={`${q.label}-${i}`}
-              onClick={() => setBody(q.body)}
+              onClick={() => {
+                if (send.isPending) return;
+                send.mutate(q.body);
+              }}
               type="button"
-              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs backdrop-blur transition hover:bg-white hover:text-foreground ${
+              disabled={send.isPending}
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs backdrop-blur transition hover:bg-white hover:text-foreground disabled:opacity-50 ${
                 q.custom
                   ? "border-primary/40 bg-primary/10 text-primary"
                   : "border-white/50 bg-white/60 text-muted-foreground"
               }`}
-              title={q.body}
+              title={`Send: ${q.body}`}
             >
               {q.custom && <Sparkles className="h-3 w-3" />}
               {q.label}
             </button>
           ))}
+          <Link
+            to="/profile"
+            hash="quick-replies"
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground/40 px-3 py-1 text-xs text-muted-foreground transition hover:bg-white hover:text-foreground"
+            title="Manage templates"
+          >
+            <Settings2 className="h-3 w-3" />
+            Templates
+          </Link>
         </div>
         <form onSubmit={onSubmit} className="flex gap-2">
           <Input value={body} onChange={(e) => onBodyChange(e.target.value)} placeholder="Write a message…" className="rounded-full bg-white/70 backdrop-blur" />
