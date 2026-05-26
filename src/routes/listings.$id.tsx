@@ -678,9 +678,19 @@ function ListingDetail() {
             category: listing.categories?.name,
             seller: seller ? { "@type": "Person", name: seller.display_name } : undefined,
             areaServed: listing.cities ? `${listing.cities.name}, ${listing.cities.region}` : undefined,
+            offers: listing.price != null ? {
+              "@type": "Offer",
+              price: Number(listing.price),
+              priceCurrency: "USD",
+              availability: "https://schema.org/InStock",
+              itemCondition: `https://schema.org/${
+                listing.condition === "new" ? "NewCondition" : "UsedCondition"
+              }`,
+            } : undefined,
           }),
         }}
       />
+
       <ShareSheet
         open={shareOpen}
         onOpenChange={setShareOpen}
