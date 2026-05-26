@@ -6,6 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import {
   Inbox, BadgeCheck, Flag, Bitcoin, AlertCircle, Megaphone, CreditCard, CheckCheck, Check,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
