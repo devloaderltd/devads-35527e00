@@ -189,12 +189,16 @@ export const listSellerReviews = createServerFn({ method: "POST" })
       .from("seller_reviews").select("*").eq("seller_id", data.sellerId).order("created_at", { ascending: false });
     const reviewerIds = [...new Set((rows ?? []).map((r) => r.reviewer_id))];
     const { data: profiles } = reviewerIds.length
-      ? await supabaseAdmin.from("profiles").select("id, display_name, avatar_url").in("id", reviewerIds)
-      : { data: [] as { id: string; display_name: string; avatar_url: string | null }[] };
-    const items = (rows ?? []).map((r) => ({
-      ...r,
-      reviewer: profiles?.find((p) => p.id === r.reviewer_id) ?? null,
-    }));
+      ? await supabaseAdmin.from("profiles").select("id, display_name, avatar_url, kyc_status").in("id", reviewerIds)
+      : { data: [] as { id: string; display_name: string; avatar_url: string | null; kyc_status: string }[] };
+    const items = (rows ?? []).map((r) => {
+      const p = profiles?.find((p) => p.id === r.reviewer_id) ?? null;
+      return {
+        ...r,
+        reviewer: p,
+        reviewer_verified: p?.kyc_status === "approved",
+      };
+    });
     const avg = items.length ? items.reduce((s, r) => s + r.rating, 0) / items.length : 0;
     return { items, avg, count: items.length };
   });
@@ -212,14 +216,18 @@ export const canReviewSeller = createServerFn({ method: "POST" })
 
 export const submitSellerReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { sellerId: string; rating: number; body?: string; listingId?: string }) => {
+  .inputValidator((input: { sellerId: string; rating: number; body?: string; listingId?: string; photoUrls?: string[] }) => {
     if (!uuid.safeParse(input.sellerId).success) throw new Error("Invalid sellerId");
     if (input.rating < 1 || input.rating > 5) throw new Error("Rating must be 1-5");
+    const photos = Array.isArray(input.photoUrls)
+      ? input.photoUrls.filter((u) => typeof u === "string" && /^https?:\/\//.test(u)).slice(0, 4)
+      : [];
     return {
       sellerId: input.sellerId,
       rating: Math.round(input.rating),
       body: String(input.body ?? "").slice(0, 1000),
       listingId: input.listingId && uuid.safeParse(input.listingId).success ? input.listingId : null,
+      photoUrls: photos,
     };
   })
   .handler(async ({ data, context }) => {
@@ -227,6 +235,7 @@ export const submitSellerReview = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("seller_reviews").upsert({
       seller_id: data.sellerId, reviewer_id: context.userId, listing_id: data.listingId,
       rating: data.rating, body: data.body || null,
+      photo_urls: data.photoUrls,
     }, { onConflict: "seller_id,reviewer_id,listing_id" });
     if (error) throw new Error(error.message);
     // Notify seller
@@ -236,6 +245,27 @@ export const submitSellerReview = createServerFn({ method: "POST" })
       link: `/sellers/${data.sellerId}`,
       metadata: { rating: data.rating },
     });
+    return { ok: true };
+  });
+
+export const reportReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { reviewId: string; reason: string; details?: string }) => {
+    if (!uuid.safeParse(input.reviewId).success) throw new Error("Invalid reviewId");
+    return {
+      reviewId: input.reviewId,
+      reason: String(input.reason ?? "").slice(0, 100) || "Other",
+      details: String(input.details ?? "").slice(0, 1000) || null,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("reports").insert({
+      review_id: data.reviewId,
+      reporter_id: context.userId,
+      reason: data.reason,
+      details: data.details,
+    });
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
@@ -440,7 +470,7 @@ export const getModerationQueue = createServerFn({ method: "GET" })
   .handler(async () => {
     const { data: reports } = await supabaseAdmin
       .from("reports").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(100);
-    const listingIds = [...new Set((reports ?? []).map((r) => r.listing_id))];
+    const listingIds = [...new Set((reports ?? []).map((r) => r.listing_id).filter((x): x is string => !!x))];
     const reporterIds = [...new Set((reports ?? []).map((r) => r.reporter_id))];
     const [{ data: listings }, { data: profiles }] = await Promise.all([
       listingIds.length ? supabaseAdmin.from("listings").select("id, title, status, user_id").in("id", listingIds) : Promise.resolve({ data: [] }),
@@ -449,7 +479,7 @@ export const getModerationQueue = createServerFn({ method: "GET" })
     return {
       reports: (reports ?? []).map((r) => ({
         ...r,
-        listing: (listings ?? []).find((l: { id: string }) => l.id === r.listing_id) ?? null,
+        listing: r.listing_id ? ((listings ?? []).find((l: { id: string }) => l.id === r.listing_id) ?? null) : null,
         reporter: (profiles ?? []).find((p: { id: string }) => p.id === r.reporter_id) ?? null,
       })),
     };
@@ -464,9 +494,11 @@ export const moderateReport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: report } = await supabaseAdmin.from("reports").select("*").eq("id", data.reportId).maybeSingle();
     if (!report) throw new Error("Report not found");
-    const { data: listing } = await supabaseAdmin.from("listings").select("user_id, title").eq("id", report.listing_id).maybeSingle();
+    const { data: listing } = report.listing_id
+      ? await supabaseAdmin.from("listings").select("user_id, title").eq("id", report.listing_id).maybeSingle()
+      : { data: null as { user_id: string; title: string } | null };
     if (data.action === "remove_listing") {
-      await supabaseAdmin.from("listings").update({ status: "removed" }).eq("id", report.listing_id);
+      if (report.listing_id) await supabaseAdmin.from("listings").update({ status: "removed" }).eq("id", report.listing_id);
       await supabaseAdmin.from("reports").update({ status: "resolved" }).eq("id", data.reportId);
       if (listing) await supabaseAdmin.from("notifications").insert({
         user_id: listing.user_id, type: "moderation",

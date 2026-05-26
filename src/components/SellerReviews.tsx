@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Star, Trash2, Pencil, X } from "lucide-react";
+import { Star, Trash2, Pencil, X, ImagePlus, BadgeCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,6 +13,10 @@ import {
 } from "@/lib/extras.functions";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { ReviewReportDialog } from "@/components/ReviewReportDialog";
+
+const MAX_PHOTOS = 4;
 
 export function SellerReviews({ sellerId }: { sellerId: string }) {
   const { user } = useAuth();
@@ -40,6 +44,8 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
   const [editing, setEditing] = useState(false);
   const [rating, setRating] = useState(myReview?.rating ?? 5);
   const [body, setBody] = useState(myReview?.body ?? "");
+  const [photos, setPhotos] = useState<string[]>(myReview?.photo_urls ?? []);
+  const [uploading, setUploading] = useState(false);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["seller-reviews", sellerId] });
@@ -47,11 +53,11 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
   };
 
   const submit = useMutation({
-    mutationFn: () => subFn({ data: { sellerId, rating, body } }),
+    mutationFn: () => subFn({ data: { sellerId, rating, body, photoUrls: photos } }),
     onSuccess: () => {
       toast.success(myReview ? "Review updated" : "Review submitted");
       setEditing(false);
-      if (!myReview) setBody("");
+      if (!myReview) { setBody(""); setPhotos([]); }
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -64,10 +70,39 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
       setEditing(false);
       setBody("");
       setRating(5);
+      setPhotos([]);
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const onPickFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return;
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+    const slotsLeft = MAX_PHOTOS - photos.length;
+    if (slotsLeft <= 0) { toast.error(`Up to ${MAX_PHOTOS} photos`); return; }
+    setUploading(true);
+    try {
+      const toUpload = files.slice(0, slotsLeft);
+      const uploaded: string[] = [];
+      for (const file of toUpload) {
+        if (file.size > 5 * 1024 * 1024) { toast.error(`${file.name} is over 5MB`); continue; }
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from("review-photos").upload(path, file, {
+          cacheControl: "3600", upsert: false,
+        });
+        if (error) { toast.error(error.message); continue; }
+        const { data } = supabase.storage.from("review-photos").getPublicUrl(path);
+        uploaded.push(data.publicUrl);
+      }
+      if (uploaded.length) setPhotos((prev) => [...prev, ...uploaded]);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const dist = [5, 4, 3, 2, 1].map((star) => ({
     star,
@@ -142,12 +177,48 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
             maxLength={1000}
             className="bg-white/70"
           />
+
+          {/* Photo uploader */}
+          <div className="mt-3">
+            <div className="flex flex-wrap gap-2">
+              {photos.map((url, i) => (
+                <div key={url} className="relative h-16 w-16 overflow-hidden rounded-lg border">
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="absolute right-0.5 top-0.5 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-white"
+                    aria-label="Remove photo"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {photos.length < MAX_PHOTOS && (
+                <label className="grid h-16 w-16 cursor-pointer place-items-center rounded-lg border border-dashed text-muted-foreground hover:bg-muted">
+                  {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={onPickFiles}
+                    disabled={uploading}
+                  />
+                </label>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Up to {MAX_PHOTOS} photos, 5MB each (optional).
+            </p>
+          </div>
+
           <div className="mt-2 flex justify-end gap-2">
             <Button
               size="sm"
               className="btn-gradient rounded-full border-0"
               onClick={() => submit.mutate()}
-              disabled={submit.isPending}
+              disabled={submit.isPending || uploading}
             >
               {myReview ? "Update review" : "Submit review"}
             </Button>
@@ -163,6 +234,7 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
       <div className="mt-4 space-y-3">
         {items.map((r) => {
           const isMine = user?.id === r.reviewer_id;
+          const photoUrls: string[] = Array.isArray(r.photo_urls) ? r.photo_urls : [];
           return (
             <div
               key={r.id}
@@ -176,10 +248,18 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
                     {(r.reviewer?.display_name ?? "?")[0]}
                   </div>
                 )}
-                <div className="text-sm font-medium">
+                <div className="flex items-center gap-1.5 text-sm font-medium">
                   {r.reviewer?.display_name ?? "Anonymous"}
+                  {r.reviewer_verified && (
+                    <span
+                      title="Verified buyer"
+                      className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400"
+                    >
+                      <BadgeCheck className="h-3 w-3" /> Verified
+                    </span>
+                  )}
                   {isMine && (
-                    <span className="ml-1 text-xs font-normal text-muted-foreground">(you)</span>
+                    <span className="text-xs font-normal text-muted-foreground">(you)</span>
                   )}
                 </div>
                 <div className="ml-auto flex items-center gap-0.5">
@@ -189,35 +269,56 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
                 </div>
               </div>
               {r.body && <p className="mt-2 whitespace-pre-wrap text-sm">{r.body}</p>}
+
+              {photoUrls.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {photoUrls.map((url) => (
+                    <a key={url} href={url} target="_blank" rel="noreferrer" className="block">
+                      <img
+                        src={url}
+                        alt="Review photo"
+                        loading="lazy"
+                        className="h-20 w-20 rounded-lg border object-cover transition hover:opacity-90"
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
+
               <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                 <span>{formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</span>
-                {isMine && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2"
-                      onClick={() => {
-                        setRating(r.rating);
-                        setBody(r.body ?? "");
-                        setEditing(true);
-                      }}
-                    >
-                      <Pencil className="mr-1 h-3 w-3" /> Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-destructive hover:text-destructive"
-                      onClick={() => {
-                        if (confirm("Delete your review?")) remove.mutate(r.id);
-                      }}
-                      disabled={remove.isPending}
-                    >
-                      <Trash2 className="mr-1 h-3 w-3" /> Delete
-                    </Button>
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  {isMine ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2"
+                        onClick={() => {
+                          setRating(r.rating);
+                          setBody(r.body ?? "");
+                          setPhotos(photoUrls);
+                          setEditing(true);
+                        }}
+                      >
+                        <Pencil className="mr-1 h-3 w-3" /> Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-destructive hover:text-destructive"
+                        onClick={() => {
+                          if (confirm("Delete your review?")) remove.mutate(r.id);
+                        }}
+                        disabled={remove.isPending}
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" /> Delete
+                      </Button>
+                    </>
+                  ) : (
+                    user && <ReviewReportDialog reviewId={r.id} />
+                  )}
+                </div>
               </div>
             </div>
           );

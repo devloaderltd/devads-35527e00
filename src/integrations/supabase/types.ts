@@ -852,27 +852,30 @@ export type Database = {
           created_at: string
           details: string | null
           id: string
-          listing_id: string
+          listing_id: string | null
           reason: string
           reporter_id: string
+          review_id: string | null
           status: Database["public"]["Enums"]["report_status"]
         }
         Insert: {
           created_at?: string
           details?: string | null
           id?: string
-          listing_id: string
+          listing_id?: string | null
           reason: string
           reporter_id: string
+          review_id?: string | null
           status?: Database["public"]["Enums"]["report_status"]
         }
         Update: {
           created_at?: string
           details?: string | null
           id?: string
-          listing_id?: string
+          listing_id?: string | null
           reason?: string
           reporter_id?: string
+          review_id?: string | null
           status?: Database["public"]["Enums"]["report_status"]
         }
         Relationships: [
@@ -881,6 +884,13 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "seller_reviews"
             referencedColumns: ["id"]
           },
         ]
