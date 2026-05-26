@@ -86,7 +86,7 @@ function Page() {
           </Button>
         </div>
       )}
-    </div>
+    </PanelShell>
   );
 }
 
