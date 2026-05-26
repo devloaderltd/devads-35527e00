@@ -39,6 +39,7 @@ function DashboardPage() {
   const sparklinesFn = useServerFn(getDashboardSparklines);
   const funnelFn = useServerFn(getFunnelStats);
   const overviewFn = useServerFn(getDashboardOverview);
+  const healthFn = useServerFn(getSystemHealth);
 
   const [range, setRange] = useState<RangeDays>(30);
   useEffect(() => {
