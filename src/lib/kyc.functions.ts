@@ -55,6 +55,16 @@ export const getMyKyc = createServerFn({ method: "GET" })
     return { submission: data };
   });
 
+export const getKycPendingCount = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const { count } = await supabaseAdmin
+      .from("kyc_submissions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending");
+    return { count: count ?? 0 };
+  });
+
 export const adminListKyc = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: { status?: "pending" | "approved" | "rejected" | "all" }) => ({
