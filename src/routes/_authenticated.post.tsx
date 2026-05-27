@@ -546,8 +546,10 @@ function PostListing() {
       toast.success(
         cityIds.length === 1 ? "Listing posted!" : `Posted to ${cityIds.length} cities!`,
       );
+      clearDraft();
       const first = created[0];
       navigate({ to: "/listings/$id", params: { id: (first as any).slug ?? first.id } });
+
     } catch (err: any) {
       toast.error(err.message ?? "Failed to post");
     } finally {
