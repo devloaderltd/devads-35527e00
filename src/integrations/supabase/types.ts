@@ -342,6 +342,39 @@ export type Database = {
           },
         ]
       }
+      homepage_config: {
+        Row: {
+          bento_featured: Json
+          bento_tile_2: Json
+          bento_tile_3: Json
+          bento_tile_4: Json
+          hero: Json
+          id: string
+          sections: Json
+          updated_at: string
+        }
+        Insert: {
+          bento_featured?: Json
+          bento_tile_2?: Json
+          bento_tile_3?: Json
+          bento_tile_4?: Json
+          hero?: Json
+          id?: string
+          sections?: Json
+          updated_at?: string
+        }
+        Update: {
+          bento_featured?: Json
+          bento_tile_2?: Json
+          bento_tile_3?: Json
+          bento_tile_4?: Json
+          hero?: Json
+          id?: string
+          sections?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       homepage_slots: {
         Row: {
           active: boolean

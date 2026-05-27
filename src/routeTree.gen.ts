@@ -49,6 +49,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminListingsRouteImport } from './routes/admin.listings'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
+import { Route as AdminHomepageEditorRouteImport } from './routes/admin.homepage-editor'
 import { Route as AdminHomepageRouteImport } from './routes/admin.homepage'
 import { Route as AdminDebugRouteImport } from './routes/admin.debug'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
@@ -282,6 +283,11 @@ const AdminInsightsRoute = AdminInsightsRouteImport.update({
   path: '/insights',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHomepageEditorRoute = AdminHomepageEditorRouteImport.update({
+  id: '/homepage-editor',
+  path: '/homepage-editor',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHomepageRoute = AdminHomepageRouteImport.update({
   id: '/homepage',
   path: '/homepage',
@@ -496,6 +502,7 @@ export interface FileRoutesByFullPath {
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/homepage': typeof AdminHomepageRoute
+  '/admin/homepage-editor': typeof AdminHomepageEditorRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/listings': typeof AdminListingsRoute
@@ -568,6 +575,7 @@ export interface FileRoutesByTo {
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/homepage': typeof AdminHomepageRoute
+  '/admin/homepage-editor': typeof AdminHomepageEditorRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/listings': typeof AdminListingsRoute
@@ -644,6 +652,7 @@ export interface FileRoutesById {
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/homepage': typeof AdminHomepageRoute
+  '/admin/homepage-editor': typeof AdminHomepageEditorRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/listings': typeof AdminListingsRoute
@@ -720,6 +729,7 @@ export interface FileRouteTypes {
     | '/admin/cities'
     | '/admin/debug'
     | '/admin/homepage'
+    | '/admin/homepage-editor'
     | '/admin/insights'
     | '/admin/kyc'
     | '/admin/listings'
@@ -792,6 +802,7 @@ export interface FileRouteTypes {
     | '/admin/cities'
     | '/admin/debug'
     | '/admin/homepage'
+    | '/admin/homepage-editor'
     | '/admin/insights'
     | '/admin/kyc'
     | '/admin/listings'
@@ -867,6 +878,7 @@ export interface FileRouteTypes {
     | '/admin/cities'
     | '/admin/debug'
     | '/admin/homepage'
+    | '/admin/homepage-editor'
     | '/admin/insights'
     | '/admin/kyc'
     | '/admin/listings'
@@ -1225,6 +1237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminInsightsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/homepage-editor': {
+      id: '/admin/homepage-editor'
+      path: '/homepage-editor'
+      fullPath: '/admin/homepage-editor'
+      preLoaderRoute: typeof AdminHomepageEditorRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/homepage': {
       id: '/admin/homepage'
       path: '/homepage'
@@ -1515,6 +1534,7 @@ interface AdminRouteChildren {
   AdminCitiesRoute: typeof AdminCitiesRoute
   AdminDebugRoute: typeof AdminDebugRoute
   AdminHomepageRoute: typeof AdminHomepageRoute
+  AdminHomepageEditorRoute: typeof AdminHomepageEditorRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminListingsRoute: typeof AdminListingsRoute
@@ -1543,6 +1563,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCitiesRoute: AdminCitiesRoute,
   AdminDebugRoute: AdminDebugRoute,
   AdminHomepageRoute: AdminHomepageRoute,
+  AdminHomepageEditorRoute: AdminHomepageEditorRoute,
   AdminInsightsRoute: AdminInsightsRoute,
   AdminKycRoute: AdminKycRoute,
   AdminListingsRoute: AdminListingsRoute,
