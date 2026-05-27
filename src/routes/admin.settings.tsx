@@ -31,6 +31,7 @@ type FormState = {
   bump_price_usd: number;
   featured_days: number;
   bump_days: number;
+  listing_post_price_usd: number;
   maintenance_mode: boolean;
   maintenance_message: string;
   site_name: string;
@@ -43,6 +44,7 @@ function validate(f: FormState) {
   const e: Partial<Record<keyof FormState, string>> = {};
   if (!(f.featured_price_usd >= 0 && f.featured_price_usd <= 9999)) e.featured_price_usd = "0 – 9999";
   if (!(f.bump_price_usd >= 0 && f.bump_price_usd <= 9999)) e.bump_price_usd = "0 – 9999";
+  if (!(f.listing_post_price_usd >= 0 && f.listing_post_price_usd <= 9999)) e.listing_post_price_usd = "0 – 9999";
   if (!Number.isInteger(f.featured_days) || f.featured_days < 1 || f.featured_days > 365) e.featured_days = "1 – 365 days";
   if (!Number.isInteger(f.bump_days) || f.bump_days < 1 || f.bump_days > 365) e.bump_days = "1 – 365 days";
   if (!f.site_name.trim() || f.site_name.length > 80) e.site_name = "1 – 80 chars";
@@ -64,6 +66,7 @@ function SettingsPage() {
     bump_price_usd: Number(s.bump_price_usd),
     featured_days: s.featured_days,
     bump_days: s.bump_days,
+    listing_post_price_usd: Number((s as any).listing_post_price_usd ?? 1),
     maintenance_mode: s.maintenance_mode,
     maintenance_message: s.maintenance_message,
     site_name: s.site_name,
