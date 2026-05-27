@@ -592,7 +592,7 @@ export type Database = {
       listings: {
         Row: {
           auto_renew: boolean
-          bumped_at: string
+          bumped_at: string | null
           category_id: string
           city_id: string
           condition: Database["public"]["Enums"]["listing_condition"]
@@ -617,7 +617,7 @@ export type Database = {
         }
         Insert: {
           auto_renew?: boolean
-          bumped_at?: string
+          bumped_at?: string | null
           category_id: string
           city_id: string
           condition?: Database["public"]["Enums"]["listing_condition"]
@@ -642,7 +642,7 @@ export type Database = {
         }
         Update: {
           auto_renew?: boolean
-          bumped_at?: string
+          bumped_at?: string | null
           category_id?: string
           city_id?: string
           condition?: Database["public"]["Enums"]["listing_condition"]
