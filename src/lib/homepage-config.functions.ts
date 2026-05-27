@@ -121,7 +121,8 @@ const heroSchema = z.object({
   cta2_url: z.string().max(500),
 });
 const bentoFeaturedSchema = z.object({
-  pinned_listing_id: z.string().uuid().nullable(),
+  // Accept either a UUID or a slug; we resolve slug → UUID in the handler.
+  pinned_listing_id: z.string().min(1).max(200).nullable(),
   badge_label: z.string().max(40),
   enabled: z.boolean(),
 });
