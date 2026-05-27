@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "./admin-middleware";
-import { runSeedDemo } from "./seed-demo.server";
+
 import { enqueueTransactionalEmail, getUserEmail, getUserDisplayName } from "./email/enqueue.server";
 
 const SITE_URL = "https://callescort.devloader.com";
@@ -61,21 +61,6 @@ export const getMyRoles = createServerFn({ method: "GET" })
     return { roles: (data ?? []).map((r) => r.role as string) };
   });
 
-export const runDemoSeed = createServerFn({ method: "POST" })
-  .middleware([requireAdmin])
-  .handler(async ({ context }) => {
-    const result = await runSeedDemo();
-    await audit(context.userId, "demo.seed_rotate", "auth", null, {
-      rotated: true,
-      rotated_at: result.rotated_at,
-      accounts: result.accounts.map(a => ({
-        email: a.email,
-        was_created: a.was_created,
-        listings_seeded: a.listings_seeded,
-      })),
-    });
-    return result;
-  });
 
 /* ---------------- Users ---------------- */
 
