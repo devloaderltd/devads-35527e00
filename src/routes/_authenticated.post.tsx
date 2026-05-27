@@ -267,12 +267,16 @@ function PostListing() {
     if (descText.length < 10) e.description = "Description must be at least 10 characters";
     const age = itemAge.trim();
     if (!age) e.itemAge = "Age is required";
-    else if (age.length > 60) e.itemAge = "Age must be 60 characters or less";
+    else if (!/^\d+$/.test(age)) e.itemAge = "Age must be a number";
+    else if (parseInt(age, 10) < 18) e.itemAge = "Age must be at least 18";
+    else if (parseInt(age, 10) > 99) e.itemAge = "Age must be 99 or less";
     const ph = phone.trim();
-    if (!PHONE_RE.test(ph)) e.phone = "Enter a valid phone number (e.g. +1 555 123 4567)";
+    const phDigits = ph.replace(/\D/g, "");
+    if (!PHONE_RE.test(ph) || phDigits.length < 7) e.phone = "Enter a valid phone number (digits only, e.g. +1 555 123 4567)";
     if (!waSame) {
       const w = whatsapp.trim();
-      if (w && !PHONE_RE.test(w)) e.whatsapp = "Enter a valid WhatsApp number";
+      const wDigits = w.replace(/\D/g, "");
+      if (w && (!PHONE_RE.test(w) || wDigits.length < 7)) e.whatsapp = "Enter a valid WhatsApp number (digits only)";
     }
     if (!categoryId) e.category = "Pick a category";
     if (cityIds.length === 0) e.city = "Pick at least one city";
