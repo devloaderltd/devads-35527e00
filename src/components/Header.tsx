@@ -59,12 +59,14 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-3 z-40 mx-3 mt-3 md:mx-6">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 rounded-2xl glass-strong px-3 py-2.5">
-        <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
-          <img src={customLogo || logoUrl} alt={siteName} width={36} height={36} className="h-9 w-9 rounded-xl object-contain" />
+    <header className="sticky top-2 z-40 mx-2 mt-2 sm:top-3 sm:mx-3 sm:mt-3 md:mx-6">
+      <div className="mx-auto flex max-w-6xl items-center gap-1.5 rounded-2xl glass-strong px-2 py-2 sm:gap-3 sm:px-3 sm:py-2.5">
+        <Link to="/" className="flex shrink-0 items-center gap-2 font-display text-lg font-bold tracking-tight">
+          <img src={customLogo || logoUrl} alt={siteName} width={36} height={36} className="h-8 w-8 rounded-xl object-contain sm:h-9 sm:w-9" />
           <span className="hidden sm:inline">{siteName}</span>
         </Link>
+
+
 
         <form onSubmit={onSearch} className="relative ml-2 hidden flex-1 max-w-md md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -85,11 +87,12 @@ export function Header() {
               type="button"
               variant="outline"
               size="icon"
-              className="md:hidden rounded-full bg-white/60 backdrop-blur"
+              className="md:hidden h-9 w-9 shrink-0 rounded-full bg-white/60 backdrop-blur"
               title="Search"
             >
               <Search className="h-4 w-4 text-primary" />
             </Button>
+
           </SheetTrigger>
           <SheetContent side="top" className="rounded-b-3xl border-white/40 bg-white/90 backdrop-blur-2xl">
             <SheetHeader>
@@ -114,7 +117,7 @@ export function Header() {
         </Sheet>
 
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
           <Button
             type="button"
             variant="outline"
@@ -131,24 +134,25 @@ export function Header() {
             variant="outline"
             size="icon"
             onClick={openPicker}
-            className="sm:hidden rounded-full bg-white/60 backdrop-blur"
+            className="sm:hidden h-9 w-9 shrink-0 rounded-full bg-white/60 backdrop-blur"
             title={cityName ?? "Select city"}
           >
             <MapPin className="h-4 w-4 text-primary" />
           </Button>
           <ThemeToggle />
           {user && <NotificationsBell />}
-          <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0">
+          <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0 px-2.5 sm:px-3">
             <Link to="/post">
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Post</span>
             </Link>
           </Button>
 
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-full bg-white/60 backdrop-blur">
+                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 rounded-full bg-white/60 backdrop-blur">
                   <UserIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -190,11 +194,12 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild variant="outline" size="sm" className="rounded-full bg-white/60 backdrop-blur">
+            <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full bg-white/60 px-2.5 backdrop-blur sm:px-3">
               <Link to="/login">Sign in</Link>
             </Button>
           )}
         </div>
+
       </div>
 
     </header>
