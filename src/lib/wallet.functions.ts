@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { createInvoice } from "./nowpayments.server";
+import { createInvoice } from "./plisio.server";
 
 const FEATURED_USD_DEFAULT = 9.99;
 const BUMP_USD_DEFAULT = 2.99;
@@ -65,16 +65,15 @@ export const createTopupInvoice = createServerFn({ method: "POST" })
       .single();
     if (error || !row) throw new Error(`Failed to create top-up: ${error?.message}`);
 
-    const ipn = `${data.origin}/api/public/payments/nowpayments-ipn`;
+    const ipn = `${data.origin}/api/public/payments/plisio-ipn`;
     try {
       const invoice = await createInvoice({
-        price_amount: amount,
-        price_currency: "usd",
-        order_id: row.id,
-        order_description: `Wallet top-up — $${amount.toFixed(2)}`,
-        ipn_callback_url: ipn,
-        success_url: `${data.origin}/wallet?topup=success`,
-        cancel_url: `${data.origin}/wallet?topup=cancel`,
+        amountUsd: amount,
+        orderId: row.id,
+        orderName: `Wallet top-up — $${amount.toFixed(2)}`,
+        callbackUrl: ipn,
+        successUrl: `${data.origin}/wallet?topup=success`,
+        cancelUrl: `${data.origin}/wallet?topup=cancel`,
       });
 
       await supabaseAdmin
