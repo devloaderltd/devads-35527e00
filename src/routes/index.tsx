@@ -257,7 +257,7 @@ function Home() {
               </div>
             </Link>
           ) : (
-            <div className="hidden md:block col-span-1 row-span-1 rounded-[2rem] glass md:col-span-2 md:row-span-2" />
+            <div className="col-span-1 row-span-1 overflow-hidden rounded-[2rem] glass animate-pulse md:col-span-2 md:row-span-2 aspect-[4/3] md:aspect-auto" />
           )}
 
           {/* Medium gradient tile 2 */}
