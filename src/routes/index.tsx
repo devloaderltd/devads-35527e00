@@ -120,31 +120,32 @@ function Home() {
       <SiteBanner />
       {/* Hero band */}
       <section className="container mx-auto px-4 pt-6">
-        <div className="relative overflow-hidden rounded-[2rem] glass-strong p-6 md:p-12 shadow-[var(--shadow-float)]">
+        <div className="relative overflow-hidden rounded-[1.75rem] glass-strong p-5 shadow-[var(--shadow-float)] sm:rounded-[2rem] sm:p-6 md:p-12">
           <div className="absolute -right-24 -bottom-24 h-80 w-80 rounded-full bg-[var(--gradient-primary)] opacity-20 blur-3xl" />
           <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-accent/40 opacity-40 blur-3xl" />
           <div className="relative z-10 max-w-2xl">
             <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground/80">
               <Sparkles className="h-3 w-3" /> Free to post · Free to browse
             </span>
-            <h1 className="mt-5 font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
+            <h1 className="mt-4 font-display text-3xl font-bold leading-[1.1] tracking-tight sm:mt-5 sm:text-4xl md:text-6xl md:leading-[1.05]">
               Buy &amp; sell locally —{" "}
               <span className="gradient-text">across the country.</span>
             </h1>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:mt-4 sm:text-base md:text-lg">
               From vintage bikes in Brooklyn to apartments in Manchester — find what's near you, or post your own in under a minute.
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="btn-gradient rounded-2xl border-0 px-7 py-6 text-base font-bold">
+            <div className="mt-5 flex flex-wrap gap-2 sm:mt-7 sm:gap-3">
+              <Button asChild size="lg" className="btn-gradient rounded-2xl border-0 px-5 py-5 text-sm font-bold sm:px-7 sm:py-6 sm:text-base">
                 <Link to="/post">Post a listing</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/70 bg-white/60 px-7 py-6 text-base font-bold backdrop-blur hover:bg-white">
+              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/70 bg-white/60 px-5 py-5 text-sm font-bold backdrop-blur hover:bg-white sm:px-7 sm:py-6 sm:text-base">
                 <Link to="/search">Browse all <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
             </div>
           </div>
         </div>
       </section>
+
 
       {/* Bento Grid */}
       <section className="container mx-auto px-4 pt-6">
