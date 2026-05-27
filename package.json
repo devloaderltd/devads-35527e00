@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "check:auth": "bun run scripts/check-auth-routes.ts"
+    "check:auth": "bun run scripts/check-auth-routes.ts",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test -u"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

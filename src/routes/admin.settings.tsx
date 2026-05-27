@@ -129,18 +129,22 @@ function SettingsPage() {
               <AssetUploader
                 label="Logo"
                 kind="logo"
+                thumbSize="logo"
                 value={form.logo_url}
                 onChange={(v) => set("logo_url", v)}
                 maxBytes={1024 * 1024}
-                hint="PNG/SVG/WebP, ≤ 1 MB"
+                maxLabel="≤ 1 MB"
+                hint="PNG, SVG or WebP"
               />
               <AssetUploader
                 label="Favicon"
                 kind="favicon"
+                thumbSize="favicon"
                 value={form.favicon_url}
                 onChange={(v) => set("favicon_url", v)}
                 maxBytes={256 * 1024}
-                hint="ICO/PNG/SVG, ≤ 256 KB"
+                maxLabel="≤ 256 KB"
+                hint="ICO, PNG or SVG"
               />
             </div>
           </div>
@@ -149,18 +153,18 @@ function SettingsPage() {
 
 
         <Panel title="Promotion pricing">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Featured price (USD)" error={errors.featured_price_usd}>
-              <Input type="number" step="0.01" min={0} max={9999} value={form.featured_price_usd} onChange={(e) => set("featured_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 [&>*]:min-w-0">
+            <Field label="Featured price" hint="0 – 9999" error={errors.featured_price_usd}>
+              <NumberInput suffix="USD" step="0.01" min={0} max={9999} value={form.featured_price_usd} onChange={(n) => set("featured_price_usd", n)} />
             </Field>
-            <Field label="Featured days" error={errors.featured_days}>
-              <Input type="number" min={1} max={365} value={form.featured_days} onChange={(e) => set("featured_days", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            <Field label="Featured days" hint="1 – 365" error={errors.featured_days}>
+              <NumberInput suffix="days" min={1} max={365} value={form.featured_days} onChange={(n) => set("featured_days", n)} />
             </Field>
-            <Field label="Bump price (USD)" error={errors.bump_price_usd}>
-              <Input type="number" step="0.01" min={0} max={9999} value={form.bump_price_usd} onChange={(e) => set("bump_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            <Field label="Bump price" hint="0 – 9999" error={errors.bump_price_usd}>
+              <NumberInput suffix="USD" step="0.01" min={0} max={9999} value={form.bump_price_usd} onChange={(n) => set("bump_price_usd", n)} />
             </Field>
-            <Field label="Bump cooldown days" error={errors.bump_days}>
-              <Input type="number" min={1} max={365} value={form.bump_days} onChange={(e) => set("bump_days", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            <Field label="Bump cooldown" hint="1 – 365" error={errors.bump_days}>
+              <NumberInput suffix="days" min={1} max={365} value={form.bump_days} onChange={(n) => set("bump_days", n)} />
             </Field>
           </div>
         </Panel>
@@ -175,7 +179,7 @@ function SettingsPage() {
           </Field>
 
           {form.maintenance_mode && (
-            <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4">
+            <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4" data-vr-mask>
               <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-200">
                 <AlertTriangle className="h-3.5 w-3.5" /> Preview
               </div>
@@ -232,24 +236,60 @@ function SettingsPage() {
 }
 
 
-function Field({ label, error, className, children }: { label: string; error?: string; className?: string; children: React.ReactNode }) {
+function Field({ label, hint, error, className, children }: { label: string; hint?: string; error?: string; className?: string; children: React.ReactNode }) {
   return (
     <div className={className}>
-      <Label className="text-xs text-slate-300 sm:text-sm">{label}</Label>
+      <div className="flex items-baseline justify-between gap-2">
+        <Label className="text-xs text-slate-300 sm:text-sm">{label}</Label>
+        {hint && <span className="text-[10px] tabular-nums text-slate-500">{hint}</span>}
+      </div>
       {children}
-      {error && <p className="mt-1 break-words text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-1 break-words text-xs leading-snug text-red-400">{error}</p>}
+    </div>
+  );
+}
+
+function NumberInput({
+  value, onChange, suffix, min, max, step,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  suffix?: string;
+  min?: number;
+  max?: number;
+  step?: string | number;
+}) {
+  return (
+    <div className="relative mt-1">
+      <Input
+        type="number"
+        inputMode="decimal"
+        step={step}
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className={`w-full rounded-lg border-white/10 bg-white/5 text-sm tabular-nums text-slate-100 ${suffix ? "pr-14" : ""}`}
+      />
+      {suffix && (
+        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 select-none text-[11px] uppercase tracking-wider text-slate-500">
+          {suffix}
+        </span>
+      )}
     </div>
   );
 }
 
 function AssetUploader({
-  label, kind, value, onChange, maxBytes, hint,
+  label, kind, thumbSize, value, onChange, maxBytes, maxLabel, hint,
 }: {
   label: string;
   kind: "logo" | "favicon";
+  thumbSize: "logo" | "favicon";
   value: string;
   onChange: (v: string) => void;
   maxBytes: number;
+  maxLabel: string;
   hint: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -283,18 +323,27 @@ function AssetUploader({
     }
   };
 
+  // Standardized outer slot: always 64×64 so logo and favicon rows align.
+  // Inner preview is sized by thumbSize so the favicon doesn't visually dominate.
+  const innerThumb = thumbSize === "logo" ? "h-14 w-14" : "h-10 w-10";
+
   return (
     <div className="w-full min-w-0">
-      <Label className="block truncate text-xs text-slate-300 sm:text-sm">{label}</Label>
-      <div className="mt-1 flex min-w-0 items-start gap-2 rounded-lg border border-white/10 bg-white/5 p-2">
-        <div className="grid h-14 w-14 flex-shrink-0 place-items-center overflow-hidden rounded-md bg-slate-950/40">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="block truncate text-xs text-slate-300 sm:text-sm">{label}</Label>
+        <span className="shrink-0 rounded-full bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wider text-slate-400">{maxLabel}</span>
+      </div>
+      <div className="mt-1 flex min-w-0 items-start gap-3 rounded-lg border border-white/10 bg-white/5 p-2.5">
+        <div className="grid h-16 w-16 flex-shrink-0 place-items-center overflow-hidden rounded-md bg-slate-950/40">
           {value ? (
-            <img src={value} alt={label} className="h-full w-full object-contain" />
+            <div className={`grid ${innerThumb} place-items-center`}>
+              <img src={value} alt={label} className="h-full w-full object-contain" />
+            </div>
           ) : (
             <span className="text-[10px] text-slate-500">None</span>
           )}
         </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex flex-wrap gap-1.5">
             <Button
               type="button"
@@ -319,7 +368,7 @@ function AssetUploader({
               </Button>
             )}
           </div>
-          <p className="break-words text-[11px] leading-snug text-slate-500">{hint}</p>
+          <p className="line-clamp-2 break-words text-[11px] leading-snug text-slate-500">{hint}</p>
         </div>
         <input
           ref={inputRef}
@@ -332,4 +381,5 @@ function AssetUploader({
     </div>
   );
 }
+
 

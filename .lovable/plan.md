@@ -1,45 +1,64 @@
 ## Goal
-Stop hint text and input groups from overflowing the Branding panel on small screens, and keep the Logo/Favicon uploaders visually aligned across breakpoints.
+Polish the admin settings page responsiveness (Promotion pricing + AssetUploader) and lock it in with visual regression tests so future edits can't silently reintroduce overflow.
 
 ## Scope
-Single file: `src/routes/admin.settings.tsx`. No business logic, no schema, no server function changes.
+- `src/routes/admin.settings.tsx` (Promotion pricing grid + AssetUploader)
+- New Playwright visual regression test for `/admin/settings` at multiple viewports
+- Minimal Playwright config / scripts wiring if not already present
+
+No server function, schema, or business logic changes.
 
 ## Changes
 
-### 1. `AssetUploader` container
-- Wrap the outer `<div>` with `w-full min-w-0` so it can shrink inside its grid cell instead of pushing the panel wider.
-- Change inner row from `flex items-center gap-2` to `flex items-start gap-2 min-w-0` — `min-w-0` lets the text column actually wrap instead of forcing horizontal overflow (this is the root cause of the current overflow on 393px screens).
-- Preview thumb: keep `h-14 w-14 flex-shrink-0`, no change.
-- Text column: keep `flex min-w-0 flex-1 flex-col gap-1`, but:
-  - Change button row from `flex gap-1.5` to `flex flex-wrap gap-1.5` so Replace + Remove wrap to a second line when the cell is narrow.
-  - Hint `<p>` gets `break-words leading-snug` and font bumped to `text-[11px]` for readability; remove the implicit single-line behavior.
-- Label gets `block truncate` so a long "Favicon"/"Logo" label never blows the cell width (defensive).
+### 1. Promotion pricing — clean phone stacking
+In `admin.settings.tsx` Promotion pricing Panel:
+- Grid stays `grid-cols-1 sm:grid-cols-2` but add `min-w-0 gap-3 sm:gap-4` and `[&>*]:min-w-0` so each Field cell can shrink.
+- Wrap each numeric `<Input>` in a `relative` container and render a unit suffix (`USD` / `days`) as an absolutely positioned, `pointer-events-none` chip on the right (`right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-500`). Input gets `pr-12` so digits never collide with the suffix.
+- Inputs get `w-full text-sm` (currently inherits a base size that crowds at 360–393px) and `tabular-nums` for aligned digits.
+- `Field` label gets a `flex items-baseline justify-between` row so an optional inline hint (e.g. small "(0–9999)") can sit beside the label without a second line. Error text keeps `break-words text-xs text-red-400` and gains `leading-snug`.
 
-### 2. Branding panel grid
-- The uploader grid stays `grid-cols-1 sm:grid-cols-2` but add `gap-3 sm:gap-4` and `min-w-0` on the grid container so children can shrink.
-- Add `[&>*]:min-w-0` (or apply `min-w-0` directly on each `AssetUploader` instance via a wrapper) to guarantee neither column overflows.
+Result at 393px: Featured price / Featured days / Bump price / Bump cooldown each occupy a full row, suffix visible inside the field, no horizontal scroll.
 
-### 3. Page-level spacing for small screens
-- Outer `<div className="grid gap-4 lg:grid-cols-2">` → `grid gap-3 sm:gap-4 lg:grid-cols-2` (tighter gutters on phones).
-- `Field` label: add `text-xs sm:text-sm` so labels don't crowd the right edge at 360–393px widths.
-- `Field` error text already `text-xs` — add `break-words` so long validation messages wrap.
-- Inputs inside Field: add `text-sm` on the small-screen path is already inherited; no change needed.
+### 2. AssetUploader — standardized thumb + spacing
+In the `AssetUploader` component:
+- Replace the bare `h-14 w-14` thumb with a token-driven sizing block:
+  - Logo: `h-16 w-16`
+  - Favicon: `h-10 w-10` (centered inside an `h-16 w-16` slot so both uploaders have the same outer row height)
+- Introduce a `thumbSize` prop (`"logo" | "favicon"`) so the parent picks the correct preview size. Outer slot is always `h-16 w-16 flex-shrink-0` → row heights match across breakpoints.
+- Container: keep `w-full min-w-0`. Outer card row becomes `flex min-w-0 items-start gap-3 rounded-lg border border-white/10 bg-white/5 p-2.5` (gap bumped from 2 → 3, padding standardized).
+- Text column: `flex min-w-0 flex-1 flex-col gap-1.5`, button row stays `flex flex-wrap gap-1.5`, hint uses `break-words text-[11px] leading-snug text-slate-500 line-clamp-2` so it never pushes height past the thumb on tablet/desktop.
+- Label row uses `flex items-center justify-between` so we can show the byte limit as a small chip on the right (e.g. `≤ 1 MB`) instead of duplicating it in the hint.
+- Both uploaders wrapped in `min-w-0` (already present) — keep.
 
-### 4. Promotion pricing grid
-- Change `grid grid-cols-2 gap-3` to `grid grid-cols-1 gap-3 sm:grid-cols-2` so the four numeric inputs stack on phones (currently they crush at 393px). Each Field already has its own label/error.
+Parent (Branding grid) call sites updated to pass `thumbSize="logo"` and `thumbSize="favicon"`.
 
-### 5. AdminPageHeader actions row
-- No structural change. The header's action buttons (`Discard`, `Publish changes`) already wrap via `flex-wrap` in `AdminPageHeader`.
+### 3. Visual regression tests
+Add Playwright + `toHaveScreenshot` based visual regression covering the admin settings page.
 
-## Verification
-1. Open `/admin/settings` at 393×655 (current viewport) — confirm:
-   - Hint text under Logo/Favicon wraps inside the card, no horizontal scroll.
-   - Replace/Remove buttons wrap to a second line cleanly.
-   - Promotion pricing inputs stack one per row.
-2. Resize to 768 and 1280 — Logo and Favicon uploaders remain equal-width side by side, hint text on one line.
-3. No new TS errors; no changes to validation, save flow, or upload logic.
+Files:
+- `playwright.config.ts` (create if missing): single project, `baseURL` from `PLAYWRIGHT_BASE_URL` (defaults to `http://localhost:3000`), `expect.toHaveScreenshot.maxDiffPixelRatio: 0.01`, snapshot dir `tests/visual/__screenshots__/`.
+- `tests/visual/admin-settings.spec.ts`: a single test that
+  1. Signs in as a seeded admin (reuse existing admin login route — use `storageState` produced by a small `tests/visual/global-setup.ts` that calls `/admin/login` with seed credentials from env `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`).
+  2. Navigates to `/admin/settings`, waits for "Site settings" heading.
+  3. Iterates viewports `[360×740, 393×740, 768×1024, 1280×800]` and runs `await expect(page).toHaveScreenshot(...)` for each, masking the live preview block (so dynamic site name/email text doesn't cause flakes).
+- `package.json` scripts: `"test:visual": "playwright test"`, `"test:visual:update": "playwright test -u"`.
+- `.gitignore`: add `test-results/` and `playwright-report/`.
+
+Baselines: the first `bun run test:visual:update` after the layout changes generates the canonical PNGs under `tests/visual/__screenshots__/admin-settings.spec.ts/`. Document this in a short `tests/visual/README.md` (how to run, when to update baselines, masking conventions).
+
+### 4. Verification
+1. Manually at 360 / 393 / 768 / 1280 widths:
+   - Promotion pricing: each input full-width on phone, suffix visible inside field, no horizontal scroll, errors wrap below.
+   - Branding: Logo (64px thumb) and Favicon (40px thumb in 64px slot) rows align; hint text wraps to max 2 lines.
+2. `bun run test:visual` passes against committed baselines.
+3. No TS errors, no changes to validation/save/upload logic.
+
+## Technical details
+- Playwright is not currently a dep — install via `bun add -D @playwright/test` and `bunx playwright install --with-deps chromium` in the test environment.
+- Visual tests are opt-in (not wired into the build) to avoid CI flakiness from font rendering differences; run locally + in a dedicated visual job.
+- Masking: use `mask: [page.locator('[data-vr-mask]')]`. Add `data-vr-mask` to the maintenance preview card and any time-sensitive UI.
 
 ## Out of scope
-- Server function changes
-- New fields
-- Visual redesign of the Branding panel
+- Server functions, new settings fields
+- Redesign of Branding/Maintenance panels
+- Other admin pages (test scaffold is reusable later)
