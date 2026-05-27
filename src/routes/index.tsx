@@ -315,7 +315,7 @@ function Home() {
       )}
 
       {/* City context banner */}
-      {hydrated && cityId && (
+      {sections.city_banner && hydrated && cityId && (
         <section className="container mx-auto px-4 pt-6">
           <button
             type="button"
@@ -347,22 +347,24 @@ function Home() {
       )}
 
       {/* Trust stats card */}
-      <section className="container mx-auto px-4 pt-6">
-        <div className="rounded-[2rem] glass p-6 md:p-8 shadow-[var(--shadow-float)]">
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
-            <TrustTile icon={<Sparkles className="h-5 w-5" />} value={siteStats?.listings ?? "—"} label="Active listings" />
-            <TrustTile icon={<Users className="h-5 w-5" />} value={siteStats?.sellers ?? "—"} label="Trusted sellers" />
-            <TrustTile icon={<MapPin className="h-5 w-5" />} value={siteStats?.cities ?? "—"} label="Cities covered" />
-            <TrustTile icon={<ShieldCheck className="h-5 w-5" />} value="100%" label="Free to post" />
+      {sections.trust_stats && (
+        <section className="container mx-auto px-4 pt-6">
+          <div className="rounded-[2rem] glass p-6 md:p-8 shadow-[var(--shadow-float)]">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
+              <TrustTile icon={<Sparkles className="h-5 w-5" />} value={siteStats?.listings ?? "—"} label="Active listings" />
+              <TrustTile icon={<Users className="h-5 w-5" />} value={siteStats?.sellers ?? "—"} label="Trusted sellers" />
+              <TrustTile icon={<MapPin className="h-5 w-5" />} value={siteStats?.cities ?? "—"} label="Cities covered" />
+              <TrustTile icon={<ShieldCheck className="h-5 w-5" />} value="100%" label="Free to post" />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {cityId && (<>
-      <RecentlyViewedRail />
-      <TrendingInCityRail cityId={cityId} cityName={cityName} />
+      {sections.recently_viewed && <RecentlyViewedRail />}
+      {sections.trending_rail && <TrendingInCityRail cityId={cityId} cityName={cityName} />}
       {/* Featured row */}
-      {featured.length > 1 && (
+      {sections.featured_row && featured.length > 1 && (
         <section className="container mx-auto px-4 pt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
@@ -376,7 +378,7 @@ function Home() {
       )}
 
       {/* Trending / Bumped rail */}
-      {bumped.length > 0 && (
+      {sections.bumped_rail && bumped.length > 0 && (
         <section className="container mx-auto px-4 pt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
