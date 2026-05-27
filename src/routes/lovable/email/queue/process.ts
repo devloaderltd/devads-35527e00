@@ -1,6 +1,7 @@
 import { sendLovableEmail } from '@lovable.dev/email-js'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createFileRoute } from '@tanstack/react-router'
+import { sendViaSMTP, type SmtpConfig } from '@/lib/smtp/send.server'
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -108,6 +109,20 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
         const ttlMinutes: Record<string, number> = {
           auth_emails: state?.auth_email_ttl_minutes ?? DEFAULT_AUTH_TTL_MINUTES,
           transactional_emails: state?.transactional_email_ttl_minutes ?? DEFAULT_TRANSACTIONAL_TTL_MINUTES,
+        }
+
+        // Load SMTP config once per cycle. When enabled, the dispatcher sends
+        // via the configured third-party SMTP server instead of Lovable Email.
+        let smtpConfig: SmtpConfig | null = null
+        {
+          const { data: smtp } = await supabase
+            .from('smtp_settings')
+            .select(
+              'enabled, host, port, secure, auth_user, auth_pass, from_email, from_name, reply_to',
+            )
+            .eq('id', 'global')
+            .maybeSingle()
+          if (smtp?.enabled) smtpConfig = smtp as unknown as SmtpConfig
         }
 
         let totalProcessed = 0
