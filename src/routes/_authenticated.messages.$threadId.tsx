@@ -197,7 +197,7 @@ function ThreadView() {
   const otherReadAt = otherLastRead ? new Date(otherLastRead) : null;
 
   return (
-    <div className="flex h-[70vh] flex-col">
+    <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-white/40 p-3">
         <Link
           to="/messages"

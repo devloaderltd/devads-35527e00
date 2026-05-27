@@ -143,7 +143,7 @@ function MessagesLayout() {
 
   return (
     <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
-      <h1 className="mb-4 flex items-center gap-2 font-display text-2xl font-bold">
+      <h1 className={`mb-4 items-center gap-2 font-display text-2xl font-bold ${hasActive ? "hidden md:flex" : "flex"}`}>
         <span className="gradient-text">Messages</span>
         {totalUnread > 0 && (
           <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
@@ -256,7 +256,7 @@ function MessagesLayout() {
             })}
           </ul>
         </aside>
-        <section className={`min-h-[60vh] rounded-2xl glass ${hasActive ? "block" : "hidden md:block"}`}>
+        <section className={`overflow-hidden rounded-2xl glass md:min-h-[60vh] md:h-[70vh] h-[calc(100dvh-9rem)] ${hasActive ? "block" : "hidden md:block"}`}>
           <Outlet />
         </section>
       </div>
