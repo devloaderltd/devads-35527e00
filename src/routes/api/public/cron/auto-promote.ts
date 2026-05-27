@@ -30,11 +30,10 @@ export const Route = createFileRoute("/api/public/cron/auto-promote")({
         }
 
         const nextExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-        const nowIso = new Date().toISOString();
 
         await supabaseAdmin
           .from("listings")
-          .update({ expires_at: nextExpiry, bumped_at: nowIso })
+          .update({ expires_at: nextExpiry })
           .in("id", ids);
 
         // Notify owners
