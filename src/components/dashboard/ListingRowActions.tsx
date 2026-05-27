@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Pause, Play, Pencil, Trash2 } from "lucide-react";
+import { Pause, Play, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PromoteDialog } from "@/components/PromoteDialog";
 
