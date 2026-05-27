@@ -13,7 +13,7 @@ type State =
   | { kind: 'done' }
   | { kind: 'error'; message: string }
 
-export const Route = createFileRoute('/email-unsubscribe')({
+export const Route = createFileRoute('/unsubscribe-email')({
   validateSearch: (s: Record<string, unknown>) => ({
     token: typeof s.token === 'string' ? s.token : '',
   }),
@@ -21,7 +21,7 @@ export const Route = createFileRoute('/email-unsubscribe')({
 })
 
 function EmailUnsubscribePage() {
-  const { token } = useSearch({ from: '/email-unsubscribe' })
+  const { token } = useSearch({ from: '/unsubscribe-email' })
   const [state, setState] = useState<State>({ kind: 'loading' })
 
   useEffect(() => {
