@@ -1,58 +1,82 @@
-## Goal
+# Production cleanup plan
 
-Audit every page in the app at mobile (375px), tablet (768px) and desktop (1280px+) widths and fix responsive layout issues — overflow, horizontal scroll, cramped touch targets, crowded grids, text wrapping. Keep the existing visual design. No business-logic changes.
+Per your answers: **wipe all users**, **keep Cities only** (drop Categories), **remove seed-demo entirely**.
 
-## Method
+## 1. Database wipe (single migration)
 
-For each route I'll check in the running preview:
-- horizontal scroll / overflow (the main symptom)
-- min-w-0 missing on flex/grid children that contain long text or inputs
-- tables and wide grids that need horizontal scroll wrappers or stacked card fallbacks on mobile
-- fixed widths (`w-[NNNpx]`) that should be `max-w-` + `w-full`
-- text sizes (`text-xs sm:text-sm` patterns) and padding (`p-3 sm:p-4`) for small screens
-- touch targets ≥ 40px on mobile
-- sticky headers / sidebars that should collapse below `lg`
-- modals/dialogs that exceed viewport on mobile
+Order matters to satisfy implicit FK chains. All in one migration:
 
-## Scope (grouped, by priority)
+```text
+DELETE FROM listing_images;
+DELETE FROM listing_price_history;
+DELETE FROM listing_promotions;
+DELETE FROM listing_events;
+DELETE FROM scheduled_bumps;
+DELETE FROM favorites;
+DELETE FROM recently_viewed;
+DELETE FROM messages;
+DELETE FROM thread_reads;
+DELETE FROM message_threads;
+DELETE FROM message_quick_replies;
+DELETE FROM seller_reviews;
+DELETE FROM seller_follows;
+DELETE FROM user_blocks;
+DELETE FROM reports;
+DELETE FROM saved_searches;
+DELETE FROM notifications;
+DELETE FROM notification_preferences;
+DELETE FROM referrals;
+DELETE FROM referral_codes;
+DELETE FROM kyc_submissions;
+DELETE FROM payments;
+DELETE FROM crypto_topups;
+DELETE FROM wallet_transactions;
+DELETE FROM wallets;
+DELETE FROM listings;
+DELETE FROM homepage_slots;
+DELETE FROM site_banners;
+DELETE FROM admin_broadcasts;
+DELETE FROM audit_log;
+DELETE FROM client_error_logs;
+DELETE FROM server_fn_logs;
+DELETE FROM email_send_log;
+DELETE FROM email_unsubscribe_tokens;
+DELETE FROM suppressed_emails;
+DELETE FROM user_roles;
+DELETE FROM profiles;
+DELETE FROM categories;          -- per your choice
+-- cities preserved (664 rows)
+```
 
-**1. Public / marketing**
-`index.tsx`, `about.tsx`, `contact.tsx`, `privacy.tsx`, `terms.tsx`, `cookies.tsx`, `dmca.tsx`
+Auth users (the 9 in `auth.users`) must be deleted via the admin API, not SQL. I'll add a one-shot server route `/api/public/admin-wipe-users` gated by `x-seed-token = SUPABASE_SERVICE_ROLE_KEY` that lists and deletes every auth user, then I'll call it once and delete the route file in the same turn.
 
-**2. Auth flows**
-`login.tsx`, `signup.tsx`, `forgot-password.tsx`, `reset-password.tsx`, `verify-email.tsx`, `auth.callback.tsx`, `unsubscribe.tsx`
+## 2. Remove seed-demo code
 
-**3. Browse / discovery**
-`search.tsx`, `compare.tsx`, `listings.$id.tsx`, `sellers.$id.tsx`
+Delete:
+- `src/lib/seed-demo.server.ts`
+- `src/routes/api/public/seed-demo.ts`
+- `src/components/admin/SeedDemoButton.tsx`
 
-**4. Authenticated user area**
-`_authenticated.dashboard`, `favorites`, `my-listings`, `post`, `profile`, `wallet`, `notifications`, `saved-searches`, `verify`, `messages` (index + thread)
+Strip references in:
+- `src/routes/admin.maintenance.tsx` (Seed Demo button + handler)
+- `src/routes/admin.index.tsx` (any SeedDemoButton import/usage)
+- any audit-log filter chips referencing `demo.seed_rotate.public`
 
-**5. Admin panel** (highest density, most overflow risk)
-All `admin.*` routes — these are data-heavy tables, the biggest source of horizontal scroll on mobile. Standard treatment: wrap tables in `overflow-x-auto`, switch dense table → stacked card list at `<md`, collapse the admin sidebar to a sheet/drawer at `<lg`.
+## 3. First-admin bootstrap
 
-**6. Shared layout shells**
-`__root.tsx`, `_authenticated.tsx`, `admin.tsx`, `Header` — verify nav collapses cleanly, no double scrollbars, content area has correct `min-w-0`.
+With every user wiped, signing up creates a `user` role only (`handle_new_user` trigger). To regain admin access, I'll add a tiny one-shot server route `/api/public/bootstrap-admin` that promotes the FIRST signup to admin if zero admins exist (same pattern as the existing `hasAnyAdmin` check). You sign up → call the endpoint once → you're admin. Route auto-noops after the first admin exists.
 
-## Deliverable per page
+Alternative: I run an `INSERT INTO user_roles` migration after you tell me your new user id. Pick one in the next reply if you don't want the bootstrap endpoint.
 
-Surgical edits to existing JSX/Tailwind classes only. No component rewrites, no design tokens changes, no new dependencies. Each fix limited to:
-- adding/removing Tailwind responsive prefixes (`sm:`, `md:`, `lg:`)
-- adding `min-w-0`, `truncate`, `break-words`, `overflow-x-auto`, `flex-wrap`
-- swapping fixed widths for `max-w-*`
-- introducing mobile-card fallbacks for the worst tables (only where needed)
+## 4. Verification
 
-## Verification
-
-After fixes I'll spot-check the highest-risk pages in the live preview at 375 / 768 / 1280 using the browser tools — confirm: (a) no horizontal scroll on `<body>`, (b) primary actions reachable without zoom, (c) tables either scroll inside their container or stack into cards. Existing Playwright visual baseline (`tests/visual/admin-settings.spec.ts`) is left as-is.
+- Re-count all tables → expect 0 except `cities` (664).
+- Visit `/` → no listings, hero still renders.
+- Admin panel inaccessible until a user is promoted.
+- Build passes (no dangling imports to deleted files).
 
 ## Out of scope
 
-- Visual redesign, color/typography changes, new components
-- Server functions, schema, auth, business rules
-- New routes or features
-- Extending visual regression to more pages (can be a follow-up)
-
-## Size note
-
-This touches ~55 route files. I'll work in the priority order above and report progress per group. If you want a tighter first pass (e.g. "just the public pages + admin tables"), say so and I'll narrow before starting.
+- Storage bucket cleanup (listing-images, kyc-documents, review-photos) — old files are orphaned but harmless; tell me if you want them purged too.
+- Reference data re-seed for Categories — you'll add them via `/admin/categories`.
+- No schema, RLS, or business logic changes.
