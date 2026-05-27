@@ -134,7 +134,7 @@ function Home() {
   // Global fallback: newest active listing with an unexpired Featured promotion,
   // otherwise the most recently bumped/created active listing site-wide. Runs
   // only when no admin-pinned listing AND no in-city featured pick is available.
-  const needGlobalFallback = !pinnedId && !featured[0] && (!listings || listings.length === 0);
+  const needGlobalFallback = !pinnedId && !featured[0] && !listings?.[0];
   const { data: globalFeatured } = useQuery({
     queryKey: ["global-featured-fallback"],
     enabled: needGlobalFallback,
