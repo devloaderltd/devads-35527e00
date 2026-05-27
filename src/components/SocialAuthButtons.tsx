@@ -3,8 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-type Provider = "google" | "apple";
-
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -16,26 +14,18 @@ function GoogleIcon() {
   );
 }
 
-function AppleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
-      <path d="M16.365 1.43c0 1.14-.42 2.24-1.11 3.03-.74.84-1.95 1.49-2.97 1.41-.13-1.11.42-2.27 1.07-3.01.74-.83 2.01-1.45 3.01-1.43zM20.5 17.4c-.55 1.27-.81 1.84-1.52 2.96-.99 1.56-2.39 3.51-4.12 3.53-1.54.02-1.93-1-4.02-.99-2.09.01-2.52 1.01-4.06.99-1.73-.02-3.06-1.78-4.05-3.34C.05 16.79-.24 11.41 1.45 8.55c1.2-2.03 3.1-3.22 4.88-3.22 1.82 0 2.96 1 4.46 1 1.46 0 2.35-1 4.46-1 1.59 0 3.28.87 4.48 2.36-3.94 2.16-3.3 7.78.77 9.71z"/>
-    </svg>
-  );
-}
-
 export function SocialAuthButtons({ redirect = "/" }: { redirect?: string }) {
-  const [loading, setLoading] = useState<Provider | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSignIn = async (provider: Provider) => {
-    setLoading(provider);
+  const handleSignIn = async () => {
+    setLoading(true);
     const redirectTo = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`;
     const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: "google",
       options: { redirectTo },
     });
     if (error) {
-      setLoading(null);
+      setLoading(false);
       toast.error(error.message);
     }
   };
@@ -46,20 +36,11 @@ export function SocialAuthButtons({ redirect = "/" }: { redirect?: string }) {
         type="button"
         variant="outline"
         className="w-full bg-white/80 hover:bg-white"
-        onClick={() => handleSignIn("google")}
-        disabled={loading !== null}
+        onClick={handleSignIn}
+        disabled={loading}
       >
         <GoogleIcon />
-        <span className="ml-2">{loading === "google" ? "Redirecting…" : "Continue with Google"}</span>
-      </Button>
-      <Button
-        type="button"
-        className="w-full bg-black text-white hover:bg-black/90"
-        onClick={() => handleSignIn("apple")}
-        disabled={loading !== null}
-      >
-        <AppleIcon />
-        <span className="ml-2">{loading === "apple" ? "Redirecting…" : "Continue with Apple"}</span>
+        <span className="ml-2">{loading ? "Redirecting…" : "Continue with Google"}</span>
       </Button>
       <div className="relative py-2">
         <div className="absolute inset-0 flex items-center">
