@@ -233,7 +233,7 @@ function Home() {
             <Link
               to="/listings/$id"
               params={{ id: (heroFeatured as any).slug ?? heroFeatured.id }}
-              className="group relative col-span-1 row-span-1 overflow-hidden rounded-[2rem] glass md:col-span-2 md:row-span-2"
+              className="group relative col-span-1 row-span-1 block overflow-hidden rounded-[2rem] glass aspect-[4/3] md:aspect-auto md:h-full md:col-span-2 md:row-span-2"
             >
               <img
                 src={heroImg}
@@ -257,7 +257,7 @@ function Home() {
               </div>
             </Link>
           ) : (
-            <div className="col-span-1 row-span-1 overflow-hidden rounded-[2rem] glass animate-pulse md:col-span-2 md:row-span-2 aspect-[4/3] md:aspect-auto" />
+            <div className="col-span-1 row-span-1 overflow-hidden rounded-[2rem] glass animate-pulse aspect-[4/3] md:aspect-auto md:h-full md:col-span-2 md:row-span-2" />
           )}
 
           {/* Medium gradient tile 2 */}
