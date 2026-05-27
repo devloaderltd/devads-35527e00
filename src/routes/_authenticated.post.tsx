@@ -94,6 +94,55 @@ function PostListing() {
   // Preview-before-post (create-only)
   const [previewMode, setPreviewMode] = useState(false);
 
+  // Draft persistence (create-only). Photos can't be persisted (File objects
+  // can't be serialized) — user re-uploads if they refresh.
+  const DRAFT_KEY = "post-listing-draft-v1";
+  const draftLoadedRef = useRef(false);
+
+  // Hydrate from localStorage on mount (create mode only).
+  useEffect(() => {
+    if (isEdit || draftLoadedRef.current || typeof window === "undefined") return;
+    draftLoadedRef.current = true;
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (typeof d.title === "string") setTitle(d.title);
+      if (typeof d.description === "string") setDescription(d.description);
+      if (typeof d.itemAge === "string") setItemAge(d.itemAge);
+      if (typeof d.phone === "string") setPhone(d.phone);
+      if (typeof d.whatsapp === "string") setWhatsapp(d.whatsapp);
+      if (typeof d.waSame === "boolean") setWaSame(d.waSame);
+      if (typeof d.categoryId === "string") setCategoryId(d.categoryId);
+      if (d.country === "US" || d.country === "UK" || d.country === "CA") setCountry(d.country);
+      if (Array.isArray(d.cityIds)) setCityIds(d.cityIds.filter((x: unknown) => typeof x === "string"));
+      if (typeof d.boostFeatured === "boolean") setBoostFeatured(d.boostFeatured);
+      if (typeof d.boostBump === "boolean") setBoostBump(d.boostBump);
+      if (typeof d.previewMode === "boolean") setPreviewMode(d.previewMode);
+    } catch {
+      /* ignore corrupt draft */
+    }
+  }, [isEdit]);
+
+  // Persist on change (create mode only, after initial hydration).
+  useEffect(() => {
+    if (isEdit || typeof window === "undefined" || !draftLoadedRef.current) return;
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        title, description, itemAge, phone, whatsapp, waSame,
+        categoryId, country, cityIds, boostFeatured, boostBump, previewMode,
+      }));
+    } catch { /* quota/serialization errors */ }
+  }, [isEdit, title, description, itemAge, phone, whatsapp, waSame,
+      categoryId, country, cityIds, boostFeatured, boostBump, previewMode]);
+
+  const clearDraft = () => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.removeItem(DRAFT_KEY); } catch { /* noop */ }
+  };
+
+
+
 
   const { data: pricing } = useQuery({
     queryKey: ["promotion-pricing"],
