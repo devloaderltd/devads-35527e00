@@ -151,7 +151,7 @@ export function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-full bg-white/60 backdrop-blur">
+                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 rounded-full bg-white/60 backdrop-blur">
                   <UserIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -193,11 +193,12 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild variant="outline" size="sm" className="rounded-full bg-white/60 backdrop-blur">
+            <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full bg-white/60 px-2.5 backdrop-blur sm:px-3">
               <Link to="/login">Sign in</Link>
             </Button>
           )}
         </div>
+
       </div>
 
     </header>
