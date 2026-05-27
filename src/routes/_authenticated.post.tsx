@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ImagePlus, X, Sparkles, Loader2, Check, ChevronsUpDown, Star, GripVertical } from "lucide-react";
 import { aiWriteListing } from "@/lib/ai.functions";
+import { chargeListingPost } from "@/lib/wallet.functions";
 import { cn } from "@/lib/utils";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor,
@@ -40,7 +41,9 @@ export const Route = createFileRoute("/_authenticated/post")({
   component: PostListing,
 });
 
-const PHONE_RE = /^[+\d][\d\s\-().]{5,31}$/;
+const PHONE_RE = /^\+?\d[\d\s\-]{6,31}$/;
+const sanitizePhone = (v: string) => v.replace(/[^\d+\s\-]/g, "").replace(/(?!^)\+/g, "");
+const sanitizeAge = (v: string) => v.replace(/\D/g, "").slice(0, 2);
 
 type ImgItem =
   | { kind: "existing"; key: string; id: string; url: string }
@@ -265,12 +268,16 @@ function PostListing() {
     if (descText.length < 10) e.description = "Description must be at least 10 characters";
     const age = itemAge.trim();
     if (!age) e.itemAge = "Age is required";
-    else if (age.length > 60) e.itemAge = "Age must be 60 characters or less";
+    else if (!/^\d+$/.test(age)) e.itemAge = "Age must be a number";
+    else if (parseInt(age, 10) < 18) e.itemAge = "Age must be at least 18";
+    else if (parseInt(age, 10) > 99) e.itemAge = "Age must be 99 or less";
     const ph = phone.trim();
-    if (!PHONE_RE.test(ph)) e.phone = "Enter a valid phone number (e.g. +1 555 123 4567)";
+    const phDigits = ph.replace(/\D/g, "");
+    if (!PHONE_RE.test(ph) || phDigits.length < 7) e.phone = "Enter a valid phone number (digits only, e.g. +1 555 123 4567)";
     if (!waSame) {
       const w = whatsapp.trim();
-      if (w && !PHONE_RE.test(w)) e.whatsapp = "Enter a valid WhatsApp number";
+      const wDigits = w.replace(/\D/g, "");
+      if (w && (!PHONE_RE.test(w) || wDigits.length < 7)) e.whatsapp = "Enter a valid WhatsApp number (digits only)";
     }
     if (!categoryId) e.category = "Pick a category";
     if (cityIds.length === 0) e.city = "Pick at least one city";
@@ -404,6 +411,16 @@ function PostListing() {
 
       // CREATE path — generate group id so we can edit as one later
       const groupUuid = crypto.randomUUID();
+
+      // Charge wallet for posting (per city)
+      try {
+        await chargeListingPost({ data: { cityCount: cityIds.length, reference: groupUuid } });
+      } catch (err: any) {
+        toast.error(err?.message ?? "Wallet charge failed");
+        setSubmitting(false);
+        return;
+      }
+
       const created: { id: string; slug: string | null }[] = [];
       for (const cId of cityIds) {
         const { data: listing, error } = await supabase
@@ -516,9 +533,9 @@ function PostListing() {
         <div className="space-y-2" data-error={!!errors.itemAge}>
           <Label htmlFor="item-age">Age</Label>
           <Input
-            id="item-age" maxLength={60} value={itemAge}
-            onChange={(e) => { setItemAge(e.target.value); if (errors.itemAge) setErrors((p) => ({ ...p, itemAge: undefined })); }}
-            placeholder="e.g. 2 years, 6 months, brand new"
+            id="item-age" inputMode="numeric" maxLength={2} value={itemAge}
+            onChange={(e) => { setItemAge(sanitizeAge(e.target.value)); if (errors.itemAge) setErrors((p) => ({ ...p, itemAge: undefined })); }}
+            placeholder="e.g. 25 (minimum 18)"
             className={cn("bg-white/70", errCls("itemAge"))}
           />
           {errors.itemAge && <p className="text-xs font-medium text-destructive">{errors.itemAge}</p>}
@@ -529,7 +546,7 @@ function PostListing() {
             <Label htmlFor="phone">Phone number</Label>
             <Input
               id="phone" inputMode="tel" maxLength={32} value={phone}
-              onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors((p) => ({ ...p, phone: undefined })); }}
+              onChange={(e) => { setPhone(sanitizePhone(e.target.value)); if (errors.phone) setErrors((p) => ({ ...p, phone: undefined })); }}
               placeholder="+1 555 123 4567"
               className={cn("bg-white/70", errCls("phone"))}
             />
@@ -540,7 +557,7 @@ function PostListing() {
             <Input
               id="whatsapp" inputMode="tel" maxLength={32}
               value={waSame ? phone : whatsapp} disabled={waSame}
-              onChange={(e) => { setWhatsapp(e.target.value); if (errors.whatsapp) setErrors((p) => ({ ...p, whatsapp: undefined })); }}
+              onChange={(e) => { setWhatsapp(sanitizePhone(e.target.value)); if (errors.whatsapp) setErrors((p) => ({ ...p, whatsapp: undefined })); }}
               placeholder="+1 555 123 4567"
               className={cn("bg-white/70", errCls("whatsapp"))}
             />
@@ -551,6 +568,7 @@ function PostListing() {
             {errors.whatsapp && <p className="text-xs font-medium text-destructive">{errors.whatsapp}</p>}
           </div>
         </div>
+
 
         <div className="space-y-2" data-error={!!errors.category}>
           <Label>Category</Label>

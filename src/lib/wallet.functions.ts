@@ -7,11 +7,12 @@ const FEATURED_USD_DEFAULT = 9.99;
 const BUMP_USD_DEFAULT = 2.99;
 const FEATURED_DAYS_DEFAULT = 7;
 const BUMP_DAYS_DEFAULT = 1;
+const LISTING_POST_USD_DEFAULT = 1.00;
 
 async function loadPricing() {
   const { data } = await supabaseAdmin
     .from("site_settings")
-    .select("featured_price_usd, bump_price_usd, featured_days, bump_days")
+    .select("featured_price_usd, bump_price_usd, featured_days, bump_days, listing_post_price_usd")
     .eq("id", "global")
     .maybeSingle();
   return {
@@ -19,6 +20,7 @@ async function loadPricing() {
     bumpPrice: Number(data?.bump_price_usd ?? BUMP_USD_DEFAULT),
     featuredDays: Number(data?.featured_days ?? FEATURED_DAYS_DEFAULT),
     bumpDays: Number(data?.bump_days ?? BUMP_DAYS_DEFAULT),
+    listingPostPrice: Number((data as any)?.listing_post_price_usd ?? LISTING_POST_USD_DEFAULT),
   };
 }
 
@@ -154,5 +156,40 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
     }
 
     return { ok: true };
+  });
+
+export const chargeListingPost = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { cityCount: number; reference: string }) => {
+    if (!Number.isInteger(data.cityCount) || data.cityCount < 1 || data.cityCount > 50) throw new Error("Invalid cityCount");
+    if (typeof data.reference !== "string" || data.reference.length > 100) throw new Error("Invalid reference");
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
+    const pricing = await loadPricing();
+    const total = Math.round(pricing.listingPostPrice * data.cityCount * 100) / 100;
+    if (total <= 0) return { ok: true, charged: 0 };
+    const { error } = await supabaseAdmin.rpc("debit_wallet", {
+      _user_id: userId,
+      _amount: total,
+      _reference: data.reference,
+      _description: `Listing post (${data.cityCount} ${data.cityCount === 1 ? "city" : "cities"})`,
+    });
+    if (error) {
+      if (error.message?.toLowerCase().includes("insufficient")) {
+        throw new Error("Insufficient wallet balance. Please top up.");
+      }
+      throw new Error(error.message);
+    }
+    await supabaseAdmin.from("payments").insert({
+      user_id: userId,
+      promotion_type: null,
+      provider: "wallet",
+      amount: total,
+      currency: "USD",
+      status: "completed",
+    });
+    return { ok: true, charged: total };
   });
 

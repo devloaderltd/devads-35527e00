@@ -1,85 +1,72 @@
 ## Goal
 
-Let admin edit the homepage hero, the 4 bento tiles, and toggle which lower sections appear — without touching the rest of the page's behavior.
+Tighten validation on the post form, charge per-city to publish a new ad, let the publisher promote (bump/feature) at post time from wallet, and add a "Listing pricing" panel to admin settings.
 
-## What admin will control
+## 1. Stricter validation on `src/routes/_authenticated.post.tsx`
 
-**Hero band**
-- Badge text (e.g. "Free to post · Free to browse")
-- Title (supports a highlighted span via `{accent}…{/accent}` marker)
-- Subtitle paragraph
-- Primary CTA label + URL
-- Secondary CTA label + URL
+**Age field** — repurpose as a numeric age (years), minimum 18.
+- Swap `<Input>` for `<Input type="number" inputMode="numeric" min={18} max={99}>`
+- Strip non-digits on change. Reject submit if not an integer ≥ 18.
+- Update placeholder to `e.g. 25`, label stays "Age".
+- DB column `item_age` already exists as `text`; store the digit string (no migration needed).
 
-**Bento — 4 tiles**
-1. *Featured tile (large)*: pin a specific listing UUID (optional — falls back to auto-pick from active listings) + override badge label (default "Featured").
-2. *Electronics-style gradient tile*: title, subtitle, image, link URL, gradient preset (`primary`, `lavender→indigo`, `amber→coral`, `ocean`).
-3. *Small tile A* (currently Furniture): title, subtitle, icon image, link URL, gradient preset.
-4. *Small tile B* (currently Pets): same fields as tile A.
+**Phone & WhatsApp** — accept digits only (plus leading `+` and single spaces/dashes for readability) and reject anything else **as the user types**.
+- On change, run `value.replace(/[^\d+\s\-]/g, "")` so letters/symbols never appear in the field.
+- Keep the existing `PHONE_RE` final-submit check but tighten the minimum to 7 digits after stripping non-digits.
+- Same rule applied to the WhatsApp field when "Same as phone" is off.
 
-Each bento tile (2–4) gets an on/off toggle. If off, the slot collapses on mobile / hides on desktop (the grid uses CSS-only fallbacks so it still looks balanced — empty cells become a faint glass placeholder).
+## 2. Paid posting — $1.00 per city (configurable)
 
-**Section visibility toggles**
-On/off for: Trust stats, Category chip strip, Recently viewed rail, Trending-in-city rail, Featured row, Bumped/Trending now rail, Latest listings, City context banner. Hero + bento are always on.
+**Admin panel** (`/admin/settings`): add a new "Listing pricing" card under "Promotion pricing" with one field — **Listing post price** (USD, 0–9999, step 0.01). Saves to `site_settings.listing_post_price_usd`.
 
-## Where it lives in admin
-
-New route `src/routes/admin.homepage-editor.tsx` (kept separate from the existing `/admin/homepage` which manages generic `homepage_slots` + `site_banners` rows). Sidebar entry: "Homepage editor" under the existing Homepage section.
-
-The page has three stacked panels:
-1. Hero
-2. Bento tiles (4 sub-cards in a 2×2)
-3. Section visibility (compact list of switches)
-
-Each panel has a Save button. A sticky "Preview" link opens `/` in a new tab.
-
-## Data model
-
-Single-row config table `public.homepage_config` (id text default 'global'). One JSONB column per group keeps schema simple and avoids a migration per added field:
-
-```text
-homepage_config
-- id                text PK default 'global'
-- hero              jsonb   (badge, title, subtitle, cta1_label, cta1_url, cta2_label, cta2_url)
-- bento_featured    jsonb   (pinned_listing_id, badge_label, enabled)
-- bento_tile_2..4   jsonb   (title, subtitle, image_url, link_url, gradient, enabled)
-- sections          jsonb   ({ trust_stats: bool, chip_strip: bool, recently_viewed: bool,
-                              trending_rail: bool, featured_row: bool, bumped_rail: bool,
-                              latest: bool, city_banner: bool })
-- updated_at        timestamptz
+**Database migration**:
+```sql
+ALTER TABLE public.site_settings
+  ADD COLUMN listing_post_price_usd numeric NOT NULL DEFAULT 1.00;
 ```
 
-RLS: public SELECT (homepage reads it anonymously); admin-only INSERT/UPDATE via `has_role(auth.uid(), 'admin')`. GRANT SELECT to anon + authenticated; ALL to service_role; UPDATE to authenticated.
+**New server function** `chargeListingPost` in `src/lib/wallet.functions.ts`:
+- Input: `{ cityCount: number, listingGroupId: string }`
+- Reads `listing_post_price_usd`, computes `total = price × cityCount`
+- Calls `debit_wallet` RPC (existing); throws "Insufficient wallet balance — please top up." on failure
+- Records a row in `payments` with `provider: "wallet"`, `promotion_type: null`
+- Returns `{ charged, balance }`
 
-A seed row is inserted in the same migration with the current hard-coded defaults so the homepage looks identical on day one.
+**Post form CREATE path** (lines 405–436 of `_authenticated.post.tsx`):
+- Before inserting listings, call `getListingPostPrice` (new GET serverFn) to show the user the total cost in a confirmation summary above the Submit button: `Posting to N cities — $X.XX will be deducted from your wallet.`
+- On submit, call `chargeListingPost` **first**. If it throws insufficient-funds, show toast with a "Top up wallet" link to `/wallet` and abort.
+- Only after successful debit, insert the listing rows.
+- EDIT path: no charge (only new cities added during edit would charge — keep simple, no charge on edit for v1).
 
-## Server functions
+## 3. Promote-at-post section
 
-`src/lib/homepage-config.functions.ts`:
-- `getHomepageConfig()` — public read; returns the single row (creates default if missing).
-- `saveHomepageConfig({ section, data })` — `requireAdmin` middleware; patches one of `hero | bento_featured | bento_tile_2 | bento_tile_3 | bento_tile_4 | sections` with Zod validation (string length caps, URL format, UUID for pinned listing).
+New collapsible card in the post form, **CREATE mode only**, placed right above the Submit button:
 
-## Homepage wiring (`src/routes/index.tsx`)
+```
+┌─ Boost your listing (optional) ────────────────┐
+│ Wallet balance: $X.XX                          │
+│                                                │
+│ ☐ Feature this listing — $9.99 / 7 days        │
+│ ☐ Bump to top — $2.99                          │
+│                                                │
+│ Total: $A.AA  (post) + $B.BB (boosts) = $C.CC  │
+└────────────────────────────────────────────────┘
+```
 
-- Fetch config via `useQuery(['homepage-config'])` with `staleTime: 5min`. Falls back to current hard-coded defaults if the request fails (no blank page).
-- Hero reads from `config.hero`. The `{accent}…{/accent}` marker is split client-side into a `gradient-text` span.
-- Bento tile 1: if `pinned_listing_id` set, fetch that listing for hero card; else keep existing auto-pick.
-- Bento tiles 2–4: read from `config.bento_tile_*`; hidden when `enabled=false`. Gradient applied via a preset map (no inline color editing — keeps the polished look).
-- Each lower section wrapped in `{config.sections.X && (...)}`.
+- Pulls prices via `getPromotionPricing` + wallet balance via `getWallet`.
+- After listings are created, loop selected boosts and call existing `promoteWithWallet({ listingId, type })` for **each created sibling** (per city).
+- If wallet drops below total mid-flow, the per-call debit will throw and we surface the error with toast.
 
-No changes to the auth flow, listing schema, or any other route.
+## 4. Files touched
+
+- `supabase/migrations/<new>.sql` — add `listing_post_price_usd`
+- `src/lib/wallet.functions.ts` — add `getListingPostPrice`, `chargeListingPost`
+- `src/routes/admin.settings.tsx` — add "Listing pricing" card + field
+- `src/routes/_authenticated.post.tsx` — validation tightening, paid-post flow, boost section
 
 ## Out of scope
 
-- Drag-to-reorder sections (user picked "toggles only").
-- Adding new sections from admin (no page-builder).
-- Editing the category chip strip from here — still managed in `/admin/categories`.
-- Editing the Trust stats numbers (they're live counts).
-- Custom color/gradient pickers — admin picks from 4 presets.
-
-## Technical notes
-
-- `homepage_config` uses single-row pattern (id default 'global') like `site_settings` / `smtp_settings` already in the project — same conventions, same `set_updated_at` trigger.
-- Image fields accept any URL; admin can paste from Cloud storage (existing `branding` / `listing-images` buckets) or external. No new upload UI in this pass.
-- The pinned-listing fetch reuses the same `select(...)` shape as the existing hero query so `ListingCard` / hero card rendering is unchanged.
-- Config caching: 5-minute query staleTime on the public read; admin save calls `queryClient.invalidateQueries(['homepage-config'])` so editor preview updates immediately.
+- Refunds if post fails after debit (will rely on Supabase atomicity of insert)
+- Per-category or per-country pricing tiers
+- Charging on edit
+- Changing existing `PromoteDialog` (still used post-publish from listing pages)
