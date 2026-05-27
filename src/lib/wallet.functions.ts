@@ -7,11 +7,12 @@ const FEATURED_USD_DEFAULT = 9.99;
 const BUMP_USD_DEFAULT = 2.99;
 const FEATURED_DAYS_DEFAULT = 7;
 const BUMP_DAYS_DEFAULT = 1;
+const LISTING_POST_USD_DEFAULT = 1.00;
 
 async function loadPricing() {
   const { data } = await supabaseAdmin
     .from("site_settings")
-    .select("featured_price_usd, bump_price_usd, featured_days, bump_days")
+    .select("featured_price_usd, bump_price_usd, featured_days, bump_days, listing_post_price_usd")
     .eq("id", "global")
     .maybeSingle();
   return {
@@ -19,6 +20,7 @@ async function loadPricing() {
     bumpPrice: Number(data?.bump_price_usd ?? BUMP_USD_DEFAULT),
     featuredDays: Number(data?.featured_days ?? FEATURED_DAYS_DEFAULT),
     bumpDays: Number(data?.bump_days ?? BUMP_DAYS_DEFAULT),
+    listingPostPrice: Number((data as any)?.listing_post_price_usd ?? LISTING_POST_USD_DEFAULT),
   };
 }
 
