@@ -21,7 +21,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ImagePlus, X, Sparkles, Loader2, Check, ChevronsUpDown, Star, GripVertical } from "lucide-react";
 import { aiWriteListing } from "@/lib/ai.functions";
-import { chargeListingPost } from "@/lib/wallet.functions";
+import { chargeListingPost, getPromotionPricing, getWallet, promoteWithWallet } from "@/lib/wallet.functions";
+import { Rocket, TrendingUp, Wallet as WalletIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor,
@@ -85,6 +86,22 @@ function PostListing() {
   const [aiHint, setAiHint] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const writeListingFn = useServerFn(aiWriteListing);
+
+  // Boost selection (create-only)
+  const [boostFeatured, setBoostFeatured] = useState(false);
+  const [boostBump, setBoostBump] = useState(false);
+
+  const { data: pricing } = useQuery({
+    queryKey: ["promotion-pricing"],
+    enabled: !isEdit,
+    queryFn: () => getPromotionPricing(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: walletData } = useQuery({
+    queryKey: ["wallet-balance-postform"],
+    enabled: !isEdit && !!user,
+    queryFn: () => getWallet(),
+  });
 
   const formRef = useRef<HTMLFormElement>(null);
   const newKeyRef = useRef(0);
@@ -446,6 +463,20 @@ function PostListing() {
         }
       }
 
+      // Apply selected boosts to each created listing
+      if (boostFeatured || boostBump) {
+        for (const c of created) {
+          if (boostFeatured) {
+            try { await promoteWithWallet({ data: { listingId: c.id, type: "featured" } }); }
+            catch (e: any) { toast.error(`Feature failed: ${e?.message ?? "error"}`); }
+          }
+          if (boostBump) {
+            try { await promoteWithWallet({ data: { listingId: c.id, type: "bump" } }); }
+            catch (e: any) { toast.error(`Bump failed: ${e?.message ?? "error"}`); }
+          }
+        }
+      }
+
       toast.success(
         cityIds.length === 1 ? "Listing posted!" : `Posted to ${cityIds.length} cities!`,
       );
@@ -707,7 +738,77 @@ function PostListing() {
           {errors.photos && <p className="text-xs font-medium text-destructive">{errors.photos}</p>}
         </div>
 
-        <Button type="submit" size="lg" className="btn-gradient w-full" disabled={submitting}>
+
+        {!isEdit && pricing && (() => {
+          const n = Math.max(1, cityIds.length);
+          const postFee = pricing.listingPostPrice * n;
+          const featCost = boostFeatured ? pricing.featuredPrice * n : 0;
+          const bumpCost = boostBump ? pricing.bumpPrice * n : 0;
+          const total = Math.round((postFee + featCost + bumpCost) * 100) / 100;
+          const balance = Number(walletData?.balance ?? 0);
+          const insufficient = total > balance;
+          const fmt = (v: number) => `$${v.toFixed(2)}`;
+          return (
+            <div className="space-y-3 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Rocket className="h-4 w-4 text-primary" /> Promote this listing (optional)
+              </div>
+              <label className="flex items-start gap-3 rounded-xl border border-white/60 bg-white/60 p-3 cursor-pointer">
+                <Checkbox checked={boostFeatured} onCheckedChange={(v) => setBoostFeatured(!!v)} className="mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium flex items-center gap-1"><Star className="h-3.5 w-3.5 text-amber-500" /> Feature this listing</span>
+                    <span className="text-sm font-semibold">{fmt(pricing.featuredPrice)}{n > 1 ? ` × ${n}` : ""}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Highlight in featured row for {pricing.featuredDays} days.</p>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 rounded-xl border border-white/60 bg-white/60 p-3 cursor-pointer">
+                <Checkbox checked={boostBump} onCheckedChange={(v) => setBoostBump(!!v)} className="mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium flex items-center gap-1"><TrendingUp className="h-3.5 w-3.5 text-primary" /> Bump to top</span>
+                    <span className="text-sm font-semibold">{fmt(pricing.bumpPrice)}{n > 1 ? ` × ${n}` : ""}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Push to the top of recent listings.</p>
+                </div>
+              </label>
+
+              <div className="space-y-1 rounded-xl bg-white/70 p-3 text-sm">
+                <div className="flex justify-between"><span>Post fee ({n} {n === 1 ? "city" : "cities"})</span><span>{fmt(postFee)}</span></div>
+                {boostFeatured && <div className="flex justify-between"><span>Featured</span><span>{fmt(featCost)}</span></div>}
+                {boostBump && <div className="flex justify-between"><span>Bump</span><span>{fmt(bumpCost)}</span></div>}
+                <div className="mt-1 flex justify-between border-t border-border/60 pt-1 font-semibold"><span>Total</span><span>{fmt(total)}</span></div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><WalletIcon className="h-3 w-3" /> Wallet balance</span>
+                  <span className={insufficient ? "text-destructive font-medium" : ""}>{fmt(balance)}</span>
+                </div>
+                {insufficient && (
+                  <p className="text-xs font-medium text-destructive">
+                    Insufficient balance.{" "}
+                    <a href="/wallet" className="underline">Top up your wallet</a>
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        <Button
+          type="submit"
+          size="lg"
+          className="btn-gradient w-full"
+          disabled={
+            submitting ||
+            (!isEdit && !!pricing && (() => {
+              const n = Math.max(1, cityIds.length);
+              const total = pricing.listingPostPrice * n
+                + (boostFeatured ? pricing.featuredPrice * n : 0)
+                + (boostBump ? pricing.bumpPrice * n : 0);
+              return total > Number(walletData?.balance ?? 0);
+            })())
+          }
+        >
           {submitting
             ? (isEdit ? "Saving…" : "Posting…")
             : isEdit
