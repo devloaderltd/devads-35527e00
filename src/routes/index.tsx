@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { SiteBanner } from "@/components/SiteBanner";
@@ -8,6 +9,7 @@ import { TrendingInCityRail } from "@/components/TrendingInCityRail";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Users } from "lucide-react";
 import { useCity } from "@/lib/city-context";
+import { getHomepageConfig, DEFAULT_HOMEPAGE_CONFIG, type BentoTile } from "@/lib/homepage-config.functions";
 import catForSale from "@/assets/cat-for-sale.jpg";
 import catVehicles from "@/assets/cat-vehicles.jpg";
 import catHousing from "@/assets/cat-housing.jpg";
