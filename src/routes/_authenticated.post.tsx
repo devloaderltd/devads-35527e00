@@ -87,6 +87,22 @@ function PostListing() {
   const [aiLoading, setAiLoading] = useState(false);
   const writeListingFn = useServerFn(aiWriteListing);
 
+  // Boost selection (create-only)
+  const [boostFeatured, setBoostFeatured] = useState(false);
+  const [boostBump, setBoostBump] = useState(false);
+
+  const { data: pricing } = useQuery({
+    queryKey: ["promotion-pricing"],
+    enabled: !isEdit,
+    queryFn: () => getPromotionPricing(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: walletData } = useQuery({
+    queryKey: ["wallet-balance-postform"],
+    enabled: !isEdit && !!user,
+    queryFn: () => getWallet(),
+  });
+
   const formRef = useRef<HTMLFormElement>(null);
   const newKeyRef = useRef(0);
   const nextKey = () => `new-${++newKeyRef.current}-${Date.now()}`;
