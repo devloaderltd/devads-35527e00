@@ -854,7 +854,8 @@ function PostListing() {
             ? (isEdit ? "Saving…" : "Posting…")
             : isEdit
               ? cityIds.length > 1 ? `Save across ${cityIds.length} cities` : "Save changes"
-              : cityIds.length > 1 ? `Post to ${cityIds.length} cities` : "Post listing"}
+              : "Preview post"}
+
         </Button>
       </form>
     </div>
