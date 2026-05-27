@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.generate_listing_slug(text) TO authenticated, anon, service_role;
