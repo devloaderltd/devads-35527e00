@@ -184,8 +184,12 @@ function SettingsPage() {
             <Field label="Bump cooldown" hint="1 – 365" error={errors.bump_days}>
               <NumberInput suffix="days" min={1} max={365} value={form.bump_days} onChange={(n) => set("bump_days", n)} />
             </Field>
+            <Field label="Listing post price (per city)" hint="0 – 9999" error={errors.listing_post_price_usd}>
+              <NumberInput suffix="USD" step="0.01" min={0} max={9999} value={form.listing_post_price_usd} onChange={(n) => set("listing_post_price_usd", n)} />
+            </Field>
           </div>
         </Panel>
+
 
         <Panel title="Maintenance mode" className="lg:col-span-2">
           <div className="flex items-center gap-3">
