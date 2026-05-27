@@ -529,7 +529,31 @@ function PostListing() {
           : "Reach buyers across the country in seconds."}
       </p>
 
-      <form ref={formRef} onSubmit={submit} className="mt-6 space-y-5 rounded-3xl border border-white/40 bg-white/60 p-6 shadow-[var(--shadow-float)] backdrop-blur-xl">
+      {!isEdit && previewMode && (
+        <PreviewPanel
+          title={title}
+          description={description}
+          itemAge={itemAge}
+          phone={phone}
+          whatsapp={waSame ? phone : whatsapp}
+          categoryName={categories?.find((c) => c.id === categoryId)?.name ?? ""}
+          cities={selectedCities}
+          images={images}
+          pricing={pricing}
+          boostFeatured={boostFeatured}
+          boostBump={boostBump}
+          walletBalance={Number(walletData?.balance ?? 0)}
+          submitting={submitting}
+          onEdit={() => {
+            setPreviewMode(false);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onConfirm={() => { void doPost(); }}
+        />
+      )}
+
+      <form ref={formRef} onSubmit={submit} className={cn("mt-6 space-y-5 rounded-3xl border border-white/40 bg-white/60 p-6 shadow-[var(--shadow-float)] backdrop-blur-xl", !isEdit && previewMode && "hidden")}>
+
         {!isEdit && (
           <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 p-4">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
