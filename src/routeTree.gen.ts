@@ -37,6 +37,7 @@ import { Route as AdminWalletsRouteImport } from './routes/admin.wallets'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTopupsRouteImport } from './routes/admin.topups'
 import { Route as AdminThreadsRouteImport } from './routes/admin.threads'
+import { Route as AdminSmtpRouteImport } from './routes/admin.smtp'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminReviewsRouteImport } from './routes/admin.reviews'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -219,6 +220,11 @@ const AdminTopupsRoute = AdminTopupsRouteImport.update({
 const AdminThreadsRoute = AdminThreadsRouteImport.update({
   id: '/threads',
   path: '/threads',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSmtpRoute = AdminSmtpRouteImport.update({
+  id: '/smtp',
+  path: '/smtp',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
@@ -501,6 +507,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/smtp': typeof AdminSmtpRoute
   '/admin/threads': typeof AdminThreadsRoute
   '/admin/topups': typeof AdminTopupsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -572,6 +579,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/smtp': typeof AdminSmtpRoute
   '/admin/threads': typeof AdminThreadsRoute
   '/admin/topups': typeof AdminTopupsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -647,6 +655,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/smtp': typeof AdminSmtpRoute
   '/admin/threads': typeof AdminThreadsRoute
   '/admin/topups': typeof AdminTopupsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -722,6 +731,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/reviews'
     | '/admin/settings'
+    | '/admin/smtp'
     | '/admin/threads'
     | '/admin/topups'
     | '/admin/users'
@@ -793,6 +803,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/reviews'
     | '/admin/settings'
+    | '/admin/smtp'
     | '/admin/threads'
     | '/admin/topups'
     | '/admin/users'
@@ -867,6 +878,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/reviews'
     | '/admin/settings'
+    | '/admin/smtp'
     | '/admin/threads'
     | '/admin/topups'
     | '/admin/users'
@@ -1127,6 +1139,13 @@ declare module '@tanstack/react-router' {
       path: '/threads'
       fullPath: '/admin/threads'
       preLoaderRoute: typeof AdminThreadsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/smtp': {
+      id: '/admin/smtp'
+      path: '/smtp'
+      fullPath: '/admin/smtp'
+      preLoaderRoute: typeof AdminSmtpRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/settings': {
@@ -1507,6 +1526,7 @@ interface AdminRouteChildren {
   AdminReportsRoute: typeof AdminReportsRoute
   AdminReviewsRoute: typeof AdminReviewsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSmtpRoute: typeof AdminSmtpRoute
   AdminThreadsRoute: typeof AdminThreadsRoute
   AdminTopupsRoute: typeof AdminTopupsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -1534,6 +1554,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReportsRoute: AdminReportsRoute,
   AdminReviewsRoute: AdminReviewsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminSmtpRoute: AdminSmtpRoute,
   AdminThreadsRoute: AdminThreadsRoute,
   AdminTopupsRoute: AdminTopupsRoute,
   AdminUsersRoute: AdminUsersRoute,
