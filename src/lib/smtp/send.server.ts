@@ -66,13 +66,10 @@ export async function sendViaSMTP(
       port: config.port,
       secure: config.secure,
       startTls: !config.secure,
+      authType: ['plain', 'login'],
       credentials:
         config.auth_user && config.auth_pass
-          ? {
-              username: config.auth_user,
-              password: config.auth_pass,
-              authType: ['plain', 'login'],
-            }
+          ? { username: config.auth_user, password: config.auth_pass }
           : undefined,
     })
 
@@ -85,11 +82,12 @@ export async function sendViaSMTP(
     await mailer.send({
       from,
       to: input.to,
-      replyTo: input.replyTo ?? config.reply_to ?? undefined,
+      reply: input.replyTo ?? config.reply_to ?? undefined,
       subject: input.subject,
       html: input.html,
       text: input.text,
     })
+
 
     await mailer.close().catch(() => {})
     return { ok: true, durationMs: Date.now() - start }
