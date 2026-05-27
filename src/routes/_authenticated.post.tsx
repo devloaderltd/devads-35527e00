@@ -938,3 +938,159 @@ function SortableTile({
     </div>
   );
 }
+
+function PreviewPanel({
+  title, description, itemAge, phone, whatsapp, categoryName, cities, images,
+  pricing, boostFeatured, boostBump, walletBalance, submitting, onEdit, onConfirm,
+}: {
+  title: string;
+  description: string;
+  itemAge: string;
+  phone: string;
+  whatsapp: string;
+  categoryName: string;
+  cities: { id: string; name: string; region?: string | null }[];
+  images: ImgItem[];
+  pricing: { listingPostPrice: number; featuredPrice: number; bumpPrice: number; featuredDays: number } | undefined;
+  boostFeatured: boolean;
+  boostBump: boolean;
+  walletBalance: number;
+  submitting: boolean;
+  onEdit: () => void;
+  onConfirm: () => void;
+}) {
+  const n = Math.max(1, cities.length);
+  const postFee = (pricing?.listingPostPrice ?? 0) * n;
+  const featCost = boostFeatured ? (pricing?.featuredPrice ?? 0) * n : 0;
+  const bumpCost = boostBump ? (pricing?.bumpPrice ?? 0) * n : 0;
+  const total = Math.round((postFee + featCost + bumpCost) * 100) / 100;
+  const remaining = Math.round((walletBalance - total) * 100) / 100;
+  const insufficient = total > walletBalance;
+  const fmt = (v: number) => `$${v.toFixed(2)}`;
+  const cover = images[0];
+  const coverSrc = cover ? (cover.kind === "existing" ? cover.url : cover.previewUrl) : null;
+
+  return (
+    <div className="mt-6 space-y-5 rounded-3xl border border-primary/30 bg-white/70 p-6 shadow-[var(--shadow-float)] backdrop-blur-xl">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl font-bold">Preview your post</h2>
+        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+          Not yet published
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Review how your listing will look. Nothing has been charged yet.
+      </p>
+
+      {/* Listing preview card */}
+      <div className="overflow-hidden rounded-2xl border border-border/60 bg-background">
+        {coverSrc ? (
+          <img src={coverSrc} alt={title} className="aspect-[16/10] w-full object-cover" />
+        ) : (
+          <div className="grid aspect-[16/10] w-full place-items-center bg-muted text-sm text-muted-foreground">
+            No cover photo
+          </div>
+        )}
+        {images.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto p-2">
+            {images.slice(1).map((img) => {
+              const src = img.kind === "existing" ? img.url : img.previewUrl;
+              return (
+                <img key={img.key} src={src} alt="" className="h-16 w-16 flex-shrink-0 rounded-md object-cover" />
+              );
+            })}
+          </div>
+        )}
+        <div className="space-y-3 p-4">
+          <div className="flex flex-wrap gap-1.5">
+            {boostFeatured && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                <Star className="h-3 w-3" /> Featured
+              </span>
+            )}
+            {boostBump && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                <TrendingUp className="h-3 w-3" /> Bumped
+              </span>
+            )}
+            {categoryName && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                {categoryName}
+              </span>
+            )}
+          </div>
+          <h3 className="font-display text-lg font-bold">{title || "(no title)"}</h3>
+          {itemAge && <p className="text-xs text-muted-foreground">Age: {itemAge}</p>}
+          <div
+            className="prose prose-sm max-w-none text-sm text-foreground/90"
+            dangerouslySetInnerHTML={{ __html: description || "<em>(no description)</em>" }}
+          />
+          <div className="grid gap-1 text-xs text-muted-foreground">
+            {phone && <div><span className="font-medium text-foreground">Phone:</span> {phone}</div>}
+            {whatsapp && <div><span className="font-medium text-foreground">WhatsApp:</span> {whatsapp}</div>}
+            {cities.length > 0 && (
+              <div>
+                <span className="font-medium text-foreground">
+                  {cities.length > 1 ? "Cities" : "City"}:
+                </span>{" "}
+                {cities.map((c) => c.name).join(", ")}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Cost summary */}
+      <div className="space-y-1 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 p-4 text-sm">
+        <div className="mb-2 flex items-center gap-2 font-semibold">
+          <Rocket className="h-4 w-4 text-primary" /> Cost summary
+        </div>
+        <div className="flex justify-between">
+          <span>Post fee ({n} {n === 1 ? "city" : "cities"})</span><span>{fmt(postFee)}</span>
+        </div>
+        {boostFeatured && <div className="flex justify-between"><span>Featured</span><span>{fmt(featCost)}</span></div>}
+        {boostBump && <div className="flex justify-between"><span>Bump</span><span>{fmt(bumpCost)}</span></div>}
+        <div className="mt-1 flex justify-between border-t border-border/60 pt-1 font-semibold">
+          <span>Total to charge</span><span>{fmt(total)}</span>
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span className="flex items-center gap-1"><WalletIcon className="h-3 w-3" /> Wallet balance</span>
+          <span className={insufficient ? "text-destructive font-medium" : ""}>{fmt(walletBalance)}</span>
+        </div>
+        {!insufficient && (
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Balance after posting</span><span>{fmt(remaining)}</span>
+          </div>
+        )}
+        {insufficient && (
+          <p className="text-xs font-medium text-destructive">
+            Insufficient balance. <a href="/wallet" className="underline">Top up your wallet</a>
+          </p>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="flex-1"
+          onClick={onEdit}
+          disabled={submitting}
+        >
+          Edit
+        </Button>
+        <Button
+          type="button"
+          size="lg"
+          className="btn-gradient flex-1"
+          onClick={onConfirm}
+          disabled={submitting || insufficient}
+        >
+          {submitting ? "Posting…" : cities.length > 1 ? `Post ad to ${cities.length} cities` : "Post ad"}
+        </Button>
+      </div>
+    </div>
+  );
+}
