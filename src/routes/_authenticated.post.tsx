@@ -312,7 +312,7 @@ function PostListing() {
     node?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return toast.error("Sign in first");
 
@@ -324,8 +324,21 @@ function PostListing() {
       return;
     }
 
+    // In create mode, go to preview first instead of posting.
+    if (!isEdit) {
+      setPreviewMode(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    void doPost();
+  };
+
+  const doPost = async () => {
+    if (!user) return;
     const phoneTrim = phone.trim();
     const waTrim = waSame ? phoneTrim : whatsapp.trim();
+
 
     setSubmitting(true);
     try {
