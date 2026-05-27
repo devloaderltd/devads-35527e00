@@ -235,9 +235,9 @@ function SettingsPage() {
 function Field({ label, error, className, children }: { label: string; error?: string; className?: string; children: React.ReactNode }) {
   return (
     <div className={className}>
-      <Label className="text-slate-300">{label}</Label>
+      <Label className="text-xs text-slate-300 sm:text-sm">{label}</Label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-1 break-words text-xs text-red-400">{error}</p>}
     </div>
   );
 }
