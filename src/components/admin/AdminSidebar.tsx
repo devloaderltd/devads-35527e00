@@ -59,6 +59,7 @@ const groups: ReadonlyArray<Group> = [
     items: [
       { title: "Listings", url: "/admin/listings", icon: Package },
       { title: "Homepage", url: "/admin/homepage", icon: Sparkles },
+      { title: "Homepage editor", url: "/admin/homepage-editor", icon: Sparkles },
       { title: "Banners", url: "/admin/banners", icon: Bell },
       { title: "Categories", url: "/admin/categories", icon: Tag },
       { title: "Cities", url: "/admin/cities", icon: MapPin },
