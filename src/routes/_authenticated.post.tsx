@@ -463,6 +463,20 @@ function PostListing() {
         }
       }
 
+      // Apply selected boosts to each created listing
+      if (boostFeatured || boostBump) {
+        for (const c of created) {
+          if (boostFeatured) {
+            try { await promoteWithWallet({ data: { listingId: c.id, type: "featured" } }); }
+            catch (e: any) { toast.error(`Feature failed: ${e?.message ?? "error"}`); }
+          }
+          if (boostBump) {
+            try { await promoteWithWallet({ data: { listingId: c.id, type: "bump" } }); }
+            catch (e: any) { toast.error(`Bump failed: ${e?.message ?? "error"}`); }
+          }
+        }
+      }
+
       toast.success(
         cityIds.length === 1 ? "Listing posted!" : `Posted to ${cityIds.length} cities!`,
       );
