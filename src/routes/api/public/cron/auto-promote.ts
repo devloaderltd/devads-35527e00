@@ -36,12 +36,12 @@ export const Route = createFileRoute("/api/public/cron/auto-promote")({
           .update({ expires_at: nextExpiry })
           .in("id", ids);
 
-        // Notify owners
+        // Notify owners (auto-renew extends expiry only; bumping requires a paid bump)
         const notifs = (rows ?? []).map((r) => ({
           user_id: r.user_id,
-          type: "auto_promoted",
+          type: "auto_renewed",
           title: "Listing auto-renewed",
-          body: `"${r.title}" was bumped and extended for 30 more days.`,
+          body: `"${r.title}" was extended for 30 more days.`,
           link: "/my-listings",
           metadata: { listing_id: r.id },
         }));
