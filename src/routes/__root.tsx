@@ -176,7 +176,7 @@ function RootComponent() {
         </CityProvider>
       </ThemeProvider>
 
-      <Toaster richColors position="top-right" />
+      <Toaster position="top-center" closeButton />
     </QueryClientProvider>
   );
 }
