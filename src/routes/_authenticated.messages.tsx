@@ -143,7 +143,7 @@ function MessagesLayout() {
 
   return (
     <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
-      <h1 className="mb-4 flex items-center gap-2 font-display text-2xl font-bold">
+      <h1 className={`mb-4 items-center gap-2 font-display text-2xl font-bold ${hasActive ? "hidden md:flex" : "flex"}`}>
         <span className="gradient-text">Messages</span>
         {totalUnread > 0 && (
           <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
