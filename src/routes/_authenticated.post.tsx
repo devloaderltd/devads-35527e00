@@ -411,6 +411,16 @@ function PostListing() {
 
       // CREATE path — generate group id so we can edit as one later
       const groupUuid = crypto.randomUUID();
+
+      // Charge wallet for posting (per city)
+      try {
+        await chargeListingPost({ data: { cityCount: cityIds.length, reference: groupUuid } });
+      } catch (err: any) {
+        toast.error(err?.message ?? "Wallet charge failed");
+        setSubmitting(false);
+        return;
+      }
+
       const created: { id: string; slug: string | null }[] = [];
       for (const cId of cityIds) {
         const { data: listing, error } = await supabase
