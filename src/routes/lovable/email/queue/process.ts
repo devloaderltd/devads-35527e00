@@ -239,23 +239,36 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
             }
 
             try {
-              await sendLovableEmail(
-                {
-                  run_id: payload.run_id,
-                  to: payload.to,
-                  from: payload.from,
-                  sender_domain: payload.sender_domain,
-                  subject: payload.subject,
-                  html: payload.html,
-                  text: payload.text,
-                  purpose: payload.purpose,
-                  label: payload.label,
-                  idempotency_key: payload.idempotency_key,
-                  unsubscribe_token: payload.unsubscribe_token,
-                  message_id: payload.message_id,
-                },
-                { apiKey, sendUrl: process.env.LOVABLE_SEND_URL }
-              )
+              if (smtpConfig) {
+                const result = await sendViaSMTP(
+                  {
+                    to: payload.to,
+                    subject: payload.subject,
+                    html: payload.html,
+                    text: payload.text,
+                  },
+                  smtpConfig,
+                )
+                if (!result.ok) throw new Error(result.error || 'SMTP send failed')
+              } else {
+                await sendLovableEmail(
+                  {
+                    run_id: payload.run_id,
+                    to: payload.to,
+                    from: payload.from,
+                    sender_domain: payload.sender_domain,
+                    subject: payload.subject,
+                    html: payload.html,
+                    text: payload.text,
+                    purpose: payload.purpose,
+                    label: payload.label,
+                    idempotency_key: payload.idempotency_key,
+                    unsubscribe_token: payload.unsubscribe_token,
+                    message_id: payload.message_id,
+                  },
+                  { apiKey, sendUrl: process.env.LOVABLE_SEND_URL }
+                )
+              }
 
               // Log success
               await supabase.from('email_send_log').insert({
