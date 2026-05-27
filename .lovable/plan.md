@@ -1,78 +1,52 @@
-## Goal
+# Switch crypto gateway: NOWPayments → Plisio
 
-Add a third-party SMTP system that can be configured and tested from the admin panel. When enabled, all outgoing emails (auth + transactional) route through the configured SMTP server instead of Lovable's email queue. When disabled, the current Lovable email queue is used.
+Yes — Plisio (https://plisio.net) is a crypto payment gateway with a hosted-invoice flow very similar to NOWPayments, so it slots into the existing wallet top-up architecture cleanly. No DB schema or UI changes are needed; only the server-side gateway adapter and webhook are replaced.
 
-## Architecture
+## Scope
 
-```text
-auth-email-hook  ─┐
-transactional/send ─┼─► enqueueEmail() ─► [SMTP enabled?]
-enqueueTransactionalEmail ─┘                  │
-                                              ├─ YES ─► sendViaSMTP()  ── worker-mailer ──► remote SMTP
-                                              └─ NO  ─► pgmq enqueue ─► process-email-queue (Lovable API)
-```
+In scope:
+- Replace NOWPayments invoice creation + IPN with Plisio equivalents
+- Keep the existing `crypto_topups` table, wallet credit logic, emails, and the user-facing `/wallet` page exactly as they are
+- Keep field names like `np_invoice_id` / `np_payment_id` as-is (just store Plisio IDs in them) to avoid a migration churn — or optionally rename in a follow-up
 
-Worker-mailer is a Cloudflare-Workers-compatible SMTP client (uses `cloudflare:sockets`). No Node `net` needed.
+Out of scope:
+- Changing wallet UI, pricing, or balance flow
+- Removing already-completed NOWPayments top-ups from history (they remain valid records)
 
-## Database
+## Steps
 
-New migration creates one admin-only table:
+1. **Secrets**
+   - Request two new secrets via `add_secret`: `PLISIO_API_KEY`, `PLISIO_WEBHOOK_SECRET` (Plisio uses the API key itself as the HMAC secret for callback verification, so `PLISIO_WEBHOOK_SECRET` may be optional — likely we just reuse `PLISIO_API_KEY`).
+   - Leave `NOWPAYMENTS_API_KEY` / `NOWPAYMENTS_IPN_SECRET` in place until cutover is verified, then remove.
 
-- `smtp_settings` (single-row, id text default `'global'`)
-  - `enabled` boolean default false
-  - `host` text, `port` int default 587, `secure` boolean default false (true for 465/SSL)
-  - `auth_user` text, `auth_pass` text (encrypted via pgsodium, or stored plain in this admin-only row — see Security)
-  - `from_email` text, `from_name` text, `reply_to` text nullable
-  - `provider_label` text (e.g. "SendGrid", "Mailgun" — informational)
-  - `last_test_at` timestamptz, `last_test_status` text, `last_test_error` text
-  - `updated_at`, `updated_by`
-- RLS: only admins (`has_role(auth.uid(),'admin')`) can SELECT/UPDATE. Service role full access.
-- GRANTs for `authenticated` (SELECT/UPDATE) and `service_role` (ALL). No anon.
+2. **New server helper `src/lib/plisio.server.ts`**
+   - `createInvoice({ amountUsd, orderId, orderName, callbackUrl, successUrl, cancelUrl })` → calls `GET https://api.plisio.net/api/v1/invoices/new` with `api_key`, `source_currency=USD`, `source_amount`, `order_number`, `order_name`, `callback_url` (append `?json=true`), `success_url`, `cancel_callback_url`. Returns `{ id, invoice_url }` from `data.txn_id` / `data.invoice_url`.
+   - `verifyCallback(payload)` → implements Plisio's HMAC verification: take POSTed JSON, remove `verify_hash`, sort keys, JSON-encode, HMAC-SHA1 with `PLISIO_API_KEY` as secret, compare to `verify_hash` using `timingSafeEqual`.
 
-A SECURITY DEFINER RPC `get_smtp_settings_for_send()` returns the row to service-role only, used by the dispatcher.
+3. **Update `src/lib/wallet.functions.ts`**
+   - In `createTopupInvoice`, swap `createInvoice` import to the new Plisio helper.
+   - Change IPN URL to `${origin}/api/public/payments/plisio-ipn`.
+   - Keep storing returned IDs in `np_invoice_id` / `np_payment_id` columns.
 
-## Server code
+4. **New webhook route `src/routes/api/public/payments/plisio-ipn.ts`**
+   - Mirrors current `nowpayments-ipn.ts` structure.
+   - Verifies signature with `verifyCallback`.
+   - Maps Plisio statuses: `completed` / `mismatch` (overpaid) → credit wallet; `new` / `pending` / `confirming` → just update status; `expired` / `cancelled` / `error` → mark failed.
+   - Uses existing `credit_wallet` RPC and existing confirmation email enqueue — no changes there.
 
-1. **`src/lib/smtp/send.server.ts`** — `sendViaSMTP({to, from, subject, html, text, replyTo})` using `worker-mailer`. Reads config from `smtp_settings` via admin client. Throws typed errors with provider response.
-2. **`src/lib/smtp/settings.functions.ts`** — admin-gated server fns:
-   - `getSmtpSettings()` — returns row (password masked as `••••` if set).
-   - `updateSmtpSettings(input)` — Zod-validated; only writes non-empty password.
-   - `testSmtpConnection({ to })` — sends a fixed "SMTP test from CallEscort24" email, updates `last_test_*` columns, returns `{ ok, error?, durationMs }`.
-   - `toggleSmtp({ enabled })` — flips the global switch.
-3. **Routing layer** — introduce `src/lib/email/dispatch.server.ts` with `dispatchEmail(payload)` that checks `smtp_settings.enabled`:
-   - true → `sendViaSMTP` + insert `email_send_log` row (status `sent`/`failed`).
-   - false → existing pgmq enqueue path (unchanged).
-4. Update:
-   - `src/routes/lovable/email/auth/webhook.ts` — call `dispatchEmail` instead of always enqueuing.
-   - `src/routes/lovable/email/transactional/send.ts` and `src/lib/email/enqueue.server.ts` — same.
-   - `src/routes/lovable/email/queue/process.ts` — when SMTP is enabled, dequeue and send via SMTP (keeps backward compatibility for any messages already in pgmq).
+5. **Delete old files (after verification)**
+   - `src/lib/nowpayments.server.ts`
+   - `src/routes/api/public/payments/nowpayments-ipn.ts`
+   - `secrets--delete_secret` for `NOWPAYMENTS_API_KEY` and `NOWPAYMENTS_IPN_SECRET`.
 
-## Admin UI
+6. **Configure Plisio dashboard (user action)**
+   - In Plisio merchant settings, set callback URL to: `https://devads.lovable.app/api/public/payments/plisio-ipn` (and add the preview URL too if testing there).
+   - Whitelist allowed currencies as desired.
 
-New route `src/routes/admin.smtp.tsx` (sidebar entry "SMTP"):
+## Open questions
 
-- Header card with status pill (Enabled / Disabled), toggle switch.
-- Form: provider label, host, port, secure (TLS/SSL select), auth user, auth pass (write-only — placeholder shows `••••`), from email, from name, reply-to.
-- "Save settings" button (calls `updateSmtpSettings`).
-- "Send test email" panel: recipient input (defaults to admin's email), "Send test" button → shows result toast + inline status (last test at / status / error message).
-- Help text listing common provider presets (Gmail 587 STARTTLS, SendGrid 587, Mailgun 587, Brevo 587, generic SSL 465).
-- Add link in `src/components/admin/AdminSidebar.tsx`.
+1. Do you want the column names renamed from `np_invoice_id` / `np_payment_id` / `np_*` to neutral `provider_invoice_id` etc.? Recommended **no** for this change — keep migration minimal — but happy to do it.
+2. Should I keep the old NOWPayments webhook live during cutover (a few days) so any in-flight invoices still credit, or remove immediately?
+3. Plisio supports a "white-label" embedded checkout in addition to the hosted invoice page. I'll use the hosted invoice page (same UX as today). OK?
 
-## Packages
-
-- `bun add worker-mailer` (Workers-compatible SMTP, uses `cloudflare:sockets`).
-
-## Security
-
-- All write/read server fns wrapped in `requireAdmin` middleware.
-- Password never returned to client; UI shows masked placeholder.
-- Test send rate-limited in-handler (1 per 10s per admin) to avoid abuse.
-- Audit log entry on save/toggle/test via existing `log_admin_action` RPC.
-
-## Non-goals
-
-- No per-template provider override (single global SMTP).
-- No DKIM/SPF management (handled at provider).
-- Auth-email customization unchanged — only the transport differs.
-
-After approval I will run the migration first, then add the package and code.
+Once you confirm, I'll implement in build mode and request the `PLISIO_API_KEY` secret.
