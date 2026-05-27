@@ -291,7 +291,8 @@ function Home() {
       </section>
 
 
-      {/* Category chip strip */}
+      {sections.chip_strip && (
+      /* Category chip strip */
       <section className="container mx-auto px-4 pt-8">
         <h2 className="sr-only">All categories</h2>
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
