@@ -522,9 +522,9 @@ function PostListing() {
         <div className="space-y-2" data-error={!!errors.itemAge}>
           <Label htmlFor="item-age">Age</Label>
           <Input
-            id="item-age" maxLength={60} value={itemAge}
-            onChange={(e) => { setItemAge(e.target.value); if (errors.itemAge) setErrors((p) => ({ ...p, itemAge: undefined })); }}
-            placeholder="e.g. 2 years, 6 months, brand new"
+            id="item-age" inputMode="numeric" maxLength={2} value={itemAge}
+            onChange={(e) => { setItemAge(sanitizeAge(e.target.value)); if (errors.itemAge) setErrors((p) => ({ ...p, itemAge: undefined })); }}
+            placeholder="e.g. 25 (minimum 18)"
             className={cn("bg-white/70", errCls("itemAge"))}
           />
           {errors.itemAge && <p className="text-xs font-medium text-destructive">{errors.itemAge}</p>}
@@ -535,7 +535,7 @@ function PostListing() {
             <Label htmlFor="phone">Phone number</Label>
             <Input
               id="phone" inputMode="tel" maxLength={32} value={phone}
-              onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors((p) => ({ ...p, phone: undefined })); }}
+              onChange={(e) => { setPhone(sanitizePhone(e.target.value)); if (errors.phone) setErrors((p) => ({ ...p, phone: undefined })); }}
               placeholder="+1 555 123 4567"
               className={cn("bg-white/70", errCls("phone"))}
             />
@@ -546,7 +546,7 @@ function PostListing() {
             <Input
               id="whatsapp" inputMode="tel" maxLength={32}
               value={waSame ? phone : whatsapp} disabled={waSame}
-              onChange={(e) => { setWhatsapp(e.target.value); if (errors.whatsapp) setErrors((p) => ({ ...p, whatsapp: undefined })); }}
+              onChange={(e) => { setWhatsapp(sanitizePhone(e.target.value)); if (errors.whatsapp) setErrors((p) => ({ ...p, whatsapp: undefined })); }}
               placeholder="+1 555 123 4567"
               className={cn("bg-white/70", errCls("whatsapp"))}
             />
@@ -557,6 +557,7 @@ function PostListing() {
             {errors.whatsapp && <p className="text-xs font-medium text-destructive">{errors.whatsapp}</p>}
           </div>
         </div>
+
 
         <div className="space-y-2" data-error={!!errors.category}>
           <Label>Category</Label>
