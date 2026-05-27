@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { SiteBanner } from "@/components/SiteBanner";
@@ -8,6 +9,7 @@ import { TrendingInCityRail } from "@/components/TrendingInCityRail";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Users } from "lucide-react";
 import { useCity } from "@/lib/city-context";
+import { getHomepageConfig, DEFAULT_HOMEPAGE_CONFIG, type BentoTile } from "@/lib/homepage-config.functions";
 import catForSale from "@/assets/cat-for-sale.jpg";
 import catVehicles from "@/assets/cat-vehicles.jpg";
 import catHousing from "@/assets/cat-housing.jpg";
@@ -48,6 +50,14 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { cityId, cityName, hydrated, openPicker } = useCity();
+  const fetchConfig = useServerFn(getHomepageConfig);
+  const { data: configData } = useQuery({
+    queryKey: ["homepage-config"],
+    queryFn: () => fetchConfig(),
+    staleTime: 5 * 60_000,
+  });
+  const config = configData?.config ?? DEFAULT_HOMEPAGE_CONFIG;
+  const sections = config.sections;
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -107,13 +117,44 @@ function Home() {
   ).slice(0, 12);
   const recent = listings?.filter((l: any) => !featured.includes(l) && !bumped.includes(l)) ?? [];
 
-  const heroFeatured = featured[0] ?? listings?.[0];
+  const pinnedId = config.bento_featured.pinned_listing_id;
+  const { data: pinnedListing } = useQuery({
+    queryKey: ["pinned-listing", pinnedId],
+    enabled: !!pinnedId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("listings")
+        .select(`id, slug, title, cities(name, region, country), listing_images(url, sort_order)`)
+        .eq("id", pinnedId!)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const heroFeatured = (pinnedListing as any) ?? featured[0] ?? listings?.[0];
   const heroImg = heroFeatured?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ?? emptyListingImg;
 
   const cat = (slug: string) => categories?.find((c) => c.slug === slug);
-  const electronicsCat = cat("electronics");
-  const furnitureCat = cat("furniture");
-  const petsCat = cat("pets");
+
+  const renderHeroTitle = (raw: string) => {
+    const parts = raw.split(/(\{accent\}.*?\{\/accent\})/);
+    return parts.map((p, i) => {
+      const m = p.match(/^\{accent\}(.*)\{\/accent\}$/);
+      if (m) return <span key={i} className="gradient-text">{m[1]}</span>;
+      return <span key={i}>{p}</span>;
+    });
+  };
+
+  const GRADIENTS: Record<BentoTile["gradient"], string> = {
+    primary: "var(--gradient-primary)",
+    lavender: "linear-gradient(135deg, var(--lavender), var(--primary))",
+    amber: "linear-gradient(135deg, var(--amber), var(--coral))",
+    ocean: "linear-gradient(135deg, var(--ocean, #0ea5e9), var(--primary))",
+  };
+
+  const tile2 = config.bento_tile_2;
+  const tile3 = config.bento_tile_3;
+  const tile4 = config.bento_tile_4;
 
   return (
     <div className="pt-0">
@@ -125,22 +166,25 @@ function Home() {
           <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-accent/40 opacity-40 blur-3xl" />
           <div className="relative z-10 max-w-2xl">
             <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground/80">
-              <Sparkles className="h-3 w-3" /> Free to post · Free to browse
+              <Sparkles className="h-3 w-3" /> {config.hero.badge}
             </span>
             <h1 className="mt-4 font-display text-3xl font-bold leading-[1.1] tracking-tight sm:mt-5 sm:text-4xl md:text-6xl md:leading-[1.05]">
-              Buy &amp; sell locally —{" "}
-              <span className="gradient-text">across the country.</span>
+              {renderHeroTitle(config.hero.title)}
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:mt-4 sm:text-base md:text-lg">
-              From vintage bikes in Brooklyn to apartments in Manchester — find what's near you, or post your own in under a minute.
+              {config.hero.subtitle}
             </p>
             <div className="mt-5 flex flex-wrap gap-2 sm:mt-7 sm:gap-3">
-              <Button asChild size="lg" className="btn-gradient rounded-2xl border-0 px-5 py-5 text-sm font-bold sm:px-7 sm:py-6 sm:text-base">
-                <Link to="/post">Post a listing</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/70 bg-white/60 px-5 py-5 text-sm font-bold backdrop-blur hover:bg-white sm:px-7 sm:py-6 sm:text-base">
-                <Link to="/search">Browse all <ArrowRight className="ml-1 h-4 w-4" /></Link>
-              </Button>
+              {config.hero.cta1_label && (
+                <Button asChild size="lg" className="btn-gradient rounded-2xl border-0 px-5 py-5 text-sm font-bold sm:px-7 sm:py-6 sm:text-base">
+                  <a href={config.hero.cta1_url}>{config.hero.cta1_label}</a>
+                </Button>
+              )}
+              {config.hero.cta2_label && (
+                <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/70 bg-white/60 px-5 py-5 text-sm font-bold backdrop-blur hover:bg-white sm:px-7 sm:py-6 sm:text-base">
+                  <a href={config.hero.cta2_url}>{config.hero.cta2_label} <ArrowRight className="ml-1 inline h-4 w-4" /></a>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -151,7 +195,7 @@ function Home() {
       <section className="container mx-auto px-4 pt-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4 md:grid-rows-2 md:auto-rows-fr md:h-[560px]">
           {/* Large featured listing */}
-          {heroFeatured ? (
+          {config.bento_featured.enabled && heroFeatured ? (
             <Link
               to="/listings/$id"
               params={{ id: (heroFeatured as any).slug ?? heroFeatured.id }}
@@ -166,7 +210,7 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/10 to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-8">
                 <span className="self-start rounded-full btn-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
-                  <Sparkles className="mr-1 inline h-3 w-3" /> Featured
+                  <Sparkles className="mr-1 inline h-3 w-3" /> {config.bento_featured.badge_label}
                 </span>
                 <div className="text-white">
                   <h3 className="font-display text-2xl font-bold leading-tight md:text-3xl">{heroFeatured.title}</h3>
@@ -182,84 +226,96 @@ function Home() {
             <div className="col-span-1 row-span-1 rounded-[2rem] glass md:col-span-2 md:row-span-2" />
           )}
 
-          {/* Medium gradient category — Electronics */}
-          <Link
-            to="/search"
-            search={{ category: electronicsCat?.slug ?? "electronics" } as any}
-            className="group relative col-span-1 overflow-hidden rounded-[2rem] p-6 text-white md:col-span-2 hover-float"
-            style={{ background: "var(--gradient-primary)", backgroundSize: "200% 200%" }}
-          >
-            <div className="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-white/30 blur-2xl" />
-            <div className="relative z-10 flex h-full flex-col justify-between gap-4">
-              <div>
-                <h3 className="font-display text-2xl font-bold md:text-3xl">{electronicsCat?.name ?? "Electronics"}</h3>
-                <p className="mt-1 text-sm text-white/85">Latest gadgets, phones & tech gear</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-widest text-white/80">Explore</span>
-                <span className="rounded-full bg-white/20 p-3 backdrop-blur-md transition group-hover:bg-white/30">
-                  <ChevronRight className="h-5 w-5" />
-                </span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Small colorful category — Furniture (lavender→indigo) */}
-          <Link
-            to="/search"
-            search={{ category: furnitureCat?.slug ?? "furniture" } as any}
-            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
-            style={{ background: "linear-gradient(135deg, var(--lavender), var(--primary))" }}
-          >
-            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
-            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
-              <img src={catFurniture} alt="" className="h-8 w-8 rounded-lg object-cover" />
-            </div>
-            <span className="font-display font-bold">{furnitureCat?.name ?? "Furniture"}</span>
-            <span className="mt-1 text-xs text-white/85">Browse home goods</span>
-          </Link>
-
-          {/* Small colorful category — Pets (amber→coral) */}
-          <Link
-            to="/search"
-            search={{ category: petsCat?.slug ?? "pets" } as any}
-            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
-            style={{ background: "linear-gradient(135deg, var(--amber), var(--coral))" }}
-          >
-            <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
-            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
-              <img src={catPets} alt="" className="h-8 w-8 rounded-lg object-cover" />
-            </div>
-            <span className="font-display font-bold">{petsCat?.name ?? "Pets"}</span>
-            <span className="mt-1 text-xs text-white/85">Find a new friend</span>
-          </Link>
-        </div>
-      </section>
-
-      {/* Category chip strip */}
-      <section className="container mx-auto px-4 pt-8">
-        <h2 className="sr-only">All categories</h2>
-        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-          {categories?.map((c) => (
-            <Link
-              key={c.id}
-              to="/search"
-              search={{ category: c.slug } as any}
-              className="group flex flex-shrink-0 items-center gap-2 rounded-full glass px-4 py-2 text-sm font-medium hover:border-primary/50"
+          {/* Medium gradient tile 2 */}
+          {tile2.enabled && (
+            <a
+              href={tile2.link_url}
+              className="group relative col-span-1 overflow-hidden rounded-[2rem] p-6 text-white md:col-span-2 hover-float"
+              style={{ background: GRADIENTS[tile2.gradient], backgroundSize: "200% 200%" }}
             >
-              <img
-                src={CATEGORY_IMAGES[c.slug] ?? emptyListingImg}
-                alt=""
-                className="h-6 w-6 rounded-full object-cover"
-              />
-              {c.name}
-            </Link>
-          ))}
+              <div className="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-white/30 blur-2xl" />
+              {tile2.image_url && (
+                <img src={tile2.image_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
+              )}
+              <div className="relative z-10 flex h-full flex-col justify-between gap-4">
+                <div>
+                  <h3 className="font-display text-2xl font-bold md:text-3xl">{tile2.title}</h3>
+                  <p className="mt-1 text-sm text-white/85">{tile2.subtitle}</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-widest text-white/80">Explore</span>
+                  <span className="rounded-full bg-white/20 p-3 backdrop-blur-md transition group-hover:bg-white/30">
+                    <ChevronRight className="h-5 w-5" />
+                  </span>
+                </div>
+              </div>
+            </a>
+          )}
+
+          {/* Small tile 3 */}
+          {tile3.enabled && (
+            <a
+              href={tile3.link_url}
+              className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
+              style={{ background: GRADIENTS[tile3.gradient] }}
+            >
+              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
+              {tile3.image_url && (
+                <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
+                  <img src={tile3.image_url} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                </div>
+              )}
+              <span className="font-display font-bold">{tile3.title}</span>
+              <span className="mt-1 text-xs text-white/85">{tile3.subtitle}</span>
+            </a>
+          )}
+
+          {/* Small tile 4 */}
+          {tile4.enabled && (
+            <a
+              href={tile4.link_url}
+              className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
+              style={{ background: GRADIENTS[tile4.gradient] }}
+            >
+              <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
+              {tile4.image_url && (
+                <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
+                  <img src={tile4.image_url} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                </div>
+              )}
+              <span className="font-display font-bold">{tile4.title}</span>
+              <span className="mt-1 text-xs text-white/85">{tile4.subtitle}</span>
+            </a>
+          )}
         </div>
       </section>
+
+
+      {sections.chip_strip && (
+        <section className="container mx-auto px-4 pt-8">
+          <h2 className="sr-only">All categories</h2>
+          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            {categories?.map((c) => (
+              <Link
+                key={c.id}
+                to="/search"
+                search={{ category: c.slug } as any}
+                className="group flex flex-shrink-0 items-center gap-2 rounded-full glass px-4 py-2 text-sm font-medium hover:border-primary/50"
+              >
+                <img
+                  src={CATEGORY_IMAGES[c.slug] ?? emptyListingImg}
+                  alt=""
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* City context banner */}
-      {hydrated && cityId && (
+      {sections.city_banner && hydrated && cityId && (
         <section className="container mx-auto px-4 pt-6">
           <button
             type="button"
@@ -291,22 +347,24 @@ function Home() {
       )}
 
       {/* Trust stats card */}
-      <section className="container mx-auto px-4 pt-6">
-        <div className="rounded-[2rem] glass p-6 md:p-8 shadow-[var(--shadow-float)]">
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
-            <TrustTile icon={<Sparkles className="h-5 w-5" />} value={siteStats?.listings ?? "—"} label="Active listings" />
-            <TrustTile icon={<Users className="h-5 w-5" />} value={siteStats?.sellers ?? "—"} label="Trusted sellers" />
-            <TrustTile icon={<MapPin className="h-5 w-5" />} value={siteStats?.cities ?? "—"} label="Cities covered" />
-            <TrustTile icon={<ShieldCheck className="h-5 w-5" />} value="100%" label="Free to post" />
+      {sections.trust_stats && (
+        <section className="container mx-auto px-4 pt-6">
+          <div className="rounded-[2rem] glass p-6 md:p-8 shadow-[var(--shadow-float)]">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
+              <TrustTile icon={<Sparkles className="h-5 w-5" />} value={siteStats?.listings ?? "—"} label="Active listings" />
+              <TrustTile icon={<Users className="h-5 w-5" />} value={siteStats?.sellers ?? "—"} label="Trusted sellers" />
+              <TrustTile icon={<MapPin className="h-5 w-5" />} value={siteStats?.cities ?? "—"} label="Cities covered" />
+              <TrustTile icon={<ShieldCheck className="h-5 w-5" />} value="100%" label="Free to post" />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {cityId && (<>
-      <RecentlyViewedRail />
-      <TrendingInCityRail cityId={cityId} cityName={cityName} />
+      {sections.recently_viewed && <RecentlyViewedRail />}
+      {sections.trending_rail && <TrendingInCityRail cityId={cityId} cityName={cityName} />}
       {/* Featured row */}
-      {featured.length > 1 && (
+      {sections.featured_row && featured.length > 1 && (
         <section className="container mx-auto px-4 pt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
@@ -320,7 +378,7 @@ function Home() {
       )}
 
       {/* Trending / Bumped rail */}
-      {bumped.length > 0 && (
+      {sections.bumped_rail && bumped.length > 0 && (
         <section className="container mx-auto px-4 pt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
@@ -339,28 +397,30 @@ function Home() {
       )}
 
       {/* Recent listings */}
-      <section className="container mx-auto px-4 pt-10 pb-16">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-2xl font-semibold">Latest listings</h2>
-          <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
-        </div>
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-white/40" />
-            ))}
+      {sections.latest && (
+        <section className="container mx-auto px-4 pt-10 pb-16">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-2xl font-semibold">Latest listings</h2>
+            <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
           </div>
-        ) : recent.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl glass p-10 text-center text-muted-foreground">
-            <img src={emptyListingImg} alt="" width={160} height={160} loading="lazy" className="h-40 w-40 object-contain" />
-            <div>No listings yet. <Link to="/post" className="font-medium text-primary hover:underline">Be the first to post!</Link></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {recent.map((l: any) => <ListingCard key={l.id} listing={l} />)}
-          </div>
-        )}
-      </section>
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-white/40" />
+              ))}
+            </div>
+          ) : recent.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-2xl glass p-10 text-center text-muted-foreground">
+              <img src={emptyListingImg} alt="" width={160} height={160} loading="lazy" className="h-40 w-40 object-contain" />
+              <div>No listings yet. <Link to="/post" className="font-medium text-primary hover:underline">Be the first to post!</Link></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {recent.map((l: any) => <ListingCard key={l.id} listing={l} />)}
+            </div>
+          )}
+        </section>
+      )}
       </>)}
 
     </div>
