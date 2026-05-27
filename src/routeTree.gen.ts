@@ -79,7 +79,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
-import { Route as ApiPublicPaymentsNowpaymentsIpnRouteImport } from './routes/api/public/payments/nowpayments-ipn'
+import { Route as ApiPublicPaymentsPlisioIpnRouteImport } from './routes/api/public/payments/plisio-ipn'
 import { Route as ApiPublicCronMatchSavedSearchesRouteImport } from './routes/api/public/cron/match-saved-searches'
 import { Route as ApiPublicCronAutoPromoteRouteImport } from './routes/api/public/cron/auto-promote'
 
@@ -440,10 +440,10 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicPaymentsNowpaymentsIpnRoute =
-  ApiPublicPaymentsNowpaymentsIpnRouteImport.update({
-    id: '/api/public/payments/nowpayments-ipn',
-    path: '/api/public/payments/nowpayments-ipn',
+const ApiPublicPaymentsPlisioIpnRoute =
+  ApiPublicPaymentsPlisioIpnRouteImport.update({
+    id: '/api/public/payments/plisio-ipn',
+    path: '/api/public/payments/plisio-ipn',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicCronMatchSavedSearchesRoute =
@@ -526,7 +526,7 @@ export interface FileRoutesByFullPath {
   '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
-  '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
+  '/api/public/payments/plisio-ipn': typeof ApiPublicPaymentsPlisioIpnRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -598,7 +598,7 @@ export interface FileRoutesByTo {
   '/messages': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
-  '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
+  '/api/public/payments/plisio-ipn': typeof ApiPublicPaymentsPlisioIpnRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -674,7 +674,7 @@ export interface FileRoutesById {
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
-  '/api/public/payments/nowpayments-ipn': typeof ApiPublicPaymentsNowpaymentsIpnRoute
+  '/api/public/payments/plisio-ipn': typeof ApiPublicPaymentsPlisioIpnRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -750,7 +750,7 @@ export interface FileRouteTypes {
     | '/messages/'
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
-    | '/api/public/payments/nowpayments-ipn'
+    | '/api/public/payments/plisio-ipn'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -822,7 +822,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
-    | '/api/public/payments/nowpayments-ipn'
+    | '/api/public/payments/plisio-ipn'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -897,7 +897,7 @@ export interface FileRouteTypes {
     | '/_authenticated/messages/'
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
-    | '/api/public/payments/nowpayments-ipn'
+    | '/api/public/payments/plisio-ipn'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -935,7 +935,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronAutoPromoteRoute: typeof ApiPublicCronAutoPromoteRoute
   ApiPublicCronMatchSavedSearchesRoute: typeof ApiPublicCronMatchSavedSearchesRoute
-  ApiPublicPaymentsNowpaymentsIpnRoute: typeof ApiPublicPaymentsNowpaymentsIpnRoute
+  ApiPublicPaymentsPlisioIpnRoute: typeof ApiPublicPaymentsPlisioIpnRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1435,11 +1435,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/payments/nowpayments-ipn': {
-      id: '/api/public/payments/nowpayments-ipn'
-      path: '/api/public/payments/nowpayments-ipn'
-      fullPath: '/api/public/payments/nowpayments-ipn'
-      preLoaderRoute: typeof ApiPublicPaymentsNowpaymentsIpnRouteImport
+    '/api/public/payments/plisio-ipn': {
+      id: '/api/public/payments/plisio-ipn'
+      path: '/api/public/payments/plisio-ipn'
+      fullPath: '/api/public/payments/plisio-ipn'
+      preLoaderRoute: typeof ApiPublicPaymentsPlisioIpnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cron/match-saved-searches': {
@@ -1594,7 +1594,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronAutoPromoteRoute: ApiPublicCronAutoPromoteRoute,
   ApiPublicCronMatchSavedSearchesRoute: ApiPublicCronMatchSavedSearchesRoute,
-  ApiPublicPaymentsNowpaymentsIpnRoute: ApiPublicPaymentsNowpaymentsIpnRoute,
+  ApiPublicPaymentsPlisioIpnRoute: ApiPublicPaymentsPlisioIpnRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
