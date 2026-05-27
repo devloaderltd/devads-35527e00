@@ -66,13 +66,14 @@ export const updateSmtpSettings = createServerFn({ method: 'POST' })
     if (data.auth_pass && data.auth_pass !== MASK) {
       patch.auth_pass = data.auth_pass
     }
-    const { data: row, error } = await supabaseAdmin
-      .from('smtp_settings')
+    const { data: row, error } = await (supabaseAdmin
+      .from('smtp_settings') as any)
       .update(patch)
       .eq('id', 'global')
       .select('*')
       .single()
     if (error) throw new Error(error.message)
+
     await supabaseAdmin.rpc('log_admin_action', {
       _actor: context.userId,
       _action: 'smtp.update',
