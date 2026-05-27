@@ -94,6 +94,55 @@ function PostListing() {
   // Preview-before-post (create-only)
   const [previewMode, setPreviewMode] = useState(false);
 
+  // Draft persistence (create-only). Photos can't be persisted (File objects
+  // can't be serialized) — user re-uploads if they refresh.
+  const DRAFT_KEY = "post-listing-draft-v1";
+  const draftLoadedRef = useRef(false);
+
+  // Hydrate from localStorage on mount (create mode only).
+  useEffect(() => {
+    if (isEdit || draftLoadedRef.current || typeof window === "undefined") return;
+    draftLoadedRef.current = true;
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (typeof d.title === "string") setTitle(d.title);
+      if (typeof d.description === "string") setDescription(d.description);
+      if (typeof d.itemAge === "string") setItemAge(d.itemAge);
+      if (typeof d.phone === "string") setPhone(d.phone);
+      if (typeof d.whatsapp === "string") setWhatsapp(d.whatsapp);
+      if (typeof d.waSame === "boolean") setWaSame(d.waSame);
+      if (typeof d.categoryId === "string") setCategoryId(d.categoryId);
+      if (d.country === "US" || d.country === "UK" || d.country === "CA") setCountry(d.country);
+      if (Array.isArray(d.cityIds)) setCityIds(d.cityIds.filter((x: unknown) => typeof x === "string"));
+      if (typeof d.boostFeatured === "boolean") setBoostFeatured(d.boostFeatured);
+      if (typeof d.boostBump === "boolean") setBoostBump(d.boostBump);
+      if (typeof d.previewMode === "boolean") setPreviewMode(d.previewMode);
+    } catch {
+      /* ignore corrupt draft */
+    }
+  }, [isEdit]);
+
+  // Persist on change (create mode only, after initial hydration).
+  useEffect(() => {
+    if (isEdit || typeof window === "undefined" || !draftLoadedRef.current) return;
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        title, description, itemAge, phone, whatsapp, waSame,
+        categoryId, country, cityIds, boostFeatured, boostBump, previewMode,
+      }));
+    } catch { /* quota/serialization errors */ }
+  }, [isEdit, title, description, itemAge, phone, whatsapp, waSame,
+      categoryId, country, cityIds, boostFeatured, boostBump, previewMode]);
+
+  const clearDraft = () => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.removeItem(DRAFT_KEY); } catch { /* noop */ }
+  };
+
+
+
 
   const { data: pricing } = useQuery({
     queryKey: ["promotion-pricing"],
@@ -497,8 +546,10 @@ function PostListing() {
       toast.success(
         cityIds.length === 1 ? "Listing posted!" : `Posted to ${cityIds.length} cities!`,
       );
+      clearDraft();
       const first = created[0];
       navigate({ to: "/listings/$id", params: { id: (first as any).slug ?? first.id } });
+
     } catch (err: any) {
       toast.error(err.message ?? "Failed to post");
     } finally {
@@ -838,6 +889,8 @@ function PostListing() {
         <Button
           type="submit"
           size="lg"
+          data-testid="preview-post-btn"
+
           className="btn-gradient w-full"
           disabled={
             submitting ||
@@ -1069,6 +1122,33 @@ function PreviewPanel({
         )}
       </div>
 
+      {/* Explicit charge confirmation */}
+      <div
+        data-testid="charge-confirmation"
+        className="rounded-2xl border-2 border-primary/40 bg-primary/5 p-4"
+      >
+        <div className="text-xs font-semibold uppercase tracking-wide text-primary">
+          You will be charged
+        </div>
+        <div className="mt-1 flex items-baseline gap-2">
+          <span data-testid="charge-amount" className="font-display text-3xl font-bold">
+            {fmt(total)}
+          </span>
+          <span className="text-sm font-medium text-muted-foreground">USD</span>
+        </div>
+        <ul className="mt-2 space-y-0.5 text-xs text-foreground/80">
+          <li>• Listing post fee for {n} {n === 1 ? "city" : "cities"} ({fmt(postFee)})</li>
+          {boostFeatured && (
+            <li>• Featured boost {pricing ? `(${pricing.featuredDays} days)` : ""} — {fmt(featCost)}</li>
+          )}
+          {boostBump && <li>• Bump to top — {fmt(bumpCost)}</li>}
+          {!boostFeatured && !boostBump && <li>• No promotion boosts selected</li>}
+        </ul>
+        <div className="mt-2 text-xs text-muted-foreground">
+          Charged from your wallet on confirm. No charge has been made yet.
+        </div>
+      </div>
+
       {/* Actions */}
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button
@@ -1078,6 +1158,7 @@ function PreviewPanel({
           className="flex-1"
           onClick={onEdit}
           disabled={submitting}
+          data-testid="preview-edit-btn"
         >
           Edit
         </Button>
@@ -1087,10 +1168,18 @@ function PreviewPanel({
           className="btn-gradient flex-1"
           onClick={onConfirm}
           disabled={submitting || insufficient}
+          aria-busy={submitting}
+          data-testid="preview-confirm-btn"
         >
-          {submitting ? "Posting…" : cities.length > 1 ? `Post ad to ${cities.length} cities` : "Post ad"}
+          {submitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Charging &amp; posting…
+            </span>
+          ) : cities.length > 1 ? `Post ad to ${cities.length} cities` : "Post ad"}
         </Button>
       </div>
+
     </div>
   );
 }
