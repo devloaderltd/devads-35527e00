@@ -9,24 +9,15 @@ export interface TemplateEntry {
   to?: string
 }
 
-import { template as notification } from './notification'
-import { template as newMessage } from './new-message'
-import { template as listingApproved } from './listing-approved'
-import { template as listingRejected } from './listing-rejected'
-import { template as reviewReceived } from './review-received'
-import { template as kycStatus } from './kyc-status'
-import { template as topupConfirmed } from './topup-confirmed'
-
 /**
- * Template registry — maps template names to React Email components.
- * Add new templates here after creating them in this directory.
+ * Template registry — maps template names to their React Email components.
+ * Import and register new templates here after creating them in this directory.
+ *
+ * Example:
+ *   import { template as welcomeTemplate } from './welcome'
+ *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
-  notification,
-  'new-message': newMessage,
-  'listing-approved': listingApproved,
-  'listing-rejected': listingRejected,
-  'review-received': reviewReceived,
-  'kyc-status': kycStatus,
-  'topup-confirmed': topupConfirmed,
+  // Add templates here as they are created, e.g.:
+  // 'welcome': welcomeTemplate,
 }

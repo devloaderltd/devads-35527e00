@@ -1,20 +1,8 @@
-I’ll finish the remaining domain/branding work and then prepare the email-domain step.
+Set up email infrastructure for the sender domain `send.callescort24.org`:
 
-1. Update website branding
-- Ensure the visible site name is consistently `CallEscort24`.
-- Replace any remaining old published/preview domain references in public-facing metadata with `https://callescort24.org`.
-- Keep existing legal/privacy/cookie/contact pages intact, only updating domain/email references where needed.
+1. Provision the email queue, tables (send log, suppressions, unsubscribe tokens), priority queues, and the cron dispatcher tied to the `send.callescort24.org` sender subdomain.
+2. Scaffold branded auth email templates (signup confirmation, magic link, password reset, invite, email change, reauthentication) styled to match CallEscort24.
+3. Scaffold app (transactional) email infrastructure: the send route, unsubscribe page + route, suppression webhook, plus a starter template you can extend.
+4. Tell you to monitor DNS verification in Cloud → Emails. Sending activates automatically once DNS for `send.callescort24.org` verifies.
 
-2. Update SEO/domain metadata
-- Check route `head()` metadata for canonical URLs and `og:url` values.
-- Ensure sitemap/robots references use `https://callescort24.org`.
-- Keep `www.callescort24.org` as an accepted custom-domain URL, but use `callescort24.org` as the main canonical domain.
-
-3. Prepare email setup
-- Your project already has the custom domain `www.callescort24.org` connected.
-- No email sender domain is configured yet, so after implementation you’ll need to open the email setup flow and add a sender domain for branded emails.
-- Once you complete that setup, I can continue with custom auth/app email templates if needed.
-
-Technical notes
-- I’ll only edit existing frontend/SEO files and public static files if needed.
-- I won’t change database tables, authentication rules, or app behavior for this step.
+After approval I’ll run the setup, scaffold both auth and app email templates, and apply CallEscort24 branding.
