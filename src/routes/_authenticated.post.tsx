@@ -40,7 +40,9 @@ export const Route = createFileRoute("/_authenticated/post")({
   component: PostListing,
 });
 
-const PHONE_RE = /^[+\d][\d\s\-().]{5,31}$/;
+const PHONE_RE = /^\+?\d[\d\s\-]{6,31}$/;
+const sanitizePhone = (v: string) => v.replace(/[^\d+\s\-]/g, "").replace(/(?!^)\+/g, "");
+const sanitizeAge = (v: string) => v.replace(/\D/g, "").slice(0, 2);
 
 type ImgItem =
   | { kind: "existing"; key: string; id: string; url: string }
