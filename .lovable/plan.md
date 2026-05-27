@@ -1,52 +1,102 @@
-# Switch crypto gateway: NOWPayments → Plisio
+## Goal
+- Keep **email + password** sign-in (already working).
+- Replace the current broken Google button with **branded Google OAuth using your own Google Cloud credentials**.
+- Remove **Apple** sign-in entirely.
 
-Yes — Plisio (https://plisio.net) is a crypto payment gateway with a hosted-invoice flow very similar to NOWPayments, so it slots into the existing wallet top-up architecture cleanly. No DB schema or UI changes are needed; only the server-side gateway adapter and webhook are replaced.
+No Lovable-managed OAuth, no Apple Developer account needed.
 
-## Scope
+---
 
-In scope:
-- Replace NOWPayments invoice creation + IPN with Plisio equivalents
-- Keep the existing `crypto_topups` table, wallet credit logic, emails, and the user-facing `/wallet` page exactly as they are
-- Keep field names like `np_invoice_id` / `np_payment_id` as-is (just store Plisio IDs in them) to avoid a migration churn — or optionally rename in a follow-up
+## Part A — Code changes I'll make
 
-Out of scope:
-- Changing wallet UI, pricing, or balance flow
-- Removing already-completed NOWPayments top-ups from history (they remain valid records)
+### 1. `src/components/SocialAuthButtons.tsx`
+- Delete the Apple button + `AppleIcon`.
+- Keep the Google button. Its click handler stays on `supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } })` — this is the correct call for BYO-credentials Google (the Lovable broker is only for *managed* OAuth, which you don't want).
+- Rename divider text to "Or with email" (already correct).
 
-## Steps
+### 2. `src/routes/login.tsx` and `src/routes/signup.tsx`
+- No structural change — they already render `<SocialAuthButtons />`. The Apple button just disappears when removed from the component.
 
-1. **Secrets**
-   - Request two new secrets via `add_secret`: `PLISIO_API_KEY`, `PLISIO_WEBHOOK_SECRET` (Plisio uses the API key itself as the HMAC secret for callback verification, so `PLISIO_WEBHOOK_SECRET` may be optional — likely we just reuse `PLISIO_API_KEY`).
-   - Leave `NOWPAYMENTS_API_KEY` / `NOWPAYMENTS_IPN_SECRET` in place until cutover is verified, then remove.
+### 3. `src/routes/auth.callback.tsx`
+- Already handles the OAuth return + `?redirect=` param. No change needed; I'll just verify it.
 
-2. **New server helper `src/lib/plisio.server.ts`**
-   - `createInvoice({ amountUsd, orderId, orderName, callbackUrl, successUrl, cancelUrl })` → calls `GET https://api.plisio.net/api/v1/invoices/new` with `api_key`, `source_currency=USD`, `source_amount`, `order_number`, `order_name`, `callback_url` (append `?json=true`), `success_url`, `cancel_callback_url`. Returns `{ id, invoice_url }` from `data.txn_id` / `data.invoice_url`.
-   - `verifyCallback(payload)` → implements Plisio's HMAC verification: take POSTed JSON, remove `verify_hash`, sort keys, JSON-encode, HMAC-SHA1 with `PLISIO_API_KEY` as secret, compare to `verify_hash` using `timingSafeEqual`.
+### 4. Enable Google provider in the backend
+I'll enable the `google` provider in the project's auth config so Supabase accepts the OAuth flow once you paste your Client ID / Secret in step B-6 below. Email/password stays enabled. Apple stays disabled.
 
-3. **Update `src/lib/wallet.functions.ts`**
-   - In `createTopupInvoice`, swap `createInvoice` import to the new Plisio helper.
-   - Change IPN URL to `${origin}/api/public/payments/plisio-ipn`.
-   - Keep storing returned IDs in `np_invoice_id` / `np_payment_id` columns.
+### 5. Apple cleanup
+- Remove the unused `AppleIcon` SVG.
+- No DB or backend changes — Apple was never enabled.
 
-4. **New webhook route `src/routes/api/public/payments/plisio-ipn.ts`**
-   - Mirrors current `nowpayments-ipn.ts` structure.
-   - Verifies signature with `verifyCallback`.
-   - Maps Plisio statuses: `completed` / `mismatch` (overpaid) → credit wallet; `new` / `pending` / `confirming` → just update status; `expired` / `cancelled` / `error` → mark failed.
-   - Uses existing `credit_wallet` RPC and existing confirmation email enqueue — no changes there.
+---
 
-5. **Delete old files (after verification)**
-   - `src/lib/nowpayments.server.ts`
-   - `src/routes/api/public/payments/nowpayments-ipn.ts`
-   - `secrets--delete_secret` for `NOWPAYMENTS_API_KEY` and `NOWPAYMENTS_IPN_SECRET`.
+## Part B — What you do in Google Cloud (one-time, ~10 min)
 
-6. **Configure Plisio dashboard (user action)**
-   - In Plisio merchant settings, set callback URL to: `https://devads.lovable.app/api/public/payments/plisio-ipn` (and add the preview URL too if testing there).
-   - Whitelist allowed currencies as desired.
+You need a Google Cloud project to host your branded OAuth client. This is what makes the consent screen show **CallEscort24** instead of "Lovable".
 
-## Open questions
+### B-1. Create / pick a Google Cloud project
+1. Go to https://console.cloud.google.com
+2. Top bar → project dropdown → **New Project** → name it `CallEscort24` → Create.
 
-1. Do you want the column names renamed from `np_invoice_id` / `np_payment_id` / `np_*` to neutral `provider_invoice_id` etc.? Recommended **no** for this change — keep migration minimal — but happy to do it.
-2. Should I keep the old NOWPayments webhook live during cutover (a few days) so any in-flight invoices still credit, or remove immediately?
-3. Plisio supports a "white-label" embedded checkout in addition to the hosted invoice page. I'll use the hosted invoice page (same UX as today). OK?
+### B-2. OAuth consent screen
+1. Left menu → **APIs & Services → OAuth consent screen**.
+2. User Type: **External** → Create.
+3. Fill in:
+   - **App name:** `CallEscort24`
+   - **User support email:** your email
+   - **App logo:** upload your logo (optional but recommended for branding)
+   - **App domain:** `https://callescort24.org`
+   - **Authorized domains:** add **both**:
+     - `callescort24.org`
+     - `lovable.app`
+   - **Developer contact:** your email
+4. **Scopes** step → click **Add or remove scopes** → tick:
+   - `.../auth/userinfo.email`
+   - `.../auth/userinfo.profile`
+   - `openid`
+5. **Test users** step → skip (you'll publish below).
+6. Back on the consent screen → click **Publish app** → confirm. (Otherwise only test users can sign in.)
 
-Once you confirm, I'll implement in build mode and request the `PLISIO_API_KEY` secret.
+### B-3. Create the OAuth client
+1. Left menu → **APIs & Services → Credentials**.
+2. **Create credentials → OAuth client ID**.
+3. **Application type:** Web application.
+4. **Name:** `CallEscort24 Web`.
+5. **Authorized JavaScript origins** — add all of these:
+   - `https://callescort24.org`
+   - `https://www.callescort24.org`
+   - `https://devads.lovable.app`
+   - `https://id-preview--4e817e8c-6b6f-4c13-a579-a3b9b7d44ed7.lovable.app`
+6. **Authorized redirect URIs** — add the **Supabase callback URL**. You'll get this exact URL in step B-6; for now leave a placeholder and come back. The URL looks like:
+   `https://jxvrfmekootjojxfovli.supabase.co/auth/v1/callback`
+   Add that one literal value here.
+7. Click **Create**. Copy the **Client ID** and **Client Secret** that appear in the modal — you need both for step B-6.
+
+### B-4. (Optional) Brand verification
+For the consent screen to drop the "unverified app" warning, Google requires domain verification + brand review. Not required to function — only required to remove the warning banner. You can submit later from the consent screen → "Prepare for verification".
+
+### B-6. Paste credentials into Lovable Cloud
+1. Open Backend → **Users → Authentication Settings → Sign In Methods → Google**.
+2. Make sure **Google** is enabled.
+3. Switch to **"Use your own credentials"**.
+4. Paste the **Client ID** and **Client Secret** from B-3.
+5. The panel shows the **Callback URL** — confirm it matches what you put in B-3 step 6. If not, copy it now and add it as an Authorized redirect URI in Google Cloud Credentials.
+6. Save.
+
+I'll add a button in my reply that opens the backend panel for you.
+
+---
+
+## Part C — Smoke test
+1. Open `/login`.
+2. Click **Continue with Google** → Google consent screen says **CallEscort24** → pick account → redirected back to `/auth/callback` → logged in.
+3. Try `/signup` with email + password → confirmation email → log in. (No change to this flow.)
+
+---
+
+## Files I'll touch in build mode
+- **EDIT** `src/components/SocialAuthButtons.tsx` (remove Apple, keep Google with `supabase.auth.signInWithOAuth`)
+
+## Files I won't touch
+- `src/routes/login.tsx`, `src/routes/signup.tsx`, `src/routes/auth.callback.tsx`, `src/integrations/supabase/*` — already correct.
+
+Confirm and I'll switch to build mode to apply the code change and enable Google in the auth config. You can do Part B in parallel.
