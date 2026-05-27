@@ -152,24 +152,39 @@ function Home() {
     ocean: "linear-gradient(135deg, var(--ocean, #0ea5e9), var(--primary))",
   };
 
+  const tile2 = config.bento_tile_2;
+  const tile3 = config.bento_tile_3;
+  const tile4 = config.bento_tile_4;
+
+  return (
+    <div className="pt-0">
+      <SiteBanner />
+      {/* Hero band */}
+      <section className="container mx-auto px-4 pt-6">
+        <div className="relative overflow-hidden rounded-[1.75rem] glass-strong p-5 shadow-[var(--shadow-float)] sm:rounded-[2rem] sm:p-6 md:p-12">
+          <div className="absolute -right-24 -bottom-24 h-80 w-80 rounded-full bg-[var(--gradient-primary)] opacity-20 blur-3xl" />
+          <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-accent/40 opacity-40 blur-3xl" />
           <div className="relative z-10 max-w-2xl">
             <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground/80">
-              <Sparkles className="h-3 w-3" /> Free to post · Free to browse
+              <Sparkles className="h-3 w-3" /> {config.hero.badge}
             </span>
             <h1 className="mt-4 font-display text-3xl font-bold leading-[1.1] tracking-tight sm:mt-5 sm:text-4xl md:text-6xl md:leading-[1.05]">
-              Buy &amp; sell locally —{" "}
-              <span className="gradient-text">across the country.</span>
+              {renderHeroTitle(config.hero.title)}
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:mt-4 sm:text-base md:text-lg">
-              From vintage bikes in Brooklyn to apartments in Manchester — find what's near you, or post your own in under a minute.
+              {config.hero.subtitle}
             </p>
             <div className="mt-5 flex flex-wrap gap-2 sm:mt-7 sm:gap-3">
-              <Button asChild size="lg" className="btn-gradient rounded-2xl border-0 px-5 py-5 text-sm font-bold sm:px-7 sm:py-6 sm:text-base">
-                <Link to="/post">Post a listing</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/70 bg-white/60 px-5 py-5 text-sm font-bold backdrop-blur hover:bg-white sm:px-7 sm:py-6 sm:text-base">
-                <Link to="/search">Browse all <ArrowRight className="ml-1 h-4 w-4" /></Link>
-              </Button>
+              {config.hero.cta1_label && (
+                <Button asChild size="lg" className="btn-gradient rounded-2xl border-0 px-5 py-5 text-sm font-bold sm:px-7 sm:py-6 sm:text-base">
+                  <a href={config.hero.cta1_url}>{config.hero.cta1_label}</a>
+                </Button>
+              )}
+              {config.hero.cta2_label && (
+                <Button asChild size="lg" variant="outline" className="rounded-2xl border-white/70 bg-white/60 px-5 py-5 text-sm font-bold backdrop-blur hover:bg-white sm:px-7 sm:py-6 sm:text-base">
+                  <a href={config.hero.cta2_url}>{config.hero.cta2_label} <ArrowRight className="ml-1 inline h-4 w-4" /></a>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -180,7 +195,7 @@ function Home() {
       <section className="container mx-auto px-4 pt-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4 md:grid-rows-2 md:auto-rows-fr md:h-[560px]">
           {/* Large featured listing */}
-          {heroFeatured ? (
+          {config.bento_featured.enabled && heroFeatured ? (
             <Link
               to="/listings/$id"
               params={{ id: (heroFeatured as any).slug ?? heroFeatured.id }}
@@ -195,7 +210,7 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/10 to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-8">
                 <span className="self-start rounded-full btn-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
-                  <Sparkles className="mr-1 inline h-3 w-3" /> Featured
+                  <Sparkles className="mr-1 inline h-3 w-3" /> {config.bento_featured.badge_label}
                 </span>
                 <div className="text-white">
                   <h3 className="font-display text-2xl font-bold leading-tight md:text-3xl">{heroFeatured.title}</h3>
@@ -211,59 +226,70 @@ function Home() {
             <div className="col-span-1 row-span-1 rounded-[2rem] glass md:col-span-2 md:row-span-2" />
           )}
 
-          {/* Medium gradient category — Electronics */}
-          <Link
-            to="/search"
-            search={{ category: electronicsCat?.slug ?? "electronics" } as any}
-            className="group relative col-span-1 overflow-hidden rounded-[2rem] p-6 text-white md:col-span-2 hover-float"
-            style={{ background: "var(--gradient-primary)", backgroundSize: "200% 200%" }}
-          >
-            <div className="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-white/30 blur-2xl" />
-            <div className="relative z-10 flex h-full flex-col justify-between gap-4">
-              <div>
-                <h3 className="font-display text-2xl font-bold md:text-3xl">{electronicsCat?.name ?? "Electronics"}</h3>
-                <p className="mt-1 text-sm text-white/85">Latest gadgets, phones & tech gear</p>
+          {/* Medium gradient tile 2 */}
+          {tile2.enabled && (
+            <a
+              href={tile2.link_url}
+              className="group relative col-span-1 overflow-hidden rounded-[2rem] p-6 text-white md:col-span-2 hover-float"
+              style={{ background: GRADIENTS[tile2.gradient], backgroundSize: "200% 200%" }}
+            >
+              <div className="absolute -right-6 -bottom-6 h-32 w-32 rounded-full bg-white/30 blur-2xl" />
+              {tile2.image_url && (
+                <img src={tile2.image_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
+              )}
+              <div className="relative z-10 flex h-full flex-col justify-between gap-4">
+                <div>
+                  <h3 className="font-display text-2xl font-bold md:text-3xl">{tile2.title}</h3>
+                  <p className="mt-1 text-sm text-white/85">{tile2.subtitle}</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-widest text-white/80">Explore</span>
+                  <span className="rounded-full bg-white/20 p-3 backdrop-blur-md transition group-hover:bg-white/30">
+                    <ChevronRight className="h-5 w-5" />
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-widest text-white/80">Explore</span>
-                <span className="rounded-full bg-white/20 p-3 backdrop-blur-md transition group-hover:bg-white/30">
-                  <ChevronRight className="h-5 w-5" />
-                </span>
-              </div>
-            </div>
-          </Link>
+            </a>
+          )}
 
-          {/* Small colorful category — Furniture (lavender→indigo) */}
-          <Link
-            to="/search"
-            search={{ category: furnitureCat?.slug ?? "furniture" } as any}
-            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
-            style={{ background: "linear-gradient(135deg, var(--lavender), var(--primary))" }}
-          >
-            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
-            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
-              <img src={catFurniture} alt="" className="h-8 w-8 rounded-lg object-cover" />
-            </div>
-            <span className="font-display font-bold">{furnitureCat?.name ?? "Furniture"}</span>
-            <span className="mt-1 text-xs text-white/85">Browse home goods</span>
-          </Link>
+          {/* Small tile 3 */}
+          {tile3.enabled && (
+            <a
+              href={tile3.link_url}
+              className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
+              style={{ background: GRADIENTS[tile3.gradient] }}
+            >
+              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
+              {tile3.image_url && (
+                <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
+                  <img src={tile3.image_url} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                </div>
+              )}
+              <span className="font-display font-bold">{tile3.title}</span>
+              <span className="mt-1 text-xs text-white/85">{tile3.subtitle}</span>
+            </a>
+          )}
 
-          {/* Small colorful category — Pets (amber→coral) */}
-          <Link
-            to="/search"
-            search={{ category: petsCat?.slug ?? "pets" } as any}
-            className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
-            style={{ background: "linear-gradient(135deg, var(--amber), var(--coral))" }}
-          >
-            <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
-            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
-              <img src={catPets} alt="" className="h-8 w-8 rounded-lg object-cover" />
-            </div>
-            <span className="font-display font-bold">{petsCat?.name ?? "Pets"}</span>
-            <span className="mt-1 text-xs text-white/85">Find a new friend</span>
-          </Link>
+          {/* Small tile 4 */}
+          {tile4.enabled && (
+            <a
+              href={tile4.link_url}
+              className="group hover-float relative col-span-1 overflow-hidden rounded-[2rem] p-6 flex flex-col items-center justify-center text-center text-white"
+              style={{ background: GRADIENTS[tile4.gradient] }}
+            >
+              <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-white/30 blur-2xl" />
+              {tile4.image_url && (
+                <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/25 backdrop-blur-md">
+                  <img src={tile4.image_url} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                </div>
+              )}
+              <span className="font-display font-bold">{tile4.title}</span>
+              <span className="mt-1 text-xs text-white/85">{tile4.subtitle}</span>
+            </a>
+          )}
         </div>
       </section>
+
 
       {/* Category chip strip */}
       <section className="container mx-auto px-4 pt-8">
