@@ -8,10 +8,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { AlertTriangle, Upload, X } from "lucide-react";
+import { AlertTriangle, Upload, X, Copy, ExternalLink, Check, ChevronDown } from "lucide-react";
 import { AdminPageHeader, Panel } from "@/components/admin/ui";
 import { getSiteSettings, updateSiteSettings } from "@/lib/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
+
+const SUPABASE_PROJECT_REF = "jxvrfmekootjojxfovli";
+const GOOGLE_REDIRECT_URI = `https://${SUPABASE_PROJECT_REF}.supabase.co/auth/v1/callback`;
+const GOOGLE_AUTHORIZED_ORIGINS = [
+  "https://callescort24.org",
+  "https://www.callescort24.org",
+  "https://devads.lovable.app",
+  "https://id-preview--4e817e8c-6b6f-4c13-a579-a3b9b7d44ed7.lovable.app",
+].join("\n");
+const BACKEND_GOOGLE_PROVIDER_URL = `https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/auth/providers?provider=Google`;
+const GOOGLE_CLOUD_CREDENTIALS_URL = "https://console.cloud.google.com/apis/credentials";
 
 export const Route = createFileRoute("/admin/settings")({ component: SettingsPage });
 
