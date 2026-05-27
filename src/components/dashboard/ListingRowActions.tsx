@@ -33,9 +33,9 @@ export function ListingRowActions({ listing, onChange }: { listing: { id: string
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-1">
-      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => bump.mutate()} disabled={bump.isPending} title="Bump to top">
-        <TrendingUp className="h-3.5 w-3.5" />
-      </Button>
+      <span title="Promote (paid)">
+        <PromoteDialog listingId={listing.id} />
+      </span>
       <span title="Promote">
         <PromoteDialog listingId={listing.id} />
       </span>
