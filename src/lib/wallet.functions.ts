@@ -158,3 +158,38 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const chargeListingPost = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { cityCount: number; reference: string }) => {
+    if (!Number.isInteger(data.cityCount) || data.cityCount < 1 || data.cityCount > 50) throw new Error("Invalid cityCount");
+    if (typeof data.reference !== "string" || data.reference.length > 100) throw new Error("Invalid reference");
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
+    const pricing = await loadPricing();
+    const total = Math.round(pricing.listingPostPrice * data.cityCount * 100) / 100;
+    if (total <= 0) return { ok: true, charged: 0 };
+    const { error } = await supabaseAdmin.rpc("debit_wallet", {
+      _user_id: userId,
+      _amount: total,
+      _reference: data.reference,
+      _description: `Listing post (${data.cityCount} ${data.cityCount === 1 ? "city" : "cities"})`,
+    });
+    if (error) {
+      if (error.message?.toLowerCase().includes("insufficient")) {
+        throw new Error("Insufficient wallet balance. Please top up.");
+      }
+      throw new Error(error.message);
+    }
+    await supabaseAdmin.from("payments").insert({
+      user_id: userId,
+      promotion_type: null,
+      provider: "wallet",
+      amount: total,
+      currency: "USD",
+      status: "completed",
+    });
+    return { ok: true, charged: total };
+  });
+
