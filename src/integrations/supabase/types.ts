@@ -77,6 +77,39 @@ export type Database = {
         }
         Relationships: []
       }
+      bump_audit_log: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          listing_id: string | null
+          outcome: string
+          payment_id: string | null
+          user_id: string | null
+          wallet_transaction_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          listing_id?: string | null
+          outcome: string
+          payment_id?: string | null
+          user_id?: string | null
+          wallet_transaction_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          listing_id?: string | null
+          outcome?: string
+          payment_id?: string | null
+          user_id?: string | null
+          wallet_transaction_id?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -1498,6 +1531,15 @@ export type Database = {
         Args: { _amount: number; _description: string; _user_id: string }
         Returns: number
       }
+      apply_paid_bump: {
+        Args: {
+          _amount: number
+          _description: string
+          _listing_id: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       approve_kyc: {
         Args: { _note?: string; _submission_id: string }
         Returns: undefined
@@ -1566,6 +1608,13 @@ export type Database = {
           message: Json
           msg_id: number
           read_ct: number
+        }[]
+      }
+      reconcile_bumps: {
+        Args: never
+        Returns: {
+          cleared: boolean
+          listing_id: string
         }[]
       }
       reject_kyc: {
