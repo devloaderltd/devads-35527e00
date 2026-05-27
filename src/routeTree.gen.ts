@@ -19,6 +19,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email-unsubscribe'
 import { Route as DmcaRouteImport } from './routes/dmca'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -129,6 +130,11 @@ const LoginRoute = LoginRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email-unsubscribe',
+  path: '/email-unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DmcaRoute = DmcaRouteImport.update({
@@ -455,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
   '/dmca': typeof DmcaRoute
+  '/email-unsubscribe': typeof EmailUnsubscribeRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
@@ -526,6 +533,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
   '/dmca': typeof DmcaRoute
+  '/email-unsubscribe': typeof EmailUnsubscribeRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
@@ -599,6 +607,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
   '/dmca': typeof DmcaRoute
+  '/email-unsubscribe': typeof EmailUnsubscribeRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
@@ -673,6 +682,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/cookies'
     | '/dmca'
+    | '/email-unsubscribe'
     | '/forgot-password'
     | '/login'
     | '/privacy'
@@ -744,6 +754,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/cookies'
     | '/dmca'
+    | '/email-unsubscribe'
     | '/forgot-password'
     | '/login'
     | '/privacy'
@@ -816,6 +827,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/cookies'
     | '/dmca'
+    | '/email-unsubscribe'
     | '/forgot-password'
     | '/login'
     | '/privacy'
@@ -890,6 +902,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CookiesRoute: typeof CookiesRoute
   DmcaRoute: typeof DmcaRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -988,6 +1001,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email-unsubscribe': {
+      id: '/email-unsubscribe'
+      path: '/email-unsubscribe'
+      fullPath: '/email-unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dmca': {
@@ -1532,6 +1552,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CookiesRoute: CookiesRoute,
   DmcaRoute: DmcaRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
