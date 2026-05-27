@@ -1513,3 +1513,46 @@ export const getDashboardOverview = createServerFn({ method: "POST" })
       },
     };
   });
+
+/* ---------------- Bump audit log ---------------- */
+
+export const getBumpAuditLog = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((input: { outcome?: string; page?: number; perPage?: number }) => ({
+    outcome: input.outcome ?? "all",
+    page: Math.max(1, Math.floor(input.page ?? 1)),
+    perPage: Math.min(200, Math.max(10, Math.floor(input.perPage ?? 50))),
+  }))
+  .handler(async ({ data }) => {
+    let q = supabaseAdmin
+      .from("bump_audit_log")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false });
+    if (data.outcome !== "all") q = q.eq("outcome", data.outcome);
+    const from = (data.page - 1) * data.perPage;
+    const to = from + data.perPage - 1;
+    const { data: rows, error, count } = await q.range(from, to);
+    if (error) throw new Error(error.message);
+
+    const userIds = [...new Set((rows ?? []).map((r) => r.user_id).filter(Boolean) as string[])];
+    const listingIds = [...new Set((rows ?? []).map((r) => r.listing_id).filter(Boolean) as string[])];
+    const [profilesRes, listingsRes] = await Promise.all([
+      userIds.length ? supabaseAdmin.from("profiles").select("id, display_name").in("id", userIds) : Promise.resolve({ data: [] }),
+      listingIds.length ? supabaseAdmin.from("listings").select("id, title, slug").in("id", listingIds) : Promise.resolve({ data: [] }),
+    ]);
+    const profiles = (profilesRes.data ?? []) as { id: string; display_name: string }[];
+    const listings = (listingsRes.data ?? []) as { id: string; title: string; slug: string }[];
+
+    return {
+      entries: (rows ?? []).map((r) => ({
+        ...r,
+        user_name: profiles.find((p) => p.id === r.user_id)?.display_name ?? null,
+        listing_title: listings.find((l) => l.id === r.listing_id)?.title ?? null,
+        listing_slug: listings.find((l) => l.id === r.listing_id)?.slug ?? null,
+      })),
+      total: count ?? 0,
+      page: data.page,
+      perPage: data.perPage,
+      hasMore: from + (rows?.length ?? 0) < (count ?? 0),
+    };
+  });

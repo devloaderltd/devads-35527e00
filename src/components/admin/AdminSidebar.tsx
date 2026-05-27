@@ -81,6 +81,7 @@ const groups: ReadonlyArray<Group> = [
       { title: "Maintenance", url: "/admin/maintenance", icon: Wrench },
       { title: "Broadcasts", url: "/admin/broadcasts", icon: Megaphone, badgeKey: "broadcasts" },
       { title: "Audit log", url: "/admin/audit", icon: FileClock },
+      { title: "Bump audit", url: "/admin/bump-audit", icon: FileClock },
     ],
   },
 ];

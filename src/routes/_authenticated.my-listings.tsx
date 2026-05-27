@@ -18,6 +18,7 @@ import { ListingSparkline } from "@/components/ThreadSparkline";
 import { BulkActionBar } from "@/components/BulkActionBar";
 import { PanelShell } from "@/components/PanelShell";
 import { ListingsSkeleton } from "@/components/ListingsSkeleton";
+import { BumpStatusCard } from "@/components/listings/BumpStatusCard";
 
 export const Route = createFileRoute("/_authenticated/my-listings")({
   head: () => ({ meta: [{ title: "My listings — CallEscort24" }] }),
@@ -391,7 +392,13 @@ function MyListings() {
                 <ListingSparkline listingId={l.id} />
 
                 {l.status === "active" && (
-                  <div className="px-1">
+                  <div className="space-y-2 px-1">
+                    <BumpStatusCard
+                      listingId={l.id}
+                      bumpedAt={l.bumped_at}
+                      isOwner
+                      compact
+                    />
                     <PromoteDialog listingId={l.id} />
                   </div>
                 )}

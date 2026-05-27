@@ -54,6 +54,7 @@ import { Route as AdminHomepageRouteImport } from './routes/admin.homepage'
 import { Route as AdminDebugRouteImport } from './routes/admin.debug'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminBumpAuditRouteImport } from './routes/admin.bump-audit'
 import { Route as AdminBroadcastsRouteImport } from './routes/admin.broadcasts'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
@@ -81,6 +82,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicPaymentsPlisioIpnRouteImport } from './routes/api/public/payments/plisio-ipn'
+import { Route as ApiPublicCronReconcileBumpsRouteImport } from './routes/api/public/cron/reconcile-bumps'
 import { Route as ApiPublicCronMatchSavedSearchesRouteImport } from './routes/api/public/cron/match-saved-searches'
 import { Route as ApiPublicCronAutoPromoteRouteImport } from './routes/api/public/cron/auto-promote'
 
@@ -308,6 +310,11 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBumpAuditRoute = AdminBumpAuditRouteImport.update({
+  id: '/bump-audit',
+  path: '/bump-audit',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBroadcastsRoute = AdminBroadcastsRouteImport.update({
   id: '/broadcasts',
   path: '/broadcasts',
@@ -452,6 +459,12 @@ const ApiPublicPaymentsPlisioIpnRoute =
     path: '/api/public/payments/plisio-ipn',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronReconcileBumpsRoute =
+  ApiPublicCronReconcileBumpsRouteImport.update({
+    id: '/api/public/cron/reconcile-bumps',
+    path: '/api/public/cron/reconcile-bumps',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronMatchSavedSearchesRoute =
   ApiPublicCronMatchSavedSearchesRouteImport.update({
     id: '/api/public/cron/match-saved-searches',
@@ -498,6 +511,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
+  '/admin/bump-audit': typeof AdminBumpAuditRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
@@ -533,6 +547,7 @@ export interface FileRoutesByFullPath {
   '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
+  '/api/public/cron/reconcile-bumps': typeof ApiPublicCronReconcileBumpsRoute
   '/api/public/payments/plisio-ipn': typeof ApiPublicPaymentsPlisioIpnRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -571,6 +586,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
+  '/admin/bump-audit': typeof AdminBumpAuditRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
@@ -606,6 +622,7 @@ export interface FileRoutesByTo {
   '/messages': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
+  '/api/public/cron/reconcile-bumps': typeof ApiPublicCronReconcileBumpsRoute
   '/api/public/payments/plisio-ipn': typeof ApiPublicPaymentsPlisioIpnRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -648,6 +665,7 @@ export interface FileRoutesById {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
+  '/admin/bump-audit': typeof AdminBumpAuditRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
@@ -683,6 +701,7 @@ export interface FileRoutesById {
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
+  '/api/public/cron/reconcile-bumps': typeof ApiPublicCronReconcileBumpsRoute
   '/api/public/payments/plisio-ipn': typeof ApiPublicPaymentsPlisioIpnRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -725,6 +744,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/banners'
     | '/admin/broadcasts'
+    | '/admin/bump-audit'
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/debug'
@@ -760,6 +780,7 @@ export interface FileRouteTypes {
     | '/messages/'
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
+    | '/api/public/cron/reconcile-bumps'
     | '/api/public/payments/plisio-ipn'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -798,6 +819,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/banners'
     | '/admin/broadcasts'
+    | '/admin/bump-audit'
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/debug'
@@ -833,6 +855,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
+    | '/api/public/cron/reconcile-bumps'
     | '/api/public/payments/plisio-ipn'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -874,6 +897,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/banners'
     | '/admin/broadcasts'
+    | '/admin/bump-audit'
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/debug'
@@ -909,6 +933,7 @@ export interface FileRouteTypes {
     | '/_authenticated/messages/'
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
+    | '/api/public/cron/reconcile-bumps'
     | '/api/public/payments/plisio-ipn'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -947,6 +972,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronAutoPromoteRoute: typeof ApiPublicCronAutoPromoteRoute
   ApiPublicCronMatchSavedSearchesRoute: typeof ApiPublicCronMatchSavedSearchesRoute
+  ApiPublicCronReconcileBumpsRoute: typeof ApiPublicCronReconcileBumpsRoute
   ApiPublicPaymentsPlisioIpnRoute: typeof ApiPublicPaymentsPlisioIpnRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1272,6 +1298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bump-audit': {
+      id: '/admin/bump-audit'
+      path: '/bump-audit'
+      fullPath: '/admin/bump-audit'
+      preLoaderRoute: typeof AdminBumpAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/broadcasts': {
       id: '/admin/broadcasts'
       path: '/broadcasts'
@@ -1461,6 +1494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsPlisioIpnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/reconcile-bumps': {
+      id: '/api/public/cron/reconcile-bumps'
+      path: '/api/public/cron/reconcile-bumps'
+      fullPath: '/api/public/cron/reconcile-bumps'
+      preLoaderRoute: typeof ApiPublicCronReconcileBumpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/match-saved-searches': {
       id: '/api/public/cron/match-saved-searches'
       path: '/api/public/cron/match-saved-searches'
@@ -1530,6 +1570,7 @@ interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminBroadcastsRoute: typeof AdminBroadcastsRoute
+  AdminBumpAuditRoute: typeof AdminBumpAuditRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCitiesRoute: typeof AdminCitiesRoute
   AdminDebugRoute: typeof AdminDebugRoute
@@ -1559,6 +1600,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminBroadcastsRoute: AdminBroadcastsRoute,
+  AdminBumpAuditRoute: AdminBumpAuditRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCitiesRoute: AdminCitiesRoute,
   AdminDebugRoute: AdminDebugRoute,
@@ -1615,6 +1657,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronAutoPromoteRoute: ApiPublicCronAutoPromoteRoute,
   ApiPublicCronMatchSavedSearchesRoute: ApiPublicCronMatchSavedSearchesRoute,
+  ApiPublicCronReconcileBumpsRoute: ApiPublicCronReconcileBumpsRoute,
   ApiPublicPaymentsPlisioIpnRoute: ApiPublicPaymentsPlisioIpnRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
