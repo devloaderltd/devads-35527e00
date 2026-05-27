@@ -116,7 +116,7 @@ export function Header() {
         </Sheet>
 
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
           <Button
             type="button"
             variant="outline"
@@ -133,19 +133,20 @@ export function Header() {
             variant="outline"
             size="icon"
             onClick={openPicker}
-            className="sm:hidden rounded-full bg-white/60 backdrop-blur"
+            className="sm:hidden h-9 w-9 shrink-0 rounded-full bg-white/60 backdrop-blur"
             title={cityName ?? "Select city"}
           >
             <MapPin className="h-4 w-4 text-primary" />
           </Button>
           <ThemeToggle />
           {user && <NotificationsBell />}
-          <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0">
+          <Button asChild size="sm" className="btn-gradient gap-1 rounded-full border-0 px-2.5 sm:px-3">
             <Link to="/post">
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Post</span>
             </Link>
           </Button>
+
 
           {user ? (
             <DropdownMenu>
