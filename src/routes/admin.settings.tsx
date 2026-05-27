@@ -153,18 +153,18 @@ function SettingsPage() {
 
 
         <Panel title="Promotion pricing">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Featured price (USD)" error={errors.featured_price_usd}>
-              <Input type="number" step="0.01" min={0} max={9999} value={form.featured_price_usd} onChange={(e) => set("featured_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 [&>*]:min-w-0">
+            <Field label="Featured price" hint="0 – 9999" error={errors.featured_price_usd}>
+              <NumberInput suffix="USD" step="0.01" min={0} max={9999} value={form.featured_price_usd} onChange={(n) => set("featured_price_usd", n)} />
             </Field>
-            <Field label="Featured days" error={errors.featured_days}>
-              <Input type="number" min={1} max={365} value={form.featured_days} onChange={(e) => set("featured_days", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            <Field label="Featured days" hint="1 – 365" error={errors.featured_days}>
+              <NumberInput suffix="days" min={1} max={365} value={form.featured_days} onChange={(n) => set("featured_days", n)} />
             </Field>
-            <Field label="Bump price (USD)" error={errors.bump_price_usd}>
-              <Input type="number" step="0.01" min={0} max={9999} value={form.bump_price_usd} onChange={(e) => set("bump_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            <Field label="Bump price" hint="0 – 9999" error={errors.bump_price_usd}>
+              <NumberInput suffix="USD" step="0.01" min={0} max={9999} value={form.bump_price_usd} onChange={(n) => set("bump_price_usd", n)} />
             </Field>
-            <Field label="Bump cooldown days" error={errors.bump_days}>
-              <Input type="number" min={1} max={365} value={form.bump_days} onChange={(e) => set("bump_days", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
+            <Field label="Bump cooldown" hint="1 – 365" error={errors.bump_days}>
+              <NumberInput suffix="days" min={1} max={365} value={form.bump_days} onChange={(n) => set("bump_days", n)} />
             </Field>
           </div>
         </Panel>
