@@ -59,12 +59,14 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-3 z-40 mx-3 mt-3 md:mx-6">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 rounded-2xl glass-strong px-3 py-2.5">
-        <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
-          <img src={customLogo || logoUrl} alt={siteName} width={36} height={36} className="h-9 w-9 rounded-xl object-contain" />
+    <header className="sticky top-2 z-40 mx-2 mt-2 sm:top-3 sm:mx-3 sm:mt-3 md:mx-6">
+      <div className="mx-auto flex max-w-6xl items-center gap-1.5 rounded-2xl glass-strong px-2 py-2 sm:gap-3 sm:px-3 sm:py-2.5">
+        <Link to="/" className="flex shrink-0 items-center gap-2 font-display text-lg font-bold tracking-tight">
+          <img src={customLogo || logoUrl} alt={siteName} width={36} height={36} className="h-8 w-8 rounded-xl object-contain sm:h-9 sm:w-9" />
           <span className="hidden sm:inline">{siteName}</span>
         </Link>
+
+
 
         <form onSubmit={onSearch} className="relative ml-2 hidden flex-1 max-w-md md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
