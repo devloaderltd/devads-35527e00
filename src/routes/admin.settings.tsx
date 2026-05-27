@@ -116,7 +116,7 @@ function SettingsPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <Panel title="Branding">
           <div className="space-y-3">
             <Field label="Site name" error={errors.site_name}>
@@ -125,7 +125,7 @@ function SettingsPage() {
             <Field label="Support email" error={errors.support_email}>
               <Input type="email" value={form.support_email} onChange={(e) => set("support_email", e.target.value)} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" maxLength={120} />
             </Field>
-            <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-1 gap-3 pt-2 sm:grid-cols-2 sm:gap-4 [&>*]:min-w-0">
               <AssetUploader
                 label="Logo"
                 kind="logo"
@@ -149,7 +149,7 @@ function SettingsPage() {
 
 
         <Panel title="Promotion pricing">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Featured price (USD)" error={errors.featured_price_usd}>
               <Input type="number" step="0.01" min={0} max={9999} value={form.featured_price_usd} onChange={(e) => set("featured_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
             </Field>
@@ -235,9 +235,9 @@ function SettingsPage() {
 function Field({ label, error, className, children }: { label: string; error?: string; className?: string; children: React.ReactNode }) {
   return (
     <div className={className}>
-      <Label className="text-slate-300">{label}</Label>
+      <Label className="text-xs text-slate-300 sm:text-sm">{label}</Label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-1 break-words text-xs text-red-400">{error}</p>}
     </div>
   );
 }
@@ -284,9 +284,9 @@ function AssetUploader({
   };
 
   return (
-    <div>
-      <Label className="text-slate-300">{label}</Label>
-      <div className="mt-1 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-2">
+    <div className="w-full min-w-0">
+      <Label className="block truncate text-xs text-slate-300 sm:text-sm">{label}</Label>
+      <div className="mt-1 flex min-w-0 items-start gap-2 rounded-lg border border-white/10 bg-white/5 p-2">
         <div className="grid h-14 w-14 flex-shrink-0 place-items-center overflow-hidden rounded-md bg-slate-950/40">
           {value ? (
             <img src={value} alt={label} className="h-full w-full object-contain" />
@@ -295,7 +295,7 @@ function AssetUploader({
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             <Button
               type="button"
               size="sm"
@@ -319,7 +319,7 @@ function AssetUploader({
               </Button>
             )}
           </div>
-          <p className="text-[10px] text-slate-500">{hint}</p>
+          <p className="break-words text-[11px] leading-snug text-slate-500">{hint}</p>
         </div>
         <input
           ref={inputRef}
