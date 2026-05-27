@@ -257,7 +257,7 @@ function Home() {
               </div>
             </Link>
           ) : (
-            <div className="col-span-1 row-span-1 rounded-[2rem] glass md:col-span-2 md:row-span-2" />
+            <div className="hidden md:block col-span-1 row-span-1 rounded-[2rem] glass md:col-span-2 md:row-span-2" />
           )}
 
           {/* Medium gradient tile 2 */}
