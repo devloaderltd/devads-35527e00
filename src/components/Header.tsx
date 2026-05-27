@@ -87,11 +87,12 @@ export function Header() {
               type="button"
               variant="outline"
               size="icon"
-              className="md:hidden rounded-full bg-white/60 backdrop-blur"
+              className="md:hidden h-9 w-9 shrink-0 rounded-full bg-white/60 backdrop-blur"
               title="Search"
             >
               <Search className="h-4 w-4 text-primary" />
             </Button>
+
           </SheetTrigger>
           <SheetContent side="top" className="rounded-b-3xl border-white/40 bg-white/90 backdrop-blur-2xl">
             <SheetHeader>
