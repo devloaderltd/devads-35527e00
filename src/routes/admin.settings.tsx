@@ -284,9 +284,9 @@ function AssetUploader({
   };
 
   return (
-    <div>
-      <Label className="text-slate-300">{label}</Label>
-      <div className="mt-1 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-2">
+    <div className="w-full min-w-0">
+      <Label className="block truncate text-xs text-slate-300 sm:text-sm">{label}</Label>
+      <div className="mt-1 flex min-w-0 items-start gap-2 rounded-lg border border-white/10 bg-white/5 p-2">
         <div className="grid h-14 w-14 flex-shrink-0 place-items-center overflow-hidden rounded-md bg-slate-950/40">
           {value ? (
             <img src={value} alt={label} className="h-full w-full object-contain" />
@@ -295,7 +295,7 @@ function AssetUploader({
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             <Button
               type="button"
               size="sm"
@@ -319,7 +319,7 @@ function AssetUploader({
               </Button>
             )}
           </div>
-          <p className="text-[10px] text-slate-500">{hint}</p>
+          <p className="break-words text-[11px] leading-snug text-slate-500">{hint}</p>
         </div>
         <input
           ref={inputRef}
