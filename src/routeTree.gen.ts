@@ -69,6 +69,7 @@ import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authen
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicSitemapDotxmlRouteImport } from './routes/api/public/sitemap[.]xml'
 import { Route as ApiPublicClientErrorsRouteImport } from './routes/api/public/client-errors'
+import { Route as ApiPublicAdminBootstrapRouteImport } from './routes/api/public/admin-bootstrap'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
 import { Route as AuthenticatedDebugSessionRouteImport } from './routes/_authenticated.debug.session'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -382,6 +383,11 @@ const ApiPublicClientErrorsRoute = ApiPublicClientErrorsRouteImport.update({
   path: '/api/public/client-errors',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminBootstrapRoute = ApiPublicAdminBootstrapRouteImport.update({
+  id: '/api/public/admin-bootstrap',
+  path: '/api/public/admin-bootstrap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedMessagesThreadIdRoute =
   AuthenticatedMessagesThreadIdRouteImport.update({
     id: '/$threadId',
@@ -499,6 +505,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
+  '/api/public/admin-bootstrap': typeof ApiPublicAdminBootstrapRoute
   '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -568,6 +575,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
+  '/api/public/admin-bootstrap': typeof ApiPublicAdminBootstrapRoute
   '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -641,6 +649,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/debug/session': typeof AuthenticatedDebugSessionRoute
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
+  '/api/public/admin-bootstrap': typeof ApiPublicAdminBootstrapRoute
   '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -714,6 +723,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/debug/session'
     | '/messages/$threadId'
+    | '/api/public/admin-bootstrap'
     | '/api/public/client-errors'
     | '/api/public/sitemap.xml'
     | '/lovable/email/suppression'
@@ -783,6 +793,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/debug/session'
     | '/messages/$threadId'
+    | '/api/public/admin-bootstrap'
     | '/api/public/client-errors'
     | '/api/public/sitemap.xml'
     | '/lovable/email/suppression'
@@ -855,6 +866,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/_authenticated/debug/session'
     | '/_authenticated/messages/$threadId'
+    | '/api/public/admin-bootstrap'
     | '/api/public/client-errors'
     | '/api/public/sitemap.xml'
     | '/lovable/email/suppression'
@@ -892,6 +904,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ListingsIdRoute: typeof ListingsIdRoute
   SellersIdRoute: typeof SellersIdRoute
+  ApiPublicAdminBootstrapRoute: typeof ApiPublicAdminBootstrapRoute
   ApiPublicClientErrorsRoute: typeof ApiPublicClientErrorsRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -1327,6 +1340,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicClientErrorsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin-bootstrap': {
+      id: '/api/public/admin-bootstrap'
+      path: '/api/public/admin-bootstrap'
+      fullPath: '/api/public/admin-bootstrap'
+      preLoaderRoute: typeof ApiPublicAdminBootstrapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/messages/$threadId': {
       id: '/_authenticated/messages/$threadId'
       path: '/$threadId'
@@ -1526,6 +1546,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ListingsIdRoute: ListingsIdRoute,
   SellersIdRoute: SellersIdRoute,
+  ApiPublicAdminBootstrapRoute: ApiPublicAdminBootstrapRoute,
   ApiPublicClientErrorsRoute: ApiPublicClientErrorsRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
