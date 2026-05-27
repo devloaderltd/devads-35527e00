@@ -179,7 +179,7 @@ function SettingsPage() {
           </Field>
 
           {form.maintenance_mode && (
-            <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4">
+            <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4" data-vr-mask>
               <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-200">
                 <AlertTriangle className="h-3.5 w-3.5" /> Preview
               </div>
