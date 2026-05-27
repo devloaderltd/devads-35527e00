@@ -397,28 +397,30 @@ function Home() {
       )}
 
       {/* Recent listings */}
-      <section className="container mx-auto px-4 pt-10 pb-16">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-2xl font-semibold">Latest listings</h2>
-          <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
-        </div>
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-white/40" />
-            ))}
+      {sections.latest && (
+        <section className="container mx-auto px-4 pt-10 pb-16">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-2xl font-semibold">Latest listings</h2>
+            <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
           </div>
-        ) : recent.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl glass p-10 text-center text-muted-foreground">
-            <img src={emptyListingImg} alt="" width={160} height={160} loading="lazy" className="h-40 w-40 object-contain" />
-            <div>No listings yet. <Link to="/post" className="font-medium text-primary hover:underline">Be the first to post!</Link></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {recent.map((l: any) => <ListingCard key={l.id} listing={l} />)}
-          </div>
-        )}
-      </section>
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-white/40" />
+              ))}
+            </div>
+          ) : recent.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-2xl glass p-10 text-center text-muted-foreground">
+              <img src={emptyListingImg} alt="" width={160} height={160} loading="lazy" className="h-40 w-40 object-contain" />
+              <div>No listings yet. <Link to="/post" className="font-medium text-primary hover:underline">Be the first to post!</Link></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {recent.map((l: any) => <ListingCard key={l.id} listing={l} />)}
+            </div>
+          )}
+        </section>
+      )}
       </>)}
 
     </div>
