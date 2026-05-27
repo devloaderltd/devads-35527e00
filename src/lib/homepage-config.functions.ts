@@ -161,9 +161,14 @@ export const saveHomepageConfig = createServerFn({ method: "POST" })
     return { section: input.section, data: schema.parse(input.data) };
   })
   .handler(async ({ data, context }) => {
+    const payload: Record<string, unknown> = {
+      id: "global",
+      updated_at: new Date().toISOString(),
+      [data.section]: data.data,
+    };
     const { error } = await supabaseAdmin
       .from("homepage_config")
-      .upsert({ id: "global", [data.section]: data.data, updated_at: new Date().toISOString() }, { onConflict: "id" });
+      .upsert(payload as never, { onConflict: "id" });
     if (error) throw new Error(error.message);
     await supabaseAdmin.rpc("log_admin_action", {
       _actor: context.userId,
