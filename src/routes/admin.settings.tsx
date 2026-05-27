@@ -125,7 +125,7 @@ function SettingsPage() {
             <Field label="Support email" error={errors.support_email}>
               <Input type="email" value={form.support_email} onChange={(e) => set("support_email", e.target.value)} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" maxLength={120} />
             </Field>
-            <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-1 gap-3 pt-2 sm:grid-cols-2 sm:gap-4 [&>*]:min-w-0">
               <AssetUploader
                 label="Logo"
                 kind="logo"
