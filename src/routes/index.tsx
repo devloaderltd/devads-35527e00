@@ -50,6 +50,14 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { cityId, cityName, hydrated, openPicker } = useCity();
+  const fetchConfig = useServerFn(getHomepageConfig);
+  const { data: configData } = useQuery({
+    queryKey: ["homepage-config"],
+    queryFn: () => fetchConfig(),
+    staleTime: 5 * 60_000,
+  });
+  const config = configData?.config ?? DEFAULT_HOMEPAGE_CONFIG;
+  const sections = config.sections;
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
