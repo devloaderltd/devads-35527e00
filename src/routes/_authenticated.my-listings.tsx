@@ -204,7 +204,7 @@ function MyListings() {
     if (!ids.length) return;
     const next = new Date(Date.now() + 30 * 86400000).toISOString();
     const { error } = await supabase.from("listings")
-      .update({ expires_at: next, bumped_at: new Date().toISOString() })
+      .update({ expires_at: next })
       .in("id", ids);
     if (error) return toast.error(error.message);
     toast.success(`Renewed ${ids.length} expiring listing${ids.length === 1 ? "" : "s"}`);
