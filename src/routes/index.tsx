@@ -292,27 +292,27 @@ function Home() {
 
 
       {sections.chip_strip && (
-      /* Category chip strip */
-      <section className="container mx-auto px-4 pt-8">
-        <h2 className="sr-only">All categories</h2>
-        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-          {categories?.map((c) => (
-            <Link
-              key={c.id}
-              to="/search"
-              search={{ category: c.slug } as any}
-              className="group flex flex-shrink-0 items-center gap-2 rounded-full glass px-4 py-2 text-sm font-medium hover:border-primary/50"
-            >
-              <img
-                src={CATEGORY_IMAGES[c.slug] ?? emptyListingImg}
-                alt=""
-                className="h-6 w-6 rounded-full object-cover"
-              />
-              {c.name}
-            </Link>
-          ))}
-        </div>
-      </section>
+        <section className="container mx-auto px-4 pt-8">
+          <h2 className="sr-only">All categories</h2>
+          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            {categories?.map((c) => (
+              <Link
+                key={c.id}
+                to="/search"
+                search={{ category: c.slug } as any}
+                className="group flex flex-shrink-0 items-center gap-2 rounded-full glass px-4 py-2 text-sm font-medium hover:border-primary/50"
+              >
+                <img
+                  src={CATEGORY_IMAGES[c.slug] ?? emptyListingImg}
+                  alt=""
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* City context banner */}
       {hydrated && cityId && (
