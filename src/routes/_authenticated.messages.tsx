@@ -256,7 +256,7 @@ function MessagesLayout() {
             })}
           </ul>
         </aside>
-        <section className={`min-h-[60vh] rounded-2xl glass ${hasActive ? "block" : "hidden md:block"}`}>
+        <section className={`overflow-hidden rounded-2xl glass md:min-h-[60vh] md:h-[70vh] h-[calc(100dvh-9rem)] ${hasActive ? "block" : "hidden md:block"}`}>
           <Outlet />
         </section>
       </div>
