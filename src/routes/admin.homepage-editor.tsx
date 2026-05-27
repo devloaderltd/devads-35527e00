@@ -82,19 +82,19 @@ function Page() {
       <Panel title="Hero band">
         <div className="space-y-3">
           <Field label="Badge text">
-            <Input value={hero.badge} onChange={(e) => setHero({ ...hero, badge: e.target.value })} maxLength={120} className="bg-slate-900/50" />
+            <Input value={hero.badge} onChange={(e) => setHero({ ...hero, badge: e.target.value })} maxLength={120} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" />
           </Field>
           <Field label="Title (use {accent}…{/accent} for the gradient highlight)">
-            <Textarea value={hero.title} onChange={(e) => setHero({ ...hero, title: e.target.value })} maxLength={240} rows={2} className="bg-slate-900/50" />
+            <Textarea value={hero.title} onChange={(e) => setHero({ ...hero, title: e.target.value })} maxLength={240} rows={2} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" />
           </Field>
           <Field label="Subtitle">
-            <Textarea value={hero.subtitle} onChange={(e) => setHero({ ...hero, subtitle: e.target.value })} maxLength={500} rows={3} className="bg-slate-900/50" />
+            <Textarea value={hero.subtitle} onChange={(e) => setHero({ ...hero, subtitle: e.target.value })} maxLength={500} rows={3} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Primary CTA label"><Input value={hero.cta1_label} onChange={(e) => setHero({ ...hero, cta1_label: e.target.value })} maxLength={40} className="bg-slate-900/50" /></Field>
-            <Field label="Primary CTA URL"><Input value={hero.cta1_url} onChange={(e) => setHero({ ...hero, cta1_url: e.target.value })} maxLength={500} className="bg-slate-900/50" /></Field>
-            <Field label="Secondary CTA label"><Input value={hero.cta2_label} onChange={(e) => setHero({ ...hero, cta2_label: e.target.value })} maxLength={40} className="bg-slate-900/50" /></Field>
-            <Field label="Secondary CTA URL"><Input value={hero.cta2_url} onChange={(e) => setHero({ ...hero, cta2_url: e.target.value })} maxLength={500} className="bg-slate-900/50" /></Field>
+            <Field label="Primary CTA label"><Input value={hero.cta1_label} onChange={(e) => setHero({ ...hero, cta1_label: e.target.value })} maxLength={40} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
+            <Field label="Primary CTA URL"><Input value={hero.cta1_url} onChange={(e) => setHero({ ...hero, cta1_url: e.target.value })} maxLength={500} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
+            <Field label="Secondary CTA label"><Input value={hero.cta2_label} onChange={(e) => setHero({ ...hero, cta2_label: e.target.value })} maxLength={40} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
+            <Field label="Secondary CTA URL"><Input value={hero.cta2_url} onChange={(e) => setHero({ ...hero, cta2_url: e.target.value })} maxLength={500} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
           </div>
           <div className="flex justify-end">
             <Button onClick={() => m.mutate({ section: "hero", data: hero })} disabled={m.isPending} className="rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500">Save hero</Button>
@@ -109,9 +109,9 @@ function Page() {
             <Switch checked={feat.enabled} onCheckedChange={(v) => setFeat({ ...feat, enabled: v })} />
           </div>
           <Field label="Pinned listing UUID (leave blank to auto-pick newest featured/active)">
-            <Input value={feat.pinned_listing_id ?? ""} onChange={(e) => setFeat({ ...feat, pinned_listing_id: e.target.value.trim() || null })} placeholder="00000000-0000-0000-0000-000000000000" className="bg-slate-900/50 font-mono text-xs" />
+            <Input value={feat.pinned_listing_id ?? ""} onChange={(e) => setFeat({ ...feat, pinned_listing_id: e.target.value.trim() || null })} placeholder="00000000-0000-0000-0000-000000000000" className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500 font-mono text-xs" />
           </Field>
-          <Field label="Badge label"><Input value={feat.badge_label} onChange={(e) => setFeat({ ...feat, badge_label: e.target.value })} maxLength={40} className="bg-slate-900/50" /></Field>
+          <Field label="Badge label"><Input value={feat.badge_label} onChange={(e) => setFeat({ ...feat, badge_label: e.target.value })} maxLength={40} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
           <div className="flex justify-end">
             <Button onClick={() => m.mutate({ section: "bento_featured", data: feat })} disabled={m.isPending} className="rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500">Save featured tile</Button>
           </div>
@@ -158,10 +158,10 @@ function TileEditor({ title, tile, onChange, onSave, saving }: { title: string; 
           <Label className="text-sm text-slate-200">Show this tile</Label>
           <Switch checked={tile.enabled} onCheckedChange={(v) => onChange({ ...tile, enabled: v })} />
         </div>
-        <Field label="Title"><Input value={tile.title} onChange={(e) => onChange({ ...tile, title: e.target.value })} maxLength={80} className="bg-slate-900/50" /></Field>
-        <Field label="Subtitle"><Input value={tile.subtitle} onChange={(e) => onChange({ ...tile, subtitle: e.target.value })} maxLength={160} className="bg-slate-900/50" /></Field>
-        <Field label="Image URL (optional)"><Input value={tile.image_url} onChange={(e) => onChange({ ...tile, image_url: e.target.value })} maxLength={500} className="bg-slate-900/50" /></Field>
-        <Field label="Link URL"><Input value={tile.link_url} onChange={(e) => onChange({ ...tile, link_url: e.target.value })} maxLength={500} className="bg-slate-900/50" /></Field>
+        <Field label="Title"><Input value={tile.title} onChange={(e) => onChange({ ...tile, title: e.target.value })} maxLength={80} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
+        <Field label="Subtitle"><Input value={tile.subtitle} onChange={(e) => onChange({ ...tile, subtitle: e.target.value })} maxLength={160} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
+        <Field label="Image URL (optional)"><Input value={tile.image_url} onChange={(e) => onChange({ ...tile, image_url: e.target.value })} maxLength={500} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
+        <Field label="Link URL"><Input value={tile.link_url} onChange={(e) => onChange({ ...tile, link_url: e.target.value })} maxLength={500} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
         <Field label="Gradient">
           <Select value={tile.gradient} onValueChange={(v) => onChange({ ...tile, gradient: v as BentoTile["gradient"] })}>
             <SelectTrigger className="bg-slate-900/50 text-slate-100"><SelectValue /></SelectTrigger>
