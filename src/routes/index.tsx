@@ -131,7 +131,41 @@ function Home() {
     },
   });
 
-  const heroFeatured = (pinnedListing as any) ?? featured[0] ?? listings?.[0];
+  // Global fallback: newest active listing with an unexpired Featured promotion,
+  // otherwise the most recently bumped/created active listing site-wide. Runs
+  // only when no admin-pinned listing AND no in-city featured pick is available.
+  const needGlobalFallback = !pinnedId && !featured[0] && !listings?.[0];
+  const { data: globalFeatured } = useQuery({
+    queryKey: ["global-featured-fallback"],
+    enabled: needGlobalFallback,
+    queryFn: async () => {
+      // Try active featured promotion first
+      const { data: promo } = await supabase
+        .from("listings")
+        .select(`id, slug, title, cities(name, region, country), listing_images(url, sort_order), listing_promotions!inner(type, ends_at)`)
+        .eq("status", "active")
+        .eq("listing_promotions.type", "featured")
+        .gt("listing_promotions.ends_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (promo) return promo;
+      // Fallback: newest active listing globally (by bumped_at, then created_at)
+      const { data: latest } = await supabase
+        .from("listings")
+        .select(`id, slug, title, cities(name, region, country), listing_images(url, sort_order)`)
+        .eq("status", "active")
+        .order("bumped_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return latest;
+    },
+    staleTime: 60_000,
+  });
+
+  const heroFeatured = (pinnedListing as any) ?? featured[0] ?? listings?.[0] ?? (globalFeatured as any);
+
   const heroImg = heroFeatured?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ?? emptyListingImg;
 
   const cat = (slug: string) => categories?.find((c) => c.slug === slug);
