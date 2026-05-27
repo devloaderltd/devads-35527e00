@@ -117,22 +117,41 @@ function Home() {
   ).slice(0, 12);
   const recent = listings?.filter((l: any) => !featured.includes(l) && !bumped.includes(l)) ?? [];
 
-  const heroFeatured = featured[0] ?? listings?.[0];
+  const pinnedId = config.bento_featured.pinned_listing_id;
+  const { data: pinnedListing } = useQuery({
+    queryKey: ["pinned-listing", pinnedId],
+    enabled: !!pinnedId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("listings")
+        .select(`id, slug, title, cities(name, region, country), listing_images(url, sort_order)`)
+        .eq("id", pinnedId!)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const heroFeatured = (pinnedListing as any) ?? featured[0] ?? listings?.[0];
   const heroImg = heroFeatured?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ?? emptyListingImg;
 
   const cat = (slug: string) => categories?.find((c) => c.slug === slug);
-  const electronicsCat = cat("electronics");
-  const furnitureCat = cat("furniture");
-  const petsCat = cat("pets");
 
-  return (
-    <div className="pt-0">
-      <SiteBanner />
-      {/* Hero band */}
-      <section className="container mx-auto px-4 pt-6">
-        <div className="relative overflow-hidden rounded-[1.75rem] glass-strong p-5 shadow-[var(--shadow-float)] sm:rounded-[2rem] sm:p-6 md:p-12">
-          <div className="absolute -right-24 -bottom-24 h-80 w-80 rounded-full bg-[var(--gradient-primary)] opacity-20 blur-3xl" />
-          <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-accent/40 opacity-40 blur-3xl" />
+  const renderHeroTitle = (raw: string) => {
+    const parts = raw.split(/(\{accent\}.*?\{\/accent\})/);
+    return parts.map((p, i) => {
+      const m = p.match(/^\{accent\}(.*)\{\/accent\}$/);
+      if (m) return <span key={i} className="gradient-text">{m[1]}</span>;
+      return <span key={i}>{p}</span>;
+    });
+  };
+
+  const GRADIENTS: Record<BentoTile["gradient"], string> = {
+    primary: "var(--gradient-primary)",
+    lavender: "linear-gradient(135deg, var(--lavender), var(--primary))",
+    amber: "linear-gradient(135deg, var(--amber), var(--coral))",
+    ocean: "linear-gradient(135deg, var(--ocean, #0ea5e9), var(--primary))",
+  };
+
           <div className="relative z-10 max-w-2xl">
             <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground/80">
               <Sparkles className="h-3 w-3" /> Free to post · Free to browse
