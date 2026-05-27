@@ -129,18 +129,22 @@ function SettingsPage() {
               <AssetUploader
                 label="Logo"
                 kind="logo"
+                thumbSize="logo"
                 value={form.logo_url}
                 onChange={(v) => set("logo_url", v)}
                 maxBytes={1024 * 1024}
-                hint="PNG/SVG/WebP, ≤ 1 MB"
+                maxLabel="≤ 1 MB"
+                hint="PNG, SVG or WebP"
               />
               <AssetUploader
                 label="Favicon"
                 kind="favicon"
+                thumbSize="favicon"
                 value={form.favicon_url}
                 onChange={(v) => set("favicon_url", v)}
                 maxBytes={256 * 1024}
-                hint="ICO/PNG/SVG, ≤ 256 KB"
+                maxLabel="≤ 256 KB"
+                hint="ICO, PNG or SVG"
               />
             </div>
           </div>
