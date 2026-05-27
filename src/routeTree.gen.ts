@@ -54,6 +54,7 @@ import { Route as AdminHomepageRouteImport } from './routes/admin.homepage'
 import { Route as AdminDebugRouteImport } from './routes/admin.debug'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminBumpAuditRouteImport } from './routes/admin.bump-audit'
 import { Route as AdminBroadcastsRouteImport } from './routes/admin.broadcasts'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
@@ -309,6 +310,11 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBumpAuditRoute = AdminBumpAuditRouteImport.update({
+  id: '/bump-audit',
+  path: '/bump-audit',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBroadcastsRoute = AdminBroadcastsRouteImport.update({
   id: '/broadcasts',
   path: '/broadcasts',
@@ -505,6 +511,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
+  '/admin/bump-audit': typeof AdminBumpAuditRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
@@ -579,6 +586,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
+  '/admin/bump-audit': typeof AdminBumpAuditRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
@@ -657,6 +665,7 @@ export interface FileRoutesById {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/broadcasts': typeof AdminBroadcastsRoute
+  '/admin/bump-audit': typeof AdminBumpAuditRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
@@ -735,6 +744,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/banners'
     | '/admin/broadcasts'
+    | '/admin/bump-audit'
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/debug'
@@ -809,6 +819,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/banners'
     | '/admin/broadcasts'
+    | '/admin/bump-audit'
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/debug'
@@ -886,6 +897,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/banners'
     | '/admin/broadcasts'
+    | '/admin/bump-audit'
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/debug'
@@ -1286,6 +1298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bump-audit': {
+      id: '/admin/bump-audit'
+      path: '/bump-audit'
+      fullPath: '/admin/bump-audit'
+      preLoaderRoute: typeof AdminBumpAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/broadcasts': {
       id: '/admin/broadcasts'
       path: '/broadcasts'
@@ -1551,6 +1570,7 @@ interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminBroadcastsRoute: typeof AdminBroadcastsRoute
+  AdminBumpAuditRoute: typeof AdminBumpAuditRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCitiesRoute: typeof AdminCitiesRoute
   AdminDebugRoute: typeof AdminDebugRoute
@@ -1580,6 +1600,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminBroadcastsRoute: AdminBroadcastsRoute,
+  AdminBumpAuditRoute: AdminBumpAuditRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCitiesRoute: AdminCitiesRoute,
   AdminDebugRoute: AdminDebugRoute,

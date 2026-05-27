@@ -391,7 +391,13 @@ function MyListings() {
                 <ListingSparkline listingId={l.id} />
 
                 {l.status === "active" && (
-                  <div className="px-1">
+                  <div className="space-y-2 px-1">
+                    <BumpStatusCard
+                      listingId={l.id}
+                      bumpedAt={l.bumped_at}
+                      isOwner
+                      compact
+                    />
                     <PromoteDialog listingId={l.id} />
                   </div>
                 )}

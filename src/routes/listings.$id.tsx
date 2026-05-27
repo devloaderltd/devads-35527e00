@@ -548,7 +548,12 @@ function ListingDetail() {
 
 
             {user?.id === listing.user_id && (
-              <div className="mt-2">
+              <div className="mt-2 space-y-2">
+                <BumpStatusCard
+                  listingId={listing.id}
+                  bumpedAt={(listing as any).bumped_at}
+                  isOwner
+                />
                 <PromoteDialog listingId={listing.id} />
               </div>
             )}
