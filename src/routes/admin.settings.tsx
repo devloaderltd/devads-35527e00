@@ -116,7 +116,7 @@ function SettingsPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <Panel title="Branding">
           <div className="space-y-3">
             <Field label="Site name" error={errors.site_name}>
