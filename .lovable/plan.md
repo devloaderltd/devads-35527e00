@@ -1,32 +1,29 @@
-# Preview before Post
+# Fix: Featured tile missing on mobile homepage
 
-Currently, clicking **Post listing** immediately charges the wallet and publishes the ad. We'll insert a preview step so users can review (and edit) before any charge happens.
+## Problem
+On the homepage bento grid (`src/routes/index.tsx`), the large Featured tile renders on desktop but is missing on mobile in some sessions (e.g. before a city is picked, or while the listings query is loading). The placeholder fallback uses `hidden md:block`, so mobile collapses to nothing instead of showing the tile.
 
-## New flow
+## Root cause
+`heroFeatured = pinnedListing ?? featured[0] ?? listings?.[0] ?? globalFeatured` can be `undefined` when:
+1. The listings query is still loading (no city or in-flight) AND
+2. `globalFeatured` hasn't resolved yet OR returned null.
 
-1. User fills the form.
-2. Primary button now says **Preview Post** (no charge, no DB write).
-3. A preview screen appears showing exactly how the listing will look once live, plus a clear cost breakdown.
-4. User can:
-   - **Edit** → returns to the form with all values intact (photos, text, city, promote selection).
-   - **Post ad** → wallet is charged and the listing goes live (existing submit logic runs here).
+When that happens, the JSX falls through to the empty `<div className="hidden md:block …" />`, which renders nothing on mobile.
 
-## UI changes (`src/routes/_authenticated.post.tsx`)
+## Fix (frontend-only, `src/routes/index.tsx`)
 
-- Add local state `mode: "edit" | "preview"` (default `"edit"`).
-- Rename the existing submit button to **Preview Post**. Clicking it runs client-side validation only (same checks already in `submit`) and switches `mode` to `"preview"`. No network call, no charge.
-- Render a new `<ListingPreview />` panel when `mode === "preview"`, hiding the form. The preview shows:
-  - Cover + photo carousel (from in-memory `previewUrl`s and existing photos).
-  - Title, description, category, city/cities, contact info — styled to match the public listing detail card.
-  - Promotion badges if Featured / Bump selected.
-  - **Cost summary** card (post fee, promo fee, total, wallet balance, remaining after charge) — reuse the totals block currently inside the form.
-  - Two buttons at the bottom: **Edit** (back to form) and **Post ad** (runs the real submit → charges wallet → publishes → navigates to the new listing, same as today's `Post listing` action).
+1. **Broaden the global fallback trigger** so it runs whenever no concrete hero pick exists yet — not just when listings is empty:
+   - Change `needGlobalFallback` to `!pinnedId && !featured[0] && !listings?.[0]` (drops the `(!listings || listings.length === 0)` gate that prevented the fallback from running while the city query was loading).
 
-## New component
+2. **Render a mobile-visible skeleton** instead of `hidden md:block` while `heroFeatured` is not yet resolved, so mobile shows a placeholder card (matching the tile's rounded glass styling) and swaps in the real featured listing once any query resolves. On desktop it keeps occupying the 2×2 slot.
 
-- `src/components/post/ListingPreview.tsx` — pure presentational component, receives form values, photo previews, totals, wallet balance, and `onEdit` / `onConfirm` callbacks. Built to mirror the live listing layout so what the user sees is what gets published.
+3. **Keep the existing resolution order** (`pinnedListing → featured[0] → listings?.[0] → globalFeatured`) — no business-logic change, only visibility/loading behavior.
 
 ## Out of scope
+- No changes to homepage-config, listings schema, or queries beyond the one `enabled` condition.
+- No changes to tiles 2–4 or other sections.
 
-- No backend / pricing / payment logic changes — the existing charge + publish path runs unchanged when the user confirms from the preview.
-- No changes to bump security work already shipped.
+## Verification
+- Mobile preview (393px): featured tile visible immediately (skeleton → real listing).
+- Desktop preview: unchanged behavior, no layout shift in the 2×2 slot.
+- City picked vs not picked: tile renders in both states.
