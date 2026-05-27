@@ -66,17 +66,14 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
       POST: async ({ request }) => {
         const apiKey = process.env.LOVABLE_API_KEY
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-        if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
+        if (!apiKey || !supabaseUrl) {
           console.error('Missing required environment variables')
           return Response.json(
             { error: 'Server configuration error' },
             { status: 500 }
           )
         }
-
-        const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
 
         // Verify the caller is authorized with the service role key.
         // In the TanStack stack, the pg_cron job sends the service role key as a Bearer token.
@@ -86,31 +83,21 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
         }
 
         const token = authHeader.slice('Bearer '.length).trim()
-        let vaultSecretMatches = false
-        if (token !== supabaseServiceKey) {
-          const { data: vaultSecret, error: vaultError } = await supabase
-            .schema('vault')
-            .from('decrypted_secrets')
-            .select('decrypted_secret')
-            .eq('name', 'email_queue_service_role_key')
-            .maybeSingle()
-
-          if (vaultError) {
-            console.error('Failed to verify email queue cron secret', { error: vaultError })
-          }
-
-          vaultSecretMatches = vaultSecret?.decrypted_secret === token
-        }
-
-        if (token !== supabaseServiceKey && !vaultSecretMatches) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 })
-        }
+        const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, token, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
 
         // 1. Check rate-limit cooldown and read queue config
-        const { data: state } = await supabase
+        const { data: state, error: stateError } = await supabase
           .from('email_send_state')
           .select('retry_after_until, batch_size, send_delay_ms, auth_email_ttl_minutes, transactional_email_ttl_minutes')
           .single()
+
+        if (stateError) {
+          console.error('Email queue authorization failed', { error: stateError })
+          return Response.json({ error: 'Forbidden' }, { status: 403 })
+        }
 
         if (state?.retry_after_until && new Date(state.retry_after_until) > new Date()) {
           return Response.json({ skipped: true, reason: 'rate_limited' })
