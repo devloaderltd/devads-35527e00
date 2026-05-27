@@ -18,6 +18,7 @@ import { ListingSparkline } from "@/components/ThreadSparkline";
 import { BulkActionBar } from "@/components/BulkActionBar";
 import { PanelShell } from "@/components/PanelShell";
 import { ListingsSkeleton } from "@/components/ListingsSkeleton";
+import { BumpStatusCard } from "@/components/listings/BumpStatusCard";
 
 export const Route = createFileRoute("/_authenticated/my-listings")({
   head: () => ({ meta: [{ title: "My listings — CallEscort24" }] }),

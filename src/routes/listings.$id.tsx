@@ -38,6 +38,7 @@ import { getSellerContact } from "@/lib/seller-contact.functions";
 import { toast } from "sonner";
 import { pushRecentlyViewed } from "@/lib/recently-viewed";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
+import { BumpStatusCard } from "@/components/listings/BumpStatusCard";
 
 export const Route = createFileRoute("/listings/$id")({
   component: ListingDetail,
