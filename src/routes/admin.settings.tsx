@@ -149,7 +149,7 @@ function SettingsPage() {
 
 
         <Panel title="Promotion pricing">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Featured price (USD)" error={errors.featured_price_usd}>
               <Input type="number" step="0.01" min={0} max={9999} value={form.featured_price_usd} onChange={(e) => set("featured_price_usd", Number(e.target.value))} className="mt-1 rounded-lg border-white/10 bg-white/5 text-slate-100" />
             </Field>
