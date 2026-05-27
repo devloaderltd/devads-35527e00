@@ -397,4 +397,118 @@ function AssetUploader({
   );
 }
 
+function CopyField({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      toast.success(`${label} copied`);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {
+      toast.error("Clipboard unavailable");
+    }
+  };
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <Label className="text-xs text-slate-300 sm:text-sm">{label}</Label>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={copy}
+          className="h-7 rounded-full px-2 text-xs text-slate-300 hover:bg-white/10 hover:text-slate-100"
+        >
+          {copied ? <Check className="mr-1 h-3 w-3" /> : <Copy className="mr-1 h-3 w-3" />}
+          {copied ? "Copied" : "Copy"}
+        </Button>
+      </div>
+      {multiline ? (
+        <Textarea
+          readOnly
+          value={value}
+          rows={4}
+          className="rounded-lg border-white/10 bg-slate-950/40 font-mono text-xs text-slate-200"
+          onFocus={(e) => e.currentTarget.select()}
+        />
+      ) : (
+        <Input
+          readOnly
+          value={value}
+          className="rounded-lg border-white/10 bg-slate-950/40 font-mono text-xs text-slate-200"
+          onFocus={(e) => e.currentTarget.select()}
+        />
+      )}
+    </div>
+  );
+}
+
+function GoogleAuthPanel() {
+  const [openChecklist, setOpenChecklist] = useState(false);
+  return (
+    <Panel title="Google sign-in (branded)" className="lg:col-span-2">
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <p className="text-sm text-slate-300">
+            Branded Google sign-in shows <span className="font-semibold text-slate-100">CallEscort24</span> on the Google
+            consent screen instead of a generic app name. Use your own Google Cloud OAuth credentials.
+          </p>
+          <p className="text-xs text-slate-500">
+            Client ID and Client Secret are stored in the backend authentication panel — not in the site database — so they
+            must be pasted there directly. The two fields below are the values you'll need to paste into Google Cloud Console.
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <CopyField label="Authorized redirect URI" value={GOOGLE_REDIRECT_URI} />
+          <CopyField label="Authorized JavaScript origins" value={GOOGLE_AUTHORIZED_ORIGINS} multiline />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            asChild
+            className="rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white"
+          >
+            <a href={BACKEND_GOOGLE_PROVIDER_URL} target="_blank" rel="noopener noreferrer">
+              Open Google provider settings <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+            </a>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="rounded-full border-white/15 bg-white/5 text-slate-100 hover:bg-white/10"
+          >
+            <a href={GOOGLE_CLOUD_CREDENTIALS_URL} target="_blank" rel="noopener noreferrer">
+              Google Cloud Console — Credentials <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+            </a>
+          </Button>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/5">
+          <button
+            type="button"
+            onClick={() => setOpenChecklist((v) => !v)}
+            className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-slate-100"
+          >
+            <span>Setup checklist</span>
+            <ChevronDown className={`h-4 w-4 transition-transform ${openChecklist ? "rotate-180" : ""}`} />
+          </button>
+          {openChecklist && (
+            <ol className="space-y-2 border-t border-white/10 px-5 py-4 text-sm text-slate-300 [counter-reset:step] [&>li]:relative [&>li]:pl-7 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:top-0 [&>li]:before:flex [&>li]:before:h-5 [&>li]:before:w-5 [&>li]:before:items-center [&>li]:before:justify-center [&>li]:before:rounded-full [&>li]:before:bg-indigo-500/20 [&>li]:before:text-[10px] [&>li]:before:font-semibold [&>li]:before:text-indigo-200 [&>li]:before:[counter-increment:step] [&>li]:before:[content:counter(step)]">
+              <li>Create a project in Google Cloud Console (name it CallEscort24).</li>
+              <li>Open <span className="font-medium text-slate-100">APIs &amp; Services → OAuth consent screen</span>. Pick <span className="font-medium">External</span>, set the app name, support email, and add <span className="font-mono text-xs">callescort24.org</span> as an authorized domain. Add scopes: <span className="font-mono text-xs">userinfo.email</span>, <span className="font-mono text-xs">userinfo.profile</span>, <span className="font-mono text-xs">openid</span>.</li>
+              <li>Open <span className="font-medium text-slate-100">Credentials → Create credentials → OAuth client ID</span>. Type: <span className="font-medium">Web application</span>.</li>
+              <li>Paste the <span className="font-medium">Authorized JavaScript origins</span> and the <span className="font-medium">Authorized redirect URI</span> from the fields above.</li>
+              <li>Copy the generated <span className="font-medium">Client ID</span> and <span className="font-medium">Client Secret</span>.</li>
+              <li>Click <span className="font-medium">Open Google provider settings</span> above, enable Google, paste the Client ID and Secret, and save.</li>
+            </ol>
+          )}
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+
 
