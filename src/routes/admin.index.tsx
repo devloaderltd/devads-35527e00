@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { Users, Package, DollarSign, Flag, Wallet, Bitcoin, TrendingUp, AlertCircle, Activity, ShieldAlert, Wrench, ServerCrash, RefreshCw, Sparkles } from "lucide-react";
 
-import { SeedDemoButton } from "@/components/admin/SeedDemoButton";
+
 import { panelCls, AdminPageHeader } from "@/components/admin/ui";
 import { KpiTile } from "@/components/admin/KpiTile";
 import { ErrorFallback, CardGridSkeleton } from "@/components/admin/Skeletons";
@@ -116,12 +116,7 @@ function DashboardPage() {
       <AdminPageHeader
         title="Dashboard"
         subtitle="At-a-glance view of the marketplace"
-        actions={
-          <div className="flex items-center gap-2">
-            <RangeToggle value={range} onChange={setRange} />
-            <SeedDemoButton />
-          </div>
-        }
+        actions={<RangeToggle value={range} onChange={setRange} />}
       />
 
       <HeroStrip

@@ -68,7 +68,6 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated.messages.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicSitemapDotxmlRouteImport } from './routes/api/public/sitemap[.]xml'
-import { Route as ApiPublicSeedDemoRouteImport } from './routes/api/public/seed-demo'
 import { Route as ApiPublicClientErrorsRouteImport } from './routes/api/public/client-errors'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
 import { Route as AuthenticatedDebugSessionRouteImport } from './routes/_authenticated.debug.session'
@@ -378,11 +377,6 @@ const ApiPublicSitemapDotxmlRoute = ApiPublicSitemapDotxmlRouteImport.update({
   path: '/api/public/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicSeedDemoRoute = ApiPublicSeedDemoRouteImport.update({
-  id: '/api/public/seed-demo',
-  path: '/api/public/seed-demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicClientErrorsRoute = ApiPublicClientErrorsRouteImport.update({
   id: '/api/public/client-errors',
   path: '/api/public/client-errors',
@@ -506,7 +500,6 @@ export interface FileRoutesByFullPath {
   '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
-  '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
@@ -576,7 +569,6 @@ export interface FileRoutesByTo {
   '/debug/session': typeof AuthenticatedDebugSessionRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
-  '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
@@ -650,7 +642,6 @@ export interface FileRoutesById {
   '/_authenticated/debug/session': typeof AuthenticatedDebugSessionRoute
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
-  '/api/public/seed-demo': typeof ApiPublicSeedDemoRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
@@ -724,7 +715,6 @@ export interface FileRouteTypes {
     | '/debug/session'
     | '/messages/$threadId'
     | '/api/public/client-errors'
-    | '/api/public/seed-demo'
     | '/api/public/sitemap.xml'
     | '/lovable/email/suppression'
     | '/messages/'
@@ -794,7 +784,6 @@ export interface FileRouteTypes {
     | '/debug/session'
     | '/messages/$threadId'
     | '/api/public/client-errors'
-    | '/api/public/seed-demo'
     | '/api/public/sitemap.xml'
     | '/lovable/email/suppression'
     | '/messages'
@@ -867,7 +856,6 @@ export interface FileRouteTypes {
     | '/_authenticated/debug/session'
     | '/_authenticated/messages/$threadId'
     | '/api/public/client-errors'
-    | '/api/public/seed-demo'
     | '/api/public/sitemap.xml'
     | '/lovable/email/suppression'
     | '/_authenticated/messages/'
@@ -905,7 +893,6 @@ export interface RootRouteChildren {
   ListingsIdRoute: typeof ListingsIdRoute
   SellersIdRoute: typeof SellersIdRoute
   ApiPublicClientErrorsRoute: typeof ApiPublicClientErrorsRoute
-  ApiPublicSeedDemoRoute: typeof ApiPublicSeedDemoRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronAutoPromoteRoute: typeof ApiPublicCronAutoPromoteRoute
@@ -1333,13 +1320,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/seed-demo': {
-      id: '/api/public/seed-demo'
-      path: '/api/public/seed-demo'
-      fullPath: '/api/public/seed-demo'
-      preLoaderRoute: typeof ApiPublicSeedDemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/client-errors': {
       id: '/api/public/client-errors'
       path: '/api/public/client-errors'
@@ -1547,7 +1527,6 @@ const rootRouteChildren: RootRouteChildren = {
   ListingsIdRoute: ListingsIdRoute,
   SellersIdRoute: SellersIdRoute,
   ApiPublicClientErrorsRoute: ApiPublicClientErrorsRoute,
-  ApiPublicSeedDemoRoute: ApiPublicSeedDemoRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronAutoPromoteRoute: ApiPublicCronAutoPromoteRoute,
