@@ -111,12 +111,29 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
     if (lerr || !listing) throw new Error("Listing not found");
     if (listing.user_id !== userId) throw new Error("Not your listing");
 
-    // Debit (raises 'insufficient funds' if balance too low)
+    if (data.type === "bump") {
+      // Atomic: debit wallet + record payment + set bumped_at (only path allowed by the DB guard trigger)
+      const { error: bumpErr } = await supabaseAdmin.rpc("apply_paid_bump", {
+        _user_id: userId,
+        _listing_id: data.listingId,
+        _amount: amount,
+        _description: "Bump promotion",
+      });
+      if (bumpErr) {
+        if (bumpErr.message?.toLowerCase().includes("insufficient")) {
+          throw new Error("Insufficient wallet balance. Please top up.");
+        }
+        throw new Error(bumpErr.message);
+      }
+      return { ok: true };
+    }
+
+    // Featured path (unchanged)
     const { error: debitErr } = await supabaseAdmin.rpc("debit_wallet", {
       _user_id: userId,
       _amount: amount,
       _reference: data.listingId,
-      _description: data.type === "featured" ? `Featured promotion (${days}d)` : "Bump promotion",
+      _description: `Featured promotion (${days}d)`,
     });
     if (debitErr) {
       if (debitErr.message?.toLowerCase().includes("insufficient")) {
@@ -125,13 +142,12 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
       throw new Error(debitErr.message);
     }
 
-    // Record payment
     const { data: pay } = await supabaseAdmin
       .from("payments")
       .insert({
         user_id: userId,
         listing_id: data.listingId,
-        promotion_type: data.type,
+        promotion_type: "featured",
         provider: "wallet",
         amount,
         currency: "USD",
@@ -140,20 +156,15 @@ export const promoteWithWallet = createServerFn({ method: "POST" })
       .select("id")
       .single();
 
-    // Apply promotion
-    if (data.type === "bump") {
-      await supabaseAdmin.from("listings").update({ bumped_at: new Date().toISOString() }).eq("id", data.listingId);
-    } else {
-      const now = new Date();
-      const ends = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-      await supabaseAdmin.from("listing_promotions").insert({
-        listing_id: data.listingId,
-        type: "featured",
-        starts_at: now.toISOString(),
-        ends_at: ends.toISOString(),
-        payment_id: pay?.id ?? null,
-      });
-    }
+    const now = new Date();
+    const ends = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    await supabaseAdmin.from("listing_promotions").insert({
+      listing_id: data.listingId,
+      type: "featured",
+      starts_at: now.toISOString(),
+      ends_at: ends.toISOString(),
+      payment_id: pay?.id ?? null,
+    });
 
     return { ok: true };
   });
