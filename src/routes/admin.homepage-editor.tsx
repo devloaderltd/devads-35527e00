@@ -108,8 +108,8 @@ function Page() {
             <Label className="text-sm text-slate-200">Show this tile</Label>
             <Switch checked={feat.enabled} onCheckedChange={(v) => setFeat({ ...feat, enabled: v })} />
           </div>
-          <Field label="Pinned listing UUID (leave blank to auto-pick newest featured/active)">
-            <Input value={feat.pinned_listing_id ?? ""} onChange={(e) => setFeat({ ...feat, pinned_listing_id: e.target.value.trim() || null })} placeholder="00000000-0000-0000-0000-000000000000" className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500 font-mono text-xs" />
+          <Field label="Pinned listing — paste the listing slug or UUID (leave blank to auto-pick newest featured/active)">
+            <Input value={feat.pinned_listing_id ?? ""} onChange={(e) => setFeat({ ...feat, pinned_listing_id: e.target.value.trim() || null })} placeholder="my-listing-slug  or  00000000-0000-0000-0000-000000000000" className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500 font-mono text-xs" />
           </Field>
           <Field label="Badge label"><Input value={feat.badge_label} onChange={(e) => setFeat({ ...feat, badge_label: e.target.value })} maxLength={40} className="bg-slate-900/50 text-slate-100 placeholder:text-slate-500" /></Field>
           <div className="flex justify-end">

@@ -121,7 +121,8 @@ const heroSchema = z.object({
   cta2_url: z.string().max(500),
 });
 const bentoFeaturedSchema = z.object({
-  pinned_listing_id: z.string().uuid().nullable(),
+  // Accept either a UUID or a slug; we resolve slug → UUID in the handler.
+  pinned_listing_id: z.string().min(1).max(200).nullable(),
   badge_label: z.string().max(40),
   enabled: z.boolean(),
 });
@@ -161,10 +162,26 @@ export const saveHomepageConfig = createServerFn({ method: "POST" })
     return { section: input.section, data: schema.parse(input.data) };
   })
   .handler(async ({ data, context }) => {
+    let sectionData: unknown = data.data;
+    // For the featured tile, allow admins to paste a slug instead of a UUID.
+    if (data.section === "bento_featured") {
+      const f = data.data as { pinned_listing_id: string | null; badge_label: string; enabled: boolean };
+      let pinned = f.pinned_listing_id;
+      if (pinned) {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pinned);
+        if (!isUuid) {
+          const { data: row } = await supabaseAdmin
+            .from("listings").select("id").eq("slug", pinned).maybeSingle();
+          if (!row) throw new Error(`No listing found for slug "${pinned}"`);
+          pinned = row.id;
+        }
+      }
+      sectionData = { ...f, pinned_listing_id: pinned };
+    }
     const payload: Record<string, unknown> = {
       id: "global",
       updated_at: new Date().toISOString(),
-      [data.section]: data.data,
+      [data.section]: sectionData,
     };
     const { error } = await supabaseAdmin
       .from("homepage_config")
