@@ -467,12 +467,10 @@ function GoogleAuthPanel() {
 
         <div className="flex flex-wrap gap-2">
           <Button
-            asChild
             className="rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white"
+            onClick={() => window.dispatchEvent(new CustomEvent("lov-open-backend"))}
           >
-            <a href={BACKEND_GOOGLE_PROVIDER_URL} target="_blank" rel="noopener noreferrer">
-              Open Google provider settings <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-            </a>
+            Open backend → Users → Auth Settings <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
           </Button>
           <Button
             asChild
