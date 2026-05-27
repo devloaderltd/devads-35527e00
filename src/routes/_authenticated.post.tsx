@@ -21,7 +21,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ImagePlus, X, Sparkles, Loader2, Check, ChevronsUpDown, Star, GripVertical } from "lucide-react";
 import { aiWriteListing } from "@/lib/ai.functions";
-import { chargeListingPost } from "@/lib/wallet.functions";
+import { chargeListingPost, getPromotionPricing, getWallet, promoteWithWallet } from "@/lib/wallet.functions";
+import { Rocket, TrendingUp, Wallet as WalletIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor,
