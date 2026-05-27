@@ -509,15 +509,7 @@ function ListingDetail() {
                 </Link>
               ) : (
                 <div className="space-y-1.5">
-                  {(listing as any).phone ? (
-                    <a
-                      href={`tel:${String((listing as any).phone).replace(/[^\d+]/g, "")}`}
-                      className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
-                    >
-                      <Phone className="h-4 w-4 text-primary" />
-                      {(listing as any).phone}
-                    </a>
-                  ) : contact?.phone ? (
+                  {contact?.phone ? (
                     <a
                       href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
                       className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
@@ -531,19 +523,20 @@ function ListingDetail() {
                       Phone not provided
                     </div>
                   )}
-                  {(listing as any).whatsapp && (
+                  {contact?.whatsapp && (
                     <a
-                      href={`https://wa.me/${String((listing as any).whatsapp).replace(/[^\d]/g, "")}`}
+                      href={`https://wa.me/${contact.whatsapp.replace(/[^\d]/g, "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm font-medium hover:bg-white"
                     >
                       <MessageCircle className="h-4 w-4 text-[#25D366]" />
-                      WhatsApp: {(listing as any).whatsapp}
+                      WhatsApp: {contact.whatsapp}
                     </a>
                   )}
                 </div>
               )}
+
             </div>
 
 
@@ -630,24 +623,25 @@ function ListingDetail() {
             >
               <Share2 className="h-4 w-4" />
             </button>
-            {((listing as any).phone || contact?.phone) && (
+            {contact?.phone && (
               <a
-                href={`tel:${String((listing as any).phone || contact?.phone).replace(/[^\d+]/g, "")}`}
+                href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
                 aria-label="Call seller"
                 className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/60 bg-white/70 hover:bg-white"
               >
                 <Phone className="h-4 w-4 text-primary" />
               </a>
             )}
-            {(listing as any).whatsapp && (
+            {contact?.whatsapp && (
               <a
-                href={`https://wa.me/${String((listing as any).whatsapp).replace(/[^\d]/g, "")}`}
+                href={`https://wa.me/${contact.whatsapp.replace(/[^\d]/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp seller"
                 className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/60 bg-white/70 hover:bg-white"
               >
                 <MessageCircle className="h-4 w-4 text-[#25D366]" />
+
               </a>
             )}
             <Button onClick={startThread} disabled={contacting} className="btn-gradient h-10 flex-1 gap-2 rounded-full border-0">
