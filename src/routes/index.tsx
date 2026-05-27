@@ -134,7 +134,7 @@ function Home() {
   // Global fallback: newest active listing with an unexpired Featured promotion,
   // otherwise the most recently bumped/created active listing site-wide. Runs
   // only when no admin-pinned listing AND no in-city featured pick is available.
-  const needGlobalFallback = !pinnedId && !featured[0] && !listings?.[0];
+  const needGlobalFallback = !pinnedId && !featured[0] && (!listings || listings.length === 0);
   const { data: globalFeatured } = useQuery({
     queryKey: ["global-featured-fallback"],
     enabled: needGlobalFallback,
@@ -257,7 +257,7 @@ function Home() {
               </div>
             </Link>
           ) : (
-            <div className="col-span-1 row-span-1 rounded-[2rem] glass md:col-span-2 md:row-span-2" />
+            <div className="hidden md:block col-span-1 row-span-1 rounded-[2rem] glass md:col-span-2 md:row-span-2" />
           )}
 
           {/* Medium gradient tile 2 */}
