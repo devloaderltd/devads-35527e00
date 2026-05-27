@@ -161,6 +161,10 @@ function SettingsPage() {
           </div>
         </Panel>
 
+        <GoogleAuthPanel />
+
+
+
 
 
         <Panel title="Promotion pricing">
