@@ -1261,6 +1261,63 @@ export type Database = {
         }
         Relationships: []
       }
+      smtp_settings: {
+        Row: {
+          auth_pass: string
+          auth_user: string
+          enabled: boolean
+          from_email: string
+          from_name: string
+          host: string
+          id: string
+          last_test_at: string | null
+          last_test_error: string | null
+          last_test_status: string | null
+          port: number
+          provider_label: string
+          reply_to: string | null
+          secure: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          auth_pass?: string
+          auth_user?: string
+          enabled?: boolean
+          from_email?: string
+          from_name?: string
+          host?: string
+          id?: string
+          last_test_at?: string | null
+          last_test_error?: string | null
+          last_test_status?: string | null
+          port?: number
+          provider_label?: string
+          reply_to?: string | null
+          secure?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          auth_pass?: string
+          auth_user?: string
+          enabled?: boolean
+          from_email?: string
+          from_name?: string
+          host?: string
+          id?: string
+          last_test_at?: string | null
+          last_test_error?: string | null
+          last_test_status?: string | null
+          port?: number
+          provider_label?: string
+          reply_to?: string | null
+          secure?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
