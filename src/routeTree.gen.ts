@@ -81,6 +81,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicPaymentsPlisioIpnRouteImport } from './routes/api/public/payments/plisio-ipn'
+import { Route as ApiPublicCronReconcileBumpsRouteImport } from './routes/api/public/cron/reconcile-bumps'
 import { Route as ApiPublicCronMatchSavedSearchesRouteImport } from './routes/api/public/cron/match-saved-searches'
 import { Route as ApiPublicCronAutoPromoteRouteImport } from './routes/api/public/cron/auto-promote'
 
@@ -452,6 +453,12 @@ const ApiPublicPaymentsPlisioIpnRoute =
     path: '/api/public/payments/plisio-ipn',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronReconcileBumpsRoute =
+  ApiPublicCronReconcileBumpsRouteImport.update({
+    id: '/api/public/cron/reconcile-bumps',
+    path: '/api/public/cron/reconcile-bumps',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronMatchSavedSearchesRoute =
   ApiPublicCronMatchSavedSearchesRouteImport.update({
     id: '/api/public/cron/match-saved-searches',
@@ -533,6 +540,7 @@ export interface FileRoutesByFullPath {
   '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
+  '/api/public/cron/reconcile-bumps': typeof ApiPublicCronReconcileBumpsRoute
   '/api/public/payments/plisio-ipn': typeof ApiPublicPaymentsPlisioIpnRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -606,6 +614,7 @@ export interface FileRoutesByTo {
   '/messages': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
+  '/api/public/cron/reconcile-bumps': typeof ApiPublicCronReconcileBumpsRoute
   '/api/public/payments/plisio-ipn': typeof ApiPublicPaymentsPlisioIpnRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -683,6 +692,7 @@ export interface FileRoutesById {
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
   '/api/public/cron/match-saved-searches': typeof ApiPublicCronMatchSavedSearchesRoute
+  '/api/public/cron/reconcile-bumps': typeof ApiPublicCronReconcileBumpsRoute
   '/api/public/payments/plisio-ipn': typeof ApiPublicPaymentsPlisioIpnRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -760,6 +770,7 @@ export interface FileRouteTypes {
     | '/messages/'
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
+    | '/api/public/cron/reconcile-bumps'
     | '/api/public/payments/plisio-ipn'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -833,6 +844,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
+    | '/api/public/cron/reconcile-bumps'
     | '/api/public/payments/plisio-ipn'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -909,6 +921,7 @@ export interface FileRouteTypes {
     | '/_authenticated/messages/'
     | '/api/public/cron/auto-promote'
     | '/api/public/cron/match-saved-searches'
+    | '/api/public/cron/reconcile-bumps'
     | '/api/public/payments/plisio-ipn'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -947,6 +960,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronAutoPromoteRoute: typeof ApiPublicCronAutoPromoteRoute
   ApiPublicCronMatchSavedSearchesRoute: typeof ApiPublicCronMatchSavedSearchesRoute
+  ApiPublicCronReconcileBumpsRoute: typeof ApiPublicCronReconcileBumpsRoute
   ApiPublicPaymentsPlisioIpnRoute: typeof ApiPublicPaymentsPlisioIpnRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1461,6 +1475,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsPlisioIpnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/reconcile-bumps': {
+      id: '/api/public/cron/reconcile-bumps'
+      path: '/api/public/cron/reconcile-bumps'
+      fullPath: '/api/public/cron/reconcile-bumps'
+      preLoaderRoute: typeof ApiPublicCronReconcileBumpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/match-saved-searches': {
       id: '/api/public/cron/match-saved-searches'
       path: '/api/public/cron/match-saved-searches'
@@ -1615,6 +1636,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronAutoPromoteRoute: ApiPublicCronAutoPromoteRoute,
   ApiPublicCronMatchSavedSearchesRoute: ApiPublicCronMatchSavedSearchesRoute,
+  ApiPublicCronReconcileBumpsRoute: ApiPublicCronReconcileBumpsRoute,
   ApiPublicPaymentsPlisioIpnRoute: ApiPublicPaymentsPlisioIpnRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
