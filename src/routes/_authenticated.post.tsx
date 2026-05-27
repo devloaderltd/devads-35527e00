@@ -91,6 +91,10 @@ function PostListing() {
   const [boostFeatured, setBoostFeatured] = useState(false);
   const [boostBump, setBoostBump] = useState(false);
 
+  // Preview-before-post (create-only)
+  const [previewMode, setPreviewMode] = useState(false);
+
+
   const { data: pricing } = useQuery({
     queryKey: ["promotion-pricing"],
     enabled: !isEdit,
