@@ -1257,6 +1257,7 @@ export type Database = {
           featured_days: number
           featured_price_usd: number
           id: string
+          listing_post_price_usd: number
           logo_url: string
           maintenance_message: string
           maintenance_mode: boolean
@@ -1271,6 +1272,7 @@ export type Database = {
           featured_days?: number
           featured_price_usd?: number
           id?: string
+          listing_post_price_usd?: number
           logo_url?: string
           maintenance_message?: string
           maintenance_mode?: boolean
@@ -1285,6 +1287,7 @@ export type Database = {
           featured_days?: number
           featured_price_usd?: number
           id?: string
+          listing_post_price_usd?: number
           logo_url?: string
           maintenance_message?: string
           maintenance_mode?: boolean

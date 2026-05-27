@@ -1,0 +1,1 @@
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS listing_post_price_usd numeric NOT NULL DEFAULT 1.00;
