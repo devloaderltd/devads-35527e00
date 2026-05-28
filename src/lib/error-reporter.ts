@@ -3,6 +3,8 @@
  * and posts them to /api/public/client-errors. Batches, dedupes, and rate-limits.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { isChunkLoadError, reloadOnceForChunkError, clearChunkReloadGuard } from "./chunk-reload";
+
 
 type Payload = {
   message: string;
