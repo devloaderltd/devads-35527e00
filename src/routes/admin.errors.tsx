@@ -8,6 +8,7 @@ import { KpiTile } from "@/components/admin/KpiTile";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertTriangle, Server, Wifi, Bug } from "lucide-react";
 import { listErrors, errorStats } from "@/lib/errors.functions";
 
 export const Route = createFileRoute("/admin/errors")({ component: ErrorsPage });
@@ -29,10 +30,10 @@ function ErrorsPage() {
       <AdminPageHeader title="Error monitoring" subtitle="Recoverable client errors and server faults from the last 24h" />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiTile label="Client · 24h" value={stats.data?.client24 ?? "—"} />
-        <KpiTile label="Client · 7d" value={stats.data?.client7d ?? "—"} />
-        <KpiTile label="Server · 24h" value={stats.data?.server24 ?? "—"} />
-        <KpiTile label="Server · 7d" value={stats.data?.server7d ?? "—"} />
+        <KpiTile icon={<Wifi className="h-4 w-4" />} label="Client · 24h" value={stats.data?.client24 ?? "—"} />
+        <KpiTile icon={<Bug className="h-4 w-4" />} label="Client · 7d" value={stats.data?.client7d ?? "—"} />
+        <KpiTile icon={<Server className="h-4 w-4" />} label="Server · 24h" value={stats.data?.server24 ?? "—"} />
+        <KpiTile icon={<AlertTriangle className="h-4 w-4" />} label="Server · 7d" value={stats.data?.server7d ?? "—"} />
       </div>
 
       <Tabs value={source} onValueChange={(v) => setSource(v as "client" | "server")}>

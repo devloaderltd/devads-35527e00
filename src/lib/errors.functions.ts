@@ -26,7 +26,7 @@ export const listErrors = createServerFn({ method: "POST" })
     let q = supabaseAdmin.from(table).select("*").gte("created_at", since)
       .order("created_at", { ascending: false }).limit(data.limit);
     if (data.severity) q = q.eq("severity", data.severity);
-    if (data.kind && data.source === "client") q = q.eq("kind", data.kind);
+    if (data.kind && data.source === "client") q = (q as any).eq("kind", data.kind);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return { rows: rows ?? [] };
