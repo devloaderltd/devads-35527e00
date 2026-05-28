@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.mirror_moderation_to_audit() FROM PUBLIC, anon, authenticated;

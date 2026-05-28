@@ -182,6 +182,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          kind: string
           message: string
           resolved: boolean
           route: string | null
@@ -193,6 +194,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          kind?: string
           message: string
           resolved?: boolean
           route?: string | null
@@ -204,6 +206,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          kind?: string
           message?: string
           resolved?: boolean
           route?: string | null
@@ -818,6 +821,42 @@ export type Database = {
           },
         ]
       }
+      moderation_actions: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          id: string
+          notify_user: boolean
+          reason_code: Database["public"]["Enums"]["moderation_reason"]
+          reason_note: string | null
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          id?: string
+          notify_user?: boolean
+          reason_code: Database["public"]["Enums"]["moderation_reason"]
+          reason_note?: string | null
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          id?: string
+          notify_user?: boolean
+          reason_code?: Database["public"]["Enums"]["moderation_reason"]
+          reason_note?: string | null
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           email_on_expiring: boolean
@@ -1210,6 +1249,42 @@ export type Database = {
           reviewer_id?: string
           seller_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      server_error_logs: {
+        Row: {
+          created_at: string
+          fn_name: string | null
+          id: string
+          message: string
+          metadata: Json
+          route: string | null
+          severity: string
+          stack: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fn_name?: string | null
+          id?: string
+          message: string
+          metadata?: Json
+          route?: string | null
+          severity?: string
+          stack?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fn_name?: string | null
+          id?: string
+          message?: string
+          metadata?: Json
+          route?: string | null
+          severity?: string
+          stack?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1651,6 +1726,16 @@ export type Database = {
         | "not_applicable"
       listing_event_type: "view" | "favorite" | "message" | "contact_reveal"
       listing_status: "draft" | "active" | "sold" | "expired" | "removed"
+      moderation_reason:
+        | "spam"
+        | "nudity"
+        | "scam"
+        | "harassment"
+        | "illegal"
+        | "duplicate"
+        | "underage"
+        | "misleading"
+        | "other"
       payment_status: "pending" | "completed" | "failed" | "refunded"
       promotion_type: "featured" | "bump" | "highlight"
       report_status: "open" | "reviewing" | "resolved" | "dismissed"
@@ -1805,6 +1890,17 @@ export const Constants = {
       ],
       listing_event_type: ["view", "favorite", "message", "contact_reveal"],
       listing_status: ["draft", "active", "sold", "expired", "removed"],
+      moderation_reason: [
+        "spam",
+        "nudity",
+        "scam",
+        "harassment",
+        "illegal",
+        "duplicate",
+        "underage",
+        "misleading",
+        "other",
+      ],
       payment_status: ["pending", "completed", "failed", "refunded"],
       promotion_type: ["featured", "bump", "highlight"],
       report_status: ["open", "reviewing", "resolved", "dismissed"],
