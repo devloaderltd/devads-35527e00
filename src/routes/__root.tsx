@@ -167,6 +167,8 @@ function RootComponent() {
             <RouteProgress />
             <AuthInvalidator />
             <DynamicFavicon />
+            <SessionWatcher />
+            <RecoveryOverlay />
             {isAdminArea ? (
               <Outlet />
             ) : (
