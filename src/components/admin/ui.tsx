@@ -18,7 +18,7 @@ export function AdminPageHeader({
         aria-hidden
         className="pointer-events-none absolute -left-4 -top-8 h-32 w-72 rounded-full bg-indigo-500/10 blur-3xl"
       />
-      <div className="relative flex flex-wrap items-end justify-between gap-3">
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-2xl font-bold tracking-tight text-slate-100 break-words sm:text-3xl">
             {title}
@@ -27,7 +27,7 @@ export function AdminPageHeader({
             <p className="mt-0.5 text-xs text-slate-400 sm:text-sm">{subtitle}</p>
           )}
         </div>
-        {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
     </div>
   );
