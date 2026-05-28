@@ -1646,6 +1646,13 @@ export type Database = {
         Returns: number
       }
       generate_listing_slug: { Args: { _title: string }; Returns: string }
+      get_my_listing_contact: {
+        Args: { _listing_id: string }
+        Returns: {
+          phone: string
+          whatsapp: string
+        }[]
+      }
       get_my_phone: { Args: never; Returns: string }
       has_role: {
         Args: {
