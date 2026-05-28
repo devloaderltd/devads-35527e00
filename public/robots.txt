@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /_authenticated/
+Disallow: /lovable/
+
+Sitemap: https://callescort24.org/sitemap.xml
