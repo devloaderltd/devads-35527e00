@@ -12,7 +12,9 @@
     "format": "prettier --write .",
     "check:auth": "bun run scripts/check-auth-routes.ts",
     "test:visual": "playwright test",
-    "test:visual:update": "playwright test -u"
+    "test:visual:update": "playwright test -u",
+    "test:e2e": "playwright test --project=e2e",
+    "test:e2e:ui": "playwright test --project=e2e --ui"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
