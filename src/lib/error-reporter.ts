@@ -13,6 +13,7 @@ type Payload = {
   user_agent?: string;
   severity?: "info" | "warn" | "error" | "fatal";
   user_id?: string | null;
+  kind?: "unhandled" | "chunk_reload" | "auth" | "query";
 };
 
 let installed = false;
