@@ -139,14 +139,16 @@ function MyListings() {
     if (!user) return;
     const { data: src, error: e1 } = await supabase
       .from("listings")
-      .select("title, description, condition, item_age, price, is_negotiable, phone, whatsapp, category_id, city_id, auto_renew")
+      .select("title, description, condition, item_age, price, is_negotiable, category_id, city_id, auto_renew")
       .eq("id", id)
       .single();
     if (e1 || !src) return toast.error(e1?.message ?? "Could not load listing");
+    const { data: contactRows } = await supabase.rpc("get_my_listing_contact", { _listing_id: id });
+    const contact = Array.isArray(contactRows) ? contactRows[0] : contactRows;
     const { data: imgs } = await supabase.from("listing_images").select("url, sort_order").eq("listing_id", id);
     const { data: inserted, error: e2 } = await supabase
       .from("listings")
-      .insert({ ...src, title: `${src.title} (copy)`, user_id: user.id, status: "draft" })
+      .insert({ ...src, phone: contact?.phone ?? null, whatsapp: contact?.whatsapp ?? null, title: `${src.title} (copy)`, user_id: user.id, status: "draft" })
       .select("id")
       .single();
     if (e2 || !inserted) return toast.error(e2?.message ?? "Could not duplicate");

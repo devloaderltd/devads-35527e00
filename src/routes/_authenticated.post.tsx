@@ -168,13 +168,18 @@ function PostListing() {
     queryFn: async () => {
       const { data: base, error } = await supabase
         .from("listings")
-        .select(`id, user_id, title, description, item_age, phone, whatsapp,
+        .select(`id, user_id, title, description, item_age,
           category_id, city_id, listing_group_id, cities(country)`)
         .eq("id", editId!)
         .maybeSingle();
       if (error) throw error;
       if (!base) throw new Error("Listing not found");
       if (base.user_id !== user!.id) throw new Error("Not your listing");
+
+      const { data: contactRows } = await supabase.rpc("get_my_listing_contact", { _listing_id: editId! });
+      const contact = Array.isArray(contactRows) ? contactRows[0] : contactRows;
+      (base as any).phone = contact?.phone ?? null;
+      (base as any).whatsapp = contact?.whatsapp ?? null;
 
       const gid = (base as any).listing_group_id ?? base.id;
       const { data: siblings } = await supabase
