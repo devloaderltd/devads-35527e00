@@ -31,6 +31,8 @@ import { getSiteSettings, getMyRoles } from "@/lib/admin.functions";
 import { AlertTriangle } from "lucide-react";
 import { isAuthError } from "@/lib/auth-errors";
 import { AuthErrorFallback } from "@/components/AuthErrorFallback";
+import { isChunkLoadError, reloadOnceForChunkError } from "@/lib/chunk-reload";
+
 
 import appCss from "../styles.css?url";
 
