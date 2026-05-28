@@ -3,6 +3,8 @@
  * and posts them to /api/public/client-errors. Batches, dedupes, and rate-limits.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { isChunkLoadError, reloadOnceForChunkError, clearChunkReloadGuard } from "./chunk-reload";
+
 
 type Payload = {
   message: string;
@@ -61,17 +63,22 @@ async function send(p: Payload) {
 export function installErrorReporter() {
   if (installed || typeof window === "undefined") return;
   installed = true;
+  // Boot succeeded — clear any prior chunk-reload guard so the next deploy can recover again.
+  clearChunkReloadGuard();
   window.addEventListener("error", (e) => {
     if (!e.message) return;
+    if (isChunkLoadError(e.error ?? e.message)) { reloadOnceForChunkError(); return; }
     send({ message: e.message, stack: e.error?.stack, severity: "error" });
   });
   window.addEventListener("unhandledrejection", (e) => {
     const r = e.reason;
+    if (isChunkLoadError(r)) { reloadOnceForChunkError(); return; }
     const message = typeof r === "string" ? r : r?.message || "Unhandled promise rejection";
     const stack = r?.stack;
     send({ message, stack, severity: "error" });
   });
 }
+
 
 export function reportClientError(message: string, options?: { stack?: string; severity?: Payload["severity"] }) {
   send({ message, stack: options?.stack, severity: options?.severity || "error" });
