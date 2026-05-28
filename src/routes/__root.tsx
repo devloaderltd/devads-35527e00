@@ -32,6 +32,8 @@ import { AlertTriangle } from "lucide-react";
 import { isAuthError } from "@/lib/auth-errors";
 import { AuthErrorFallback } from "@/components/AuthErrorFallback";
 import { isChunkLoadError, reloadOnceForChunkError } from "@/lib/chunk-reload";
+import { RecoveryOverlay } from "@/components/RecoveryOverlay";
+import { SessionWatcher } from "@/lib/session-watcher";
 
 
 import appCss from "../styles.css?url";
@@ -64,11 +66,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     if (chunkError) reloadOnceForChunkError();
   }, [chunkError]);
   if (chunkError) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="max-w-md text-center text-sm text-muted-foreground">Updating to the latest version…</div>
-      </div>
-    );
+    // RecoveryOverlay (mounted in RootComponent) handles the visible UI
+    // including the "reload failed" retry button. Render nothing here so
+    // the overlay sits over whatever shell already existed.
+    return null;
   }
   if (isAuthError(error)) {
     return <AuthErrorFallback error={error} reset={() => { router.invalidate(); reset(); }} />;
@@ -166,6 +167,8 @@ function RootComponent() {
             <RouteProgress />
             <AuthInvalidator />
             <DynamicFavicon />
+            <SessionWatcher />
+            <RecoveryOverlay />
             {isAdminArea ? (
               <Outlet />
             ) : (

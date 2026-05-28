@@ -22,11 +22,18 @@ export function isChunkLoadError(error: unknown): boolean {
 
 export function reloadOnceForChunkError(): boolean {
   if (typeof window === "undefined") return false;
+  // Tell the overlay we're attempting recovery so the user sees feedback
+  // even though location.replace is queued.
+  try { window.dispatchEvent(new CustomEvent("chunk-reload")); } catch { /* ignore */ }
   try {
-    if (sessionStorage.getItem(STORAGE_KEY)) return false;
+    if (sessionStorage.getItem(STORAGE_KEY)) {
+      // Already tried once — surface the failed-recovery UI instead of looping.
+      try { window.dispatchEvent(new CustomEvent("chunk-reload-failed")); } catch { /* ignore */ }
+      return false;
+    }
     sessionStorage.setItem(STORAGE_KEY, String(Date.now()));
   } catch {
-    // sessionStorage unavailable — bail rather than risk a loop
+    try { window.dispatchEvent(new CustomEvent("chunk-reload-failed")); } catch { /* ignore */ }
     return false;
   }
   const url = new URL(window.location.href);

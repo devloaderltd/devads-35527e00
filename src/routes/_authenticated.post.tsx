@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { downscaleImage } from "@/lib/image-prep";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -274,20 +275,46 @@ function PostListing() {
     setCityIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const MAX_PHOTOS = 5;
+  const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8 MB hard cap (we also downscale)
+  const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"]);
   const totalPhotos = images.length;
-  const onFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files ?? []);
     const remaining = MAX_PHOTOS - totalPhotos;
+    e.target.value = "";
     if (remaining <= 0) {
-      e.target.value = "";
+      toast.error(`You can upload up to ${MAX_PHOTOS} photos.`);
       return;
     }
-    const added = list.slice(0, remaining).map<ImgItem>((f) => ({
-      kind: "new", key: nextKey(), file: f, previewUrl: URL.createObjectURL(f),
-    }));
-    setImages((prev) => [...prev, ...added]);
-    setImagesDirty(true);
-    e.target.value = "";
+    const accepted: ImgItem[] = [];
+    let rejected = 0;
+    let rejectedReason = "";
+    for (const f of list.slice(0, remaining)) {
+      if (!ALLOWED_TYPES.has(f.type)) {
+        rejected++; rejectedReason = "Only JPG, PNG, WebP, or HEIC images are allowed.";
+        continue;
+      }
+      if (f.size > MAX_FILE_BYTES) {
+        rejected++; rejectedReason = `Each image must be under ${(MAX_FILE_BYTES / 1024 / 1024).toFixed(0)} MB.`;
+        continue;
+      }
+      try {
+        const processed = await downscaleImage(f);
+        accepted.push({
+          kind: "new", key: nextKey(), file: processed, previewUrl: URL.createObjectURL(processed),
+        });
+      } catch {
+        rejected++; rejectedReason = "Couldn't read one of the images.";
+      }
+    }
+    if (list.length > remaining) {
+      toast.warning(`Only added the first ${remaining} photo${remaining === 1 ? "" : "s"} — limit is ${MAX_PHOTOS}.`);
+    }
+    if (rejected > 0) toast.error(rejectedReason || `${rejected} image${rejected === 1 ? "" : "s"} skipped.`);
+    if (accepted.length > 0) {
+      setImages((prev) => [...prev, ...accepted]);
+      setImagesDirty(true);
+    }
   };
 
   const removeImage = (key: string) => {
