@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { downscaleImage } from "@/lib/image-prep";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
