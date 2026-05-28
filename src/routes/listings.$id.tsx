@@ -40,9 +40,101 @@ import { pushRecentlyViewed } from "@/lib/recently-viewed";
 import listingPlaceholder from "@/assets/listing-placeholder.jpg";
 import { BumpStatusCard } from "@/components/listings/BumpStatusCard";
 
+const SITE_URL = "https://callescort24.org";
+
+type ListingHead = {
+  title: string;
+  description: string;
+  image: string | null;
+  slug: string;
+  price: number | null;
+  city: string | null;
+  category: string | null;
+  status: string;
+};
+
+async function fetchListingHead(id: string): Promise<ListingHead | null> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const { data } = await supabase
+    .from("listings")
+    .select("title, description, slug, price, status, categories(name), cities(name), listing_images(url, sort_order)")
+    .eq(isUuid ? "id" : "slug", id)
+    .maybeSingle();
+  if (!data) return null;
+  const imgs = ((data as any).listing_images ?? []).slice().sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const plain = String((data as any).description ?? "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  return {
+    title: (data as any).title ?? "Listing",
+    description: plain.slice(0, 155),
+    image: imgs[0]?.url ?? null,
+    slug: (data as any).slug ?? id,
+    price: (data as any).price ?? null,
+    city: (data as any).cities?.name ?? null,
+    category: (data as any).categories?.name ?? null,
+    status: (data as any).status ?? "active",
+  };
+}
+
 export const Route = createFileRoute("/listings/$id")({
   component: ListingDetail,
+  loader: async ({ params }) => ({ head: await fetchListingHead(params.id) }),
+  head: ({ loaderData, params }) => {
+    const h = loaderData?.head;
+    if (!h) {
+      return { meta: [{ title: "Listing — Callescort24" }] };
+    }
+    const url = `${SITE_URL}/listings/${h.slug}`;
+    const cityPart = h.city ? ` in ${h.city}` : "";
+    const title = `${h.title}${cityPart} — Callescort24`;
+    const desc = h.description || `${h.title}${cityPart}`;
+    const productLd: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: h.title,
+      description: desc,
+      url,
+      ...(h.image ? { image: [h.image] } : {}),
+      ...(h.category ? { category: h.category } : {}),
+      ...(h.price != null
+        ? { offers: { "@type": "Offer", price: h.price, priceCurrency: "USD", availability: h.status === "active" ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", url } }
+        : {}),
+    };
+    const breadcrumbsLd = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+        { "@type": "ListItem", position: 2, name: "Search", item: `${SITE_URL}/search` },
+        { "@type": "ListItem", position: 3, name: h.title, item: url },
+      ],
+    };
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "product" },
+        ...(h.image ? [{ property: "og:image", content: h.image }] : []),
+        ...(h.image ? [{ name: "twitter:image", content: h.image }] : []),
+        { name: "twitter:card", content: h.image ? "summary_large_image" : "summary" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(productLd) },
+        { type: "application/ld+json", children: JSON.stringify(breadcrumbsLd) },
+      ],
+    };
+  },
+  notFoundComponent: () => (
+    <div className="mx-auto max-w-3xl px-4 py-20 text-center">
+      <h1 className="text-2xl font-semibold">Listing not found</h1>
+      <p className="mt-2 text-muted-foreground">It may have been removed or the link is incorrect.</p>
+    </div>
+  ),
 });
+
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
