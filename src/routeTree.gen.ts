@@ -51,6 +51,7 @@ import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
 import { Route as AdminHomepageEditorRouteImport } from './routes/admin.homepage-editor'
 import { Route as AdminHomepageRouteImport } from './routes/admin.homepage'
+import { Route as AdminErrorsRouteImport } from './routes/admin.errors'
 import { Route as AdminDebugRouteImport } from './routes/admin.debug'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
@@ -295,6 +296,11 @@ const AdminHomepageRoute = AdminHomepageRouteImport.update({
   path: '/homepage',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminErrorsRoute = AdminErrorsRouteImport.update({
+  id: '/errors',
+  path: '/errors',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDebugRoute = AdminDebugRouteImport.update({
   id: '/debug',
   path: '/debug',
@@ -515,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
+  '/admin/errors': typeof AdminErrorsRoute
   '/admin/homepage': typeof AdminHomepageRoute
   '/admin/homepage-editor': typeof AdminHomepageEditorRoute
   '/admin/insights': typeof AdminInsightsRoute
@@ -590,6 +597,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
+  '/admin/errors': typeof AdminErrorsRoute
   '/admin/homepage': typeof AdminHomepageRoute
   '/admin/homepage-editor': typeof AdminHomepageEditorRoute
   '/admin/insights': typeof AdminInsightsRoute
@@ -669,6 +677,7 @@ export interface FileRoutesById {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/debug': typeof AdminDebugRoute
+  '/admin/errors': typeof AdminErrorsRoute
   '/admin/homepage': typeof AdminHomepageRoute
   '/admin/homepage-editor': typeof AdminHomepageEditorRoute
   '/admin/insights': typeof AdminInsightsRoute
@@ -748,6 +757,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/debug'
+    | '/admin/errors'
     | '/admin/homepage'
     | '/admin/homepage-editor'
     | '/admin/insights'
@@ -823,6 +833,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/debug'
+    | '/admin/errors'
     | '/admin/homepage'
     | '/admin/homepage-editor'
     | '/admin/insights'
@@ -901,6 +912,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/cities'
     | '/admin/debug'
+    | '/admin/errors'
     | '/admin/homepage'
     | '/admin/homepage-editor'
     | '/admin/insights'
@@ -1277,6 +1289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHomepageRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/errors': {
+      id: '/admin/errors'
+      path: '/errors'
+      fullPath: '/admin/errors'
+      preLoaderRoute: typeof AdminErrorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/debug': {
       id: '/admin/debug'
       path: '/debug'
@@ -1574,6 +1593,7 @@ interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCitiesRoute: typeof AdminCitiesRoute
   AdminDebugRoute: typeof AdminDebugRoute
+  AdminErrorsRoute: typeof AdminErrorsRoute
   AdminHomepageRoute: typeof AdminHomepageRoute
   AdminHomepageEditorRoute: typeof AdminHomepageEditorRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
@@ -1604,6 +1624,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCitiesRoute: AdminCitiesRoute,
   AdminDebugRoute: AdminDebugRoute,
+  AdminErrorsRoute: AdminErrorsRoute,
   AdminHomepageRoute: AdminHomepageRoute,
   AdminHomepageEditorRoute: AdminHomepageEditorRoute,
   AdminInsightsRoute: AdminInsightsRoute,
