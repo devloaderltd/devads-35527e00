@@ -1,7 +1,38 @@
-I found the likely issue: the Featured tile exists in the DOM, but on mobile it has no fixed height/aspect ratio when real data loads, so only a thin/white separator-like bar is visible. The global Featured query is returning a valid featured listing, so this is a mobile layout/rendering problem, not a missing-data problem.
 
-Plan:
-1. Update the Featured tile link on the homepage to have a stable mobile height/aspect ratio, while keeping the current 2x2 desktop bento layout unchanged.
-2. Make the loading placeholder use the same mobile/desktop dimensions as the real Featured tile so it cannot collapse.
-3. Add a safer image selection that sorts a copied image array instead of mutating query data during render.
-4. Verify the mobile preview at 393px shows the Featured listing card above “Women Seek Man” instead of the white bar.
+## Problem
+
+"Failed to fetch dynamically imported module: …/assets/listings.\_id-DQCBhCjr.js" — a classic stale-chunk error. After we redeploy, every JS chunk gets a new content hash. A user with the previous version still open tries to lazy-load a route chunk by its old hash, which no longer exists on the CDN, so the dynamic `import()` rejects and the root `errorComponent` shows "Something went wrong". A manual refresh loads the new HTML (with new chunk hashes) and everything works.
+
+This will keep happening on every deploy unless we handle it explicitly. It is not a code bug in `listings.$id.tsx`.
+
+## Fix
+
+Detect chunk-load failures and recover automatically — with a one-shot guard so we never loop.
+
+### 1. `src/lib/chunk-reload.ts` (new helper)
+
+- `isChunkLoadError(error)` — true when the message matches any of:
+  - `Failed to fetch dynamically imported module`
+  - `Importing a module script failed`
+  - `error loading dynamically imported module`
+  - `ChunkLoadError`
+  - `Loading chunk` … `failed`
+- `reloadOnceForChunkError()` — uses `sessionStorage` key `chunk-reload-attempted` so we only force-reload once per session; calls `location.reload()` (cache-busted by appending `?_r=<timestamp>` to current URL via `location.replace`).
+
+### 2. `src/routes/__root.tsx` — `ErrorComponent`
+
+Before rendering the fallback, if `isChunkLoadError(error)` and we haven't already attempted recovery, call `reloadOnceForChunkError()` from a `useEffect` and render a small "Updating…" message instead of the scary error UI. If the reload already happened (storage flag set) and we still get the error, fall through to the normal fallback so we don't loop.
+
+### 3. `src/lib/error-reporter.ts` — `installErrorReporter`
+
+The global `unhandledrejection` listener also catches these. Add the same `isChunkLoadError` check and trigger `reloadOnceForChunkError()` so users get recovered even if the rejection bubbles before TanStack's error boundary catches it. Skip reporting these to `/api/public/client-errors` (they're noise, not real bugs).
+
+### Why this is safe
+
+- Single sessionStorage-guarded reload — no infinite refresh loop.
+- Only triggers on the specific dynamic-import failure messages, not generic errors.
+- After the reload, browser fetches the fresh `index.html` with new chunk hashes and everything works.
+
+### Out of scope
+
+No router/route changes, no server changes, no build-config changes. Pure client-side recovery.
