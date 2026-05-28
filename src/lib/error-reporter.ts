@@ -55,6 +55,7 @@ async function send(p: Payload) {
         user_agent: (typeof navigator !== "undefined" ? navigator.userAgent : "").slice(0, 500),
         severity: p.severity || "error",
         user_id: userId,
+        kind: p.kind || "unhandled",
       }),
       keepalive: true,
     });

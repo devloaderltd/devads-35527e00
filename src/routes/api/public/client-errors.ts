@@ -9,6 +9,7 @@ const schema = z.object({
   user_agent: z.string().max(500).nullable().optional(),
   severity: z.enum(["info", "warn", "error", "fatal"]).default("error"),
   user_id: z.string().uuid().nullable().optional(),
+  kind: z.enum(["unhandled", "chunk_reload", "auth", "query"]).default("unhandled"),
 });
 
 // Simple in-memory per-IP rate limit (best-effort, edge worker isolate scope).
@@ -54,7 +55,8 @@ export const Route = createFileRoute("/api/public/client-errors")({
           user_agent: d.user_agent ?? null,
           severity: d.severity,
           user_id: d.user_id ?? null,
-        });
+          kind: d.kind,
+        } as never);
         if (error) {
           return new Response("db_error", { status: 500 });
         }
