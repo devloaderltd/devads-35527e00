@@ -59,9 +59,21 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const chunkError = isChunkLoadError(error);
+  useEffect(() => {
+    if (chunkError) reloadOnceForChunkError();
+  }, [chunkError]);
+  if (chunkError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center text-sm text-muted-foreground">Updating to the latest version…</div>
+      </div>
+    );
+  }
   if (isAuthError(error)) {
     return <AuthErrorFallback error={error} reset={() => { router.invalidate(); reset(); }} />;
   }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
