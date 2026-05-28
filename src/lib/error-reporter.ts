@@ -69,15 +69,24 @@ export function installErrorReporter() {
   clearChunkReloadGuard();
   window.addEventListener("error", (e) => {
     if (!e.message) return;
-    if (isChunkLoadError(e.error ?? e.message)) { reloadOnceForChunkError(); return; }
+    if (isChunkLoadError(e.error ?? e.message)) {
+      send({ message: e.message, severity: "warn", kind: "chunk_reload" });
+      reloadOnceForChunkError();
+      return;
+    }
     send({ message: e.message, stack: e.error?.stack, severity: "error" });
   });
   window.addEventListener("unhandledrejection", (e) => {
     const r = e.reason;
-    if (isChunkLoadError(r)) { reloadOnceForChunkError(); return; }
+    if (isChunkLoadError(r)) {
+      send({ message: typeof r === "string" ? r : r?.message || "chunk load", severity: "warn", kind: "chunk_reload" });
+      reloadOnceForChunkError();
+      return;
+    }
     const message = typeof r === "string" ? r : r?.message || "Unhandled promise rejection";
     const stack = r?.stack;
-    send({ message, stack, severity: "error" });
+    const kind: Payload["kind"] = /unauthorized|forbidden|jwt|auth/i.test(message) ? "auth" : "unhandled";
+    send({ message, stack, severity: "error", kind });
   });
 }
 
