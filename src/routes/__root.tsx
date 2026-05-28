@@ -32,6 +32,8 @@ import { AlertTriangle } from "lucide-react";
 import { isAuthError } from "@/lib/auth-errors";
 import { AuthErrorFallback } from "@/components/AuthErrorFallback";
 import { isChunkLoadError, reloadOnceForChunkError } from "@/lib/chunk-reload";
+import { RecoveryOverlay } from "@/components/RecoveryOverlay";
+import { SessionWatcher } from "@/lib/session-watcher";
 
 
 import appCss from "../styles.css?url";
