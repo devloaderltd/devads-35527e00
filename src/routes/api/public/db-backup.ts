@@ -17,7 +17,7 @@ export const Route = createFileRoute("/api/public/db-backup")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const token = url.searchParams.get("token") ?? request.headers.get("x-token");
-        if (!token || token !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        if (!token || token !== process.env.DB_BACKUP_TOKEN) {
           return new Response("Unauthorized", { status: 401 });
         }
 
