@@ -1,14 +1,12 @@
 // VPS / Node deployment build.
-// The Cloudflare Workers target is disabled (`cloudflare: false`) so TanStack
-// Start emits a standard Node server bundle at .output/server/index.mjs that
-// you can run with `node .output/server/index.mjs` or under PM2.
+// node-server preset emits .output/server/index.mjs (a real Node HTTP server
+// that calls listen() on PORT). Run it with: node .output/server/index.mjs
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   cloudflare: false,
   tanstackStart: {
     server: {
-      entry: "server",
       preset: "node-server",
     },
   },
