@@ -5,6 +5,7 @@
 // Usage:
 //   bun run build           # produces dist/client/ and dist/server/server.js
 //   node server.mjs         # or: pm2 start ecosystem.config.cjs
+import "dotenv/config";
 import { createServer } from "node:http";
 import { createReadStream, statSync } from "node:fs";
 import { extname, join, normalize, resolve } from "node:path";
