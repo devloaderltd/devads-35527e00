@@ -1,13 +1,16 @@
-// VPS / Node deployment build.
-// node-server preset emits .output/server/index.mjs (a real Node HTTP server
-// that calls listen() on PORT). Run it with: node .output/server/index.mjs
+// Default config = Cloudflare (used by Lovable preview + devads.lovable.app).
+// For VPS / Node deployment, build with:
+//   BUILD_TARGET=node bun run build
+// then run: node .output/server/index.mjs
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig({
-  cloudflare: false,
-  tanstackStart: {
-    server: {
-      preset: "node-server",
-    },
-  },
-});
+const isNode = process.env.BUILD_TARGET === "node";
+
+export default defineConfig(
+  isNode
+    ? {
+        cloudflare: false,
+        tanstackStart: { server: { preset: "node-server" } },
+      }
+    : {},
+);
