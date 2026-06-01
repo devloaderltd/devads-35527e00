@@ -1,10 +1,8 @@
 /**
- * Worker-compatible SMTP sender. Reads config from `smtp_settings` and sends
- * via `worker-mailer` (uses `cloudflare:sockets`).
- *
+ * Node SMTP sender via nodemailer.
  * SERVER-ONLY — never import from client code.
  */
-import { WorkerMailer } from 'worker-mailer'
+import nodemailer from 'nodemailer'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 
 export interface SmtpConfig {
@@ -61,35 +59,32 @@ export async function sendViaSMTP(
   }
 
   try {
-    const mailer = await WorkerMailer.connect({
+    const transporter = nodemailer.createTransport({
       host: config.host,
       port: config.port,
-      secure: config.secure,
-      startTls: !config.secure,
-      authType: ['plain', 'login'],
-      credentials:
+      secure: config.secure, // true => SMTPS (465); false => STARTTLS upgrade
+      auth:
         config.auth_user && config.auth_pass
-          ? { username: config.auth_user, password: config.auth_pass }
+          ? { user: config.auth_user, pass: config.auth_pass }
           : undefined,
     })
 
     const from = input.from
       ? input.from
       : config.from_name
-        ? { name: config.from_name, email: config.from_email }
+        ? `"${config.from_name}" <${config.from_email}>`
         : config.from_email
 
-    await mailer.send({
+    await transporter.sendMail({
       from,
       to: input.to,
-      reply: input.replyTo ?? config.reply_to ?? undefined,
+      replyTo: input.replyTo ?? config.reply_to ?? undefined,
       subject: input.subject,
       html: input.html,
       text: input.text,
     })
 
-
-    await mailer.close().catch(() => {})
+    transporter.close()
     return { ok: true, durationMs: Date.now() - start }
   } catch (e: any) {
     const msg = e?.message || String(e)
