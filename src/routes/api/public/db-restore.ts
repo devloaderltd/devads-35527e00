@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/db-restore")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const token = url.searchParams.get("token");
-        if (!token || token !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        if (!token || token !== process.env.DB_BACKUP_TOKEN) {
           return new Response("Unauthorized", { status: 401 });
         }
         const html = `<!doctype html><meta charset=utf-8><title>DB Restore</title>
@@ -53,7 +53,7 @@ then restore from the JSON backup file.</p>
           payload = await request.json();
         }
 
-        if (!token || token !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        if (!token || token !== process.env.DB_BACKUP_TOKEN) {
           return new Response("Unauthorized", { status: 401 });
         }
         if (!payload?.tables) return Response.json({ error: "invalid backup" }, { status: 400 });
