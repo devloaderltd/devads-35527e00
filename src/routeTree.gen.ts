@@ -72,6 +72,8 @@ import { Route as AuthenticatedFavoritesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated.messages.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiPublicDbRestoreRouteImport } from './routes/api/public/db-restore'
+import { Route as ApiPublicDbBackupRouteImport } from './routes/api/public/db-backup'
 import { Route as ApiPublicClientErrorsRouteImport } from './routes/api/public/client-errors'
 import { Route as ApiPublicAdminBootstrapRouteImport } from './routes/api/public/admin-bootstrap'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated.messages.$threadId'
@@ -403,6 +405,16 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDbRestoreRoute = ApiPublicDbRestoreRouteImport.update({
+  id: '/api/public/db-restore',
+  path: '/api/public/db-restore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDbBackupRoute = ApiPublicDbBackupRouteImport.update({
+  id: '/api/public/db-backup',
+  path: '/api/public/db-backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicClientErrorsRoute = ApiPublicClientErrorsRouteImport.update({
   id: '/api/public/client-errors',
   path: '/api/public/client-errors',
@@ -543,6 +555,8 @@ export interface FileRoutesByFullPath {
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/admin-bootstrap': typeof ApiPublicAdminBootstrapRoute
   '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
+  '/api/public/db-backup': typeof ApiPublicDbBackupRoute
+  '/api/public/db-restore': typeof ApiPublicDbRestoreRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
@@ -618,6 +632,8 @@ export interface FileRoutesByTo {
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/admin-bootstrap': typeof ApiPublicAdminBootstrapRoute
   '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
+  '/api/public/db-backup': typeof ApiPublicDbBackupRoute
+  '/api/public/db-restore': typeof ApiPublicDbRestoreRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
@@ -697,6 +713,8 @@ export interface FileRoutesById {
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/api/public/admin-bootstrap': typeof ApiPublicAdminBootstrapRoute
   '/api/public/client-errors': typeof ApiPublicClientErrorsRoute
+  '/api/public/db-backup': typeof ApiPublicDbBackupRoute
+  '/api/public/db-restore': typeof ApiPublicDbRestoreRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/api/public/cron/auto-promote': typeof ApiPublicCronAutoPromoteRoute
@@ -776,6 +794,8 @@ export interface FileRouteTypes {
     | '/messages/$threadId'
     | '/api/public/admin-bootstrap'
     | '/api/public/client-errors'
+    | '/api/public/db-backup'
+    | '/api/public/db-restore'
     | '/lovable/email/suppression'
     | '/messages/'
     | '/api/public/cron/auto-promote'
@@ -851,6 +871,8 @@ export interface FileRouteTypes {
     | '/messages/$threadId'
     | '/api/public/admin-bootstrap'
     | '/api/public/client-errors'
+    | '/api/public/db-backup'
+    | '/api/public/db-restore'
     | '/lovable/email/suppression'
     | '/messages'
     | '/api/public/cron/auto-promote'
@@ -929,6 +951,8 @@ export interface FileRouteTypes {
     | '/_authenticated/messages/$threadId'
     | '/api/public/admin-bootstrap'
     | '/api/public/client-errors'
+    | '/api/public/db-backup'
+    | '/api/public/db-restore'
     | '/lovable/email/suppression'
     | '/_authenticated/messages/'
     | '/api/public/cron/auto-promote'
@@ -968,6 +992,8 @@ export interface RootRouteChildren {
   SellersIdRoute: typeof SellersIdRoute
   ApiPublicAdminBootstrapRoute: typeof ApiPublicAdminBootstrapRoute
   ApiPublicClientErrorsRoute: typeof ApiPublicClientErrorsRoute
+  ApiPublicDbBackupRoute: typeof ApiPublicDbBackupRoute
+  ApiPublicDbRestoreRoute: typeof ApiPublicDbRestoreRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronAutoPromoteRoute: typeof ApiPublicCronAutoPromoteRoute
   ApiPublicCronMatchSavedSearchesRoute: typeof ApiPublicCronMatchSavedSearchesRoute
@@ -1423,6 +1449,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/db-restore': {
+      id: '/api/public/db-restore'
+      path: '/api/public/db-restore'
+      fullPath: '/api/public/db-restore'
+      preLoaderRoute: typeof ApiPublicDbRestoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/db-backup': {
+      id: '/api/public/db-backup'
+      path: '/api/public/db-backup'
+      fullPath: '/api/public/db-backup'
+      preLoaderRoute: typeof ApiPublicDbBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/client-errors': {
       id: '/api/public/client-errors'
       path: '/api/public/client-errors'
@@ -1654,6 +1694,8 @@ const rootRouteChildren: RootRouteChildren = {
   SellersIdRoute: SellersIdRoute,
   ApiPublicAdminBootstrapRoute: ApiPublicAdminBootstrapRoute,
   ApiPublicClientErrorsRoute: ApiPublicClientErrorsRoute,
+  ApiPublicDbBackupRoute: ApiPublicDbBackupRoute,
+  ApiPublicDbRestoreRoute: ApiPublicDbRestoreRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronAutoPromoteRoute: ApiPublicCronAutoPromoteRoute,
   ApiPublicCronMatchSavedSearchesRoute: ApiPublicCronMatchSavedSearchesRoute,
@@ -1668,13 +1710,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -1606,6 +1606,9 @@ export type Database = {
         Args: { _amount: number; _description: string; _user_id: string }
         Returns: number
       }
+      admin_list_public_tables: { Args: never; Returns: string[] }
+      admin_set_replica_mode: { Args: { _on: boolean }; Returns: undefined }
+      admin_truncate_all_public: { Args: never; Returns: undefined }
       apply_paid_bump: {
         Args: {
           _amount: number
