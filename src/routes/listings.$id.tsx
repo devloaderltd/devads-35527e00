@@ -182,7 +182,7 @@ function ListingDetail() {
   // Fire-and-forget view increment + recently viewed tracking
   useEffect(() => {
     if (!listing?.id) return;
-    supabase.rpc("increment_listing_view", { _listing_id: listing.id });
+    supabase.rpc("increment_listing_view", { _listing_id: listing.id }).then(() => {});
     pushRecentlyViewed(listing.id);
   }, [listing?.id]);
 

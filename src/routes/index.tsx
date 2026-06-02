@@ -37,10 +37,12 @@ const CATEGORY_IMAGES: Record<string, string> = {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CallEscort24 — Buy & sell locally across the US, UK & Canada" },
-      { name: "description", content: "Find great deals on vehicles, housing, jobs, electronics, furniture and more. Post a free listing in minutes." },
-      { property: "og:title", content: "CallEscort24 — Buy & sell locally" },
-      { property: "og:description", content: "Country-wide classifieds marketplace. Browse or post free listings in minutes." },
+      { title: "Independent Escorts Near You – Local Escort Directory" },
+      { name: "description", content: "callescort24 is an escort directory for adult providers to advertise services, show rates and availability, and connect with paying clients." },
+      { property: "og:title", content: "Independent Escorts Near You – Local Escort Directory" },
+      { property: "og:description", content: "callescort24 is an escort directory for adult providers to advertise services, show rates and availability, and connect with paying clients." },
+      { name: "twitter:title", content: "Independent Escorts Near You – Local Escort Directory" },
+      { name: "twitter:description", content: "callescort24 is an escort directory for adult providers to advertise services, show rates and availability, and connect with paying clients." },
       { property: "og:url", content: "https://callescort24.org/" },
       { property: "og:type", content: "website" },
     ],
@@ -75,22 +77,33 @@ function Home() {
     queryKey: ["listings", "home", cityId],
     enabled: !!cityId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("listings")
-        .select(`
+      const baseSelect = `
           id, slug, title, condition, created_at, bumped_at, verified_at,
           categories(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),
           listing_promotions(type, ends_at)
-        `)
+        `;
+      const { data, error } = await supabase
+        .from("listings")
+        .select(baseSelect)
         .eq("status", "active")
         .eq("city_id", cityId!)
         .order("bumped_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false })
         .limit(24);
       if (error) throw error;
-      return data;
+      if (data && data.length > 0) return data;
+      // Fallback: no listings in selected city — show latest globally
+      const { data: globalData, error: gErr } = await supabase
+        .from("listings")
+        .select(baseSelect)
+        .eq("status", "active")
+        .order("bumped_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(24);
+      if (gErr) throw gErr;
+      return globalData ?? [];
     },
   });
 
@@ -389,16 +402,16 @@ function Home() {
       {sections.recently_viewed && <RecentlyViewedRail />}
       {sections.trending_rail && <TrendingInCityRail cityId={cityId} cityName={cityName} />}
       {/* Featured row */}
-      {sections.featured_row && featured.length > 1 && (
+      {sections.featured_row && featured.length > 0 && (
         <section className="container mx-auto px-4 pt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" /> Featured listings
             </h2>
           </div>
-          <Carousel opts={{ align: "start", dragFree: true }} className="w-full">
+          <Carousel opts={{ align: "start", dragFree: true, loop: featured.length > 2 }} className="w-full">
             <CarouselContent className="-ml-4">
-              {featured.slice(1).map((l: any) => (
+              {featured.map((l: any) => (
                 <CarouselItem key={l.id} className="pl-4 basis-[80%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
                   <ListingCard listing={l} featured />
                 </CarouselItem>

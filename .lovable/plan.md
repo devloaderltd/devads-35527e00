@@ -1,67 +1,51 @@
-# Post-Deploy Upgrades
+# Fix 4 homepage issues
 
-Six focused fixes. No major refactors.
+## 1. SEO title & description on the home page
 
-## 1. Google OAuth on hosted Supabase (your new project)
+**File:** `src/routes/index.tsx` (lines 38–48)
 
-Since the new DB is at supabase.com, no env/Docker work. Guide steps (also delivered as `GOOGLE_OAUTH_SETUP.md`):
+The home route's `head()` overrides the correct sitewide SEO in `__root.tsx` with old "Buy & sell locally" copy — that's why the browser tab still shows the old title.
 
-1. **Google Cloud Console** → APIs & Services → Credentials → Create OAuth Client ID → **Web application**.
-2. Authorized JavaScript origins: `https://callescort24.org`
-3. Authorized redirect URIs: `https://<your-project-ref>.supabase.co/auth/v1/callback` (copy this exact URL from Supabase → Auth → Providers → Google panel).
-4. Copy Client ID + Client Secret.
-5. **Supabase dashboard** → Authentication → Providers → Google → Enable, paste credentials, Save.
-6. **Supabase dashboard** → Authentication → URL Configuration:
-   - Site URL: `https://callescort24.org`
-   - Redirect URLs: add `https://callescort24.org/**`
-7. Test sign-in on the live site.
+Replace the meta entries with:
+- `title`: `Independent Escorts Near You – Local Escort Directory`
+- `description` / `og:description` / `twitter:description`: `callescort24 is an escort directory for adult providers to advertise services, show rates and availability, and connect with paying clients.`
+- `og:title` / `twitter:title`: same as title
 
-Code already uses `supabase.auth.signInWithOAuth({ provider: 'google' })`, so no app changes.
+Root already has the correct copy, so other pages inherit it automatically. No other route files contain the old strings.
 
-## 2. New listings not showing first
+## 2. New listings not showing in "Latest" / "Recent"
 
-**File:** `src/routes/index.tsx` line 88.
+**File:** `src/routes/index.tsx` (lines 74–95)
 
-Current sort: `.order("bumped_at", { ascending: false })` — new listings have `bumped_at = NULL` and Postgres sorts NULLs last, so they appear at the bottom.
+Current query filters strictly by the user's selected city (`Mobile` in the screenshot). The new "Ready to fuck" listing is in Denver, so it never appears in Latest. User expects new listings to appear regardless.
 
-Fix: replace with two orders so paid bumps still surface first, then newest:
+Fix: if the in-city query returns 0 listings, run a fallback query without the `city_id` filter (still ordered by `bumped_at desc, created_at desc, limit 24`). Keep city filtering when there ARE city listings, so local relevance is preserved. The `featured` / `bumped` / `recent` split stays the same.
+
+## 3. Featured posts don't slide and show only one
+
+**File:** `src/routes/index.tsx` (lines 391–411)
+
+Two problems:
+- Section is gated by `featured.length > 1`, so when there's only one featured listing the carousel is hidden entirely.
+- `featured.slice(1)` skips the hero featured, leaving nothing.
+
+Fix:
+- Change gate to `featured.length > 0`.
+- Render `featured` (not `.slice(1)`) so all featured listings appear in the carousel. The hero showing the same item is fine — that's the intended "featured rail" behavior.
+- Also relax basis so single items still look correct and the carousel arrows + drag work on desktop.
+
+## 4. Ad view counts stuck at 0
+
+**File:** `src/routes/listings.$id.tsx` (line 185)
+
+`supabase.rpc("increment_listing_view", ...)` is called without `.then()` / `await`. Supabase JS query builders are lazy thenables — they don't fire the HTTP request until consumed. Verified the SQL function itself works (tested via psql: counter incremented from 0 → 1).
+
+Fix: chain `.then(() => {})` so the request is actually sent:
 ```ts
-.order("bumped_at", { ascending: false, nullsFirst: false })
-.order("created_at", { ascending: false })
+supabase.rpc("increment_listing_view", { _listing_id: listing.id }).then(() => {});
 ```
 
-## 3. Featured posts → horizontal swipe carousel
-
-**File:** `src/routes/index.tsx` lines 397–399.
-
-Replace the static grid with the existing embla `Carousel` from `src/components/ui/carousel.tsx`:
-- Options: `{ align: 'start', dragFree: true }`
-- Item width: `basis-[80%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4` (mobile shows ~1.2 cards, swipeable)
-- Show `CarouselPrevious`/`CarouselNext` arrows on `md+` only.
-
-## 4. View counts not incrementing
-
-App code is correct (`supabase.rpc('increment_listing_view', { _listing_id })`). On the new hosted Supabase project the function exists (from the restore) but EXECUTE may not be granted to anon/authenticated.
-
-**Action:** run this one-off migration on the new project:
-```sql
-GRANT EXECUTE ON FUNCTION public.increment_listing_view(uuid) TO anon, authenticated;
-```
-(Migration tool will surface for approval.)
-
-## 5. Favicon — minimal monoline icon
-
-- Generate a minimal monoline mark (single accent color on transparent) at 1024×1024 via imagegen.
-- Export PNGs: `public/favicon.png` (192), `public/favicon-32.png` (32), `public/apple-touch-icon.png` (180).
-- Wire `<link rel="icon">`, `<link rel="apple-touch-icon">`, and `<meta name="theme-color">` into `src/routes/__root.tsx` `head()`.
-
-## 6. Deliverables
-
-- Edit `src/routes/index.tsx` (sort + carousel)
-- Edit `src/routes/__root.tsx` (favicon links)
-- Add `public/favicon.png`, `public/favicon-32.png`, `public/apple-touch-icon.png`
-- Migration: GRANT EXECUTE on `increment_listing_view`
-- New file: `GOOGLE_OAUTH_SETUP.md`
-
-## Not included (say the word and I'll do them)
-- Custom email template redesign + Supabase SMTP/Auth template wiring
+## Out of scope / not changing
+- No DB migrations needed.
+- No changes to `__root.tsx` (already correct).
+- No changes to other route files — SEO inherits from root.
