@@ -396,9 +396,17 @@ function Home() {
               <Sparkles className="h-5 w-5 text-primary" /> Featured listings
             </h2>
           </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {featured.slice(1).map((l: any) => <ListingCard key={l.id} listing={l} featured />)}
-          </div>
+          <Carousel opts={{ align: "start", dragFree: true }} className="w-full">
+            <CarouselContent className="-ml-4">
+              {featured.slice(1).map((l: any) => (
+                <CarouselItem key={l.id} className="pl-4 basis-[80%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+                  <ListingCard listing={l} featured />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex" />
+            <CarouselNext className="hidden md:flex" />
+          </Carousel>
         </section>
       )}
 
