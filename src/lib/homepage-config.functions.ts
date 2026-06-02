@@ -47,9 +47,9 @@ export type HomepageConfig = {
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   hero: {
     badge: "Free to post · Free to browse",
-    title: "Buy & sell locally — {accent}across the country.{/accent}",
+    title: "Independent Escorts Near You – {accent}Local Escort Directory.{/accent}",
     subtitle:
-      "From vintage bikes in Brooklyn to apartments in Manchester — find what's near you, or post your own in under a minute.",
+      "callescort24 is an escort directory for adult providers to advertise services, show rates and availability, and connect with paying clients.",
     cta1_label: "Post a listing",
     cta1_url: "/post",
     cta2_label: "Browse all",
