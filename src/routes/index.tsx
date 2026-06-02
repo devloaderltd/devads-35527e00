@@ -77,22 +77,33 @@ function Home() {
     queryKey: ["listings", "home", cityId],
     enabled: !!cityId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("listings")
-        .select(`
+      const baseSelect = `
           id, slug, title, condition, created_at, bumped_at, verified_at,
           categories(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),
           listing_promotions(type, ends_at)
-        `)
+        `;
+      const { data, error } = await supabase
+        .from("listings")
+        .select(baseSelect)
         .eq("status", "active")
         .eq("city_id", cityId!)
         .order("bumped_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false })
         .limit(24);
       if (error) throw error;
-      return data;
+      if (data && data.length > 0) return data;
+      // Fallback: no listings in selected city — show latest globally
+      const { data: globalData, error: gErr } = await supabase
+        .from("listings")
+        .select(baseSelect)
+        .eq("status", "active")
+        .order("bumped_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(24);
+      if (gErr) throw gErr;
+      return globalData ?? [];
     },
   });
 
