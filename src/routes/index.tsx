@@ -8,6 +8,7 @@ import { RecentlyViewedRail } from "@/components/RecentlyViewedRail";
 import { TrendingInCityRail } from "@/components/TrendingInCityRail";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Users } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import { useCity } from "@/lib/city-context";
 import { getHomepageConfig, DEFAULT_HOMEPAGE_CONFIG, type BentoTile } from "@/lib/homepage-config.functions";
 import catForSale from "@/assets/cat-for-sale.jpg";
