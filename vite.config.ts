@@ -11,6 +11,9 @@ export default defineConfig(
     ? {
         cloudflare: false,
         tanstackStart: { server: { preset: "node-server" } },
+        ssr: { noExternal: ["h3-v2"] },
       }
-    : {},
+    : {
+        ssr: { noExternal: ["h3-v2"] },
+      },
 );
