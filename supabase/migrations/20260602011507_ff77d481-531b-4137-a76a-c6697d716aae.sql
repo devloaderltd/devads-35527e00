@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.increment_listing_view(uuid) TO anon, authenticated;
