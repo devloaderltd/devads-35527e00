@@ -402,16 +402,16 @@ function Home() {
       {sections.recently_viewed && <RecentlyViewedRail />}
       {sections.trending_rail && <TrendingInCityRail cityId={cityId} cityName={cityName} />}
       {/* Featured row */}
-      {sections.featured_row && featured.length > 1 && (
+      {sections.featured_row && featured.length > 0 && (
         <section className="container mx-auto px-4 pt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" /> Featured listings
             </h2>
           </div>
-          <Carousel opts={{ align: "start", dragFree: true }} className="w-full">
+          <Carousel opts={{ align: "start", dragFree: true, loop: featured.length > 2 }} className="w-full">
             <CarouselContent className="-ml-4">
-              {featured.slice(1).map((l: any) => (
+              {featured.map((l: any) => (
                 <CarouselItem key={l.id} className="pl-4 basis-[80%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
                   <ListingCard listing={l} featured />
                 </CarouselItem>
