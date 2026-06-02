@@ -37,10 +37,12 @@ const CATEGORY_IMAGES: Record<string, string> = {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CallEscort24 — Buy & sell locally across the US, UK & Canada" },
-      { name: "description", content: "Find great deals on vehicles, housing, jobs, electronics, furniture and more. Post a free listing in minutes." },
-      { property: "og:title", content: "CallEscort24 — Buy & sell locally" },
-      { property: "og:description", content: "Country-wide classifieds marketplace. Browse or post free listings in minutes." },
+      { title: "Independent Escorts Near You – Local Escort Directory" },
+      { name: "description", content: "callescort24 is an escort directory for adult providers to advertise services, show rates and availability, and connect with paying clients." },
+      { property: "og:title", content: "Independent Escorts Near You – Local Escort Directory" },
+      { property: "og:description", content: "callescort24 is an escort directory for adult providers to advertise services, show rates and availability, and connect with paying clients." },
+      { name: "twitter:title", content: "Independent Escorts Near You – Local Escort Directory" },
+      { name: "twitter:description", content: "callescort24 is an escort directory for adult providers to advertise services, show rates and availability, and connect with paying clients." },
       { property: "og:url", content: "https://callescort24.org/" },
       { property: "og:type", content: "website" },
     ],
