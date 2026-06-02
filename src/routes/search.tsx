@@ -61,19 +61,34 @@ const searchSchema = z.object({
   page: z.coerce.number().min(1).optional(),
 });
 
+const SITE_URL = "https://callescort24.org";
+
 export const Route = createFileRoute("/search")({
   validateSearch: searchSchema,
-  head: () => ({
-    meta: [
-      { title: "Browse listings — CallEscort24" },
-      { name: "description", content: "Search vehicles, housing, jobs, electronics, furniture and more across the CallEscort24 marketplace." },
-      { property: "og:title", content: "Browse listings — CallEscort24" },
-      { property: "og:description", content: "Filter by category, city and condition to find what you need." },
-      { property: "og:url", content: "https://callescort24.org/search" },
-      { property: "og:type", content: "website" },
-    ],
-    links: [{ rel: "canonical", href: "https://callescort24.org/search" }],
-  }),
+  head: () => {
+    const url = `${SITE_URL}/search`;
+    const collectionLd = {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: "Browse listings — CallEscort24",
+      url,
+      description: "Search vehicles, housing, jobs, electronics, furniture and more across the CallEscort24 marketplace.",
+    };
+    return {
+      meta: [
+        { title: "Browse listings — CallEscort24" },
+        { name: "description", content: "Search vehicles, housing, jobs, electronics, furniture and more across the CallEscort24 marketplace." },
+        { property: "og:title", content: "Browse listings — CallEscort24" },
+        { property: "og:description", content: "Filter by category, city and condition to find what you need." },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "website" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(collectionLd) },
+      ],
+    };
+  },
   component: SearchPage,
 });
 

@@ -15,21 +15,79 @@ import { ShareSheet } from "@/components/ShareSheet";
 import { RatingDistribution } from "@/components/seller/RatingDistribution";
 import { BrandLoader } from "@/components/BrandLoader";
 
+const SITE_URL = "https://callescort24.org";
 
+type SellerHead = {
+  display_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  city: { name: string; region: string; country: string } | null;
+};
+
+async function fetchSellerHead(id: string): Promise<SellerHead | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, display_name, avatar_url, bio, city_id, created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return null;
+  let city = null;
+  if (data.city_id) {
+    const { data: c } = await supabase
+      .from("cities").select("name, region, country").eq("id", data.city_id).maybeSingle();
+    city = c;
+  }
+  return {
+    display_name: data.display_name,
+    avatar_url: data.avatar_url,
+    bio: data.bio,
+    city,
+  };
+}
 
 export const Route = createFileRoute("/sellers/$id")({
-  head: ({ params }) => ({
-    meta: [
-      { title: "Seller profile — CallEscort24" },
-      { name: "description", content: "View this seller's active listings, location and member history on CallEscort24." },
-      { property: "og:title", content: "Seller profile — CallEscort24" },
-      { property: "og:description", content: "Browse a seller's active listings on CallEscort24." },
-      { property: "og:url", content: `https://callescort24.org/sellers/${params.id}` },
-      { property: "og:type", content: "profile" },
-      { name: "robots", content: "index,follow" },
-    ],
-    links: [{ rel: "canonical", href: `https://callescort24.org/sellers/${params.id}` }],
-  }),
+  loader: async ({ params }) => ({ head: await fetchSellerHead(params.id) }),
+  head: ({ loaderData, params }) => {
+    const p = loaderData?.head;
+    if (!p) {
+      return { meta: [{ title: "Seller profile — CallEscort24" }] };
+    }
+    const url = `${SITE_URL}/sellers/${params.id}`;
+    const cityPart = p.city ? ` in ${p.city.name}` : "";
+    const title = `${p.display_name}${cityPart} — CallEscort24`;
+    const desc = p.bio ? p.bio.slice(0, 155) : `Browse ${p.display_name}'s active listings on CallEscort24.`;
+    const personLd = {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      name: p.display_name,
+      ...(p.avatar_url ? { image: p.avatar_url } : {}),
+      ...(p.bio ? { description: p.bio } : {}),
+      ...(p.city ? {
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: p.city.name,
+          addressRegion: p.city.region,
+          addressCountry: p.city.country,
+        },
+      } : {}),
+      url,
+    };
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "profile" },
+        { name: "robots", content: "index,follow" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(personLd) },
+      ],
+    };
+  },
   component: SellerPage,
 });
 
