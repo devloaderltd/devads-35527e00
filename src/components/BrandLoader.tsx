@@ -9,8 +9,9 @@ interface Props {
 }
 
 /**
- * Branded animated loader — gradient orb with pulsing rings.
- * Respects prefers-reduced-motion via Tailwind motion-safe utilities.
+ * Branded animated loader — gradient orb with smooth halo + ring.
+ * Uses custom easing keyframes (no harsh ping/pulse). Fades itself in to
+ * avoid the loader flashing on fast renders, and respects reduced motion.
  */
 export function BrandLoader({ variant = "block", label = "Loading", className }: Props) {
   const sizes = {
@@ -24,37 +25,55 @@ export function BrandLoader({ variant = "block", label = "Loading", className }:
       role="status"
       aria-label={label}
       className={cn(
-        "flex w-full flex-col items-center justify-center text-muted-foreground",
+        "flex w-full flex-col items-center justify-center text-muted-foreground motion-safe:animate-[brand-fade-in_320ms_ease-out_both]",
         sizes.wrap,
         className,
       )}
+      style={{ animationDelay: "120ms" }}
     >
       <div className={cn("relative", sizes.orb)}>
-        {/* Outer pulsing ring */}
+        {/* Soft outer halo — smooth scale+fade, no ping snap */}
         <span
           aria-hidden
-          className="absolute inset-0 rounded-full motion-safe:animate-ping"
-          style={{ background: "var(--gradient-primary, linear-gradient(135deg, hsl(var(--primary)), #a78bfa))", opacity: 0.35 }}
+          className="absolute inset-0 rounded-full motion-safe:animate-[brand-halo_2.6s_cubic-bezier(0.45,0,0.2,1)_infinite]"
+          style={{ background: "var(--gradient-primary, linear-gradient(135deg, hsl(var(--primary)), #a78bfa))" }}
         />
-        {/* Middle slow ring */}
+        {/* Inner halo, offset for layered breathing */}
         <span
           aria-hidden
-          className="absolute inset-[15%] rounded-full motion-safe:animate-[spin_2.4s_linear_infinite]"
+          className="absolute inset-0 rounded-full motion-safe:animate-[brand-halo_2.6s_cubic-bezier(0.45,0,0.2,1)_infinite]"
           style={{
-            background: "conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary)) 90deg, transparent 240deg)",
-            WebkitMask: "radial-gradient(circle, transparent 55%, #000 56%)",
-            mask: "radial-gradient(circle, transparent 55%, #000 56%)",
+            background: "var(--gradient-primary, linear-gradient(135deg, hsl(var(--primary)), #a78bfa))",
+            animationDelay: "1.3s",
           }}
         />
-        {/* Core orb */}
+        {/* Sweeping conic ring */}
         <span
           aria-hidden
-          className="absolute inset-[28%] rounded-full shadow-lg motion-safe:animate-pulse"
+          className="absolute inset-[14%] rounded-full motion-safe:animate-[brand-spin_2.6s_linear_infinite]"
+          style={{
+            background:
+              "conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary) / 0.9) 110deg, transparent 260deg)",
+            WebkitMask: "radial-gradient(circle, transparent 56%, #000 57%)",
+            mask: "radial-gradient(circle, transparent 56%, #000 57%)",
+          }}
+        />
+        {/* Core orb — gentle breathing */}
+        <span
+          aria-hidden
+          className="absolute inset-[30%] rounded-full shadow-lg motion-safe:animate-[brand-breathe_2.2s_ease-in-out_infinite]"
           style={{ background: "var(--gradient-primary, linear-gradient(135deg, hsl(var(--primary)), #a78bfa))" }}
         />
       </div>
       {label && variant !== "inline" && (
-        <p className={cn("font-medium tracking-wide", sizes.text)}>{label}…</p>
+        <p
+          className={cn(
+            "font-medium tracking-wide motion-safe:animate-[brand-text-fade_2.4s_ease-in-out_infinite]",
+            sizes.text,
+          )}
+        >
+          {label}…
+        </p>
       )}
       {label && variant === "inline" && (
         <span className={cn("font-medium", sizes.text)}>{label}…</span>

@@ -309,3 +309,25 @@
   pointer-events: none;
 }
 
+
+/* BrandLoader smooth keyframes */
+@keyframes brand-halo {
+  0% { transform: scale(0.82); opacity: 0.55; }
+  60% { opacity: 0; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+@keyframes brand-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes brand-breathe {
+  0%, 100% { transform: scale(0.92); filter: brightness(0.95); }
+  50% { transform: scale(1.04); filter: brightness(1.1); }
+}
+@keyframes brand-text-fade {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes brand-fade-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
