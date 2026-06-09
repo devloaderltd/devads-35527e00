@@ -8,9 +8,9 @@ const isNode = process.env.BUILD_TARGET === "node";
 
 export default defineConfig(
   isNode
-    ? {
+    ? ({
         cloudflare: false,
         tanstackStart: { server: { preset: "node-server" } },
-      }
+      } as any)
     : {},
 );
