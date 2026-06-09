@@ -9,26 +9,34 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true;
-    let hydrated = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const finish = (s: Session | null) => {
       if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
-      if (hydrated || _event !== "INITIAL_SESSION") setLoading(false);
+      setLoading(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      // Resolve loading on ANY auth event, including INITIAL_SESSION.
+      // Some browsers (iOS Safari, in-app webviews) can hang getSession()
+      // due to storage access; relying on it alone leaves the UI stuck.
+      finish(s);
     });
+
     supabase.auth.getSession()
-      .then(({ data }) => {
-        if (!mounted) return;
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-      })
-      .finally(() => {
-        hydrated = true;
-        if (mounted) setLoading(false);
-      });
+      .then(({ data }) => finish(data.session))
+      .catch(() => finish(null));
+
+    // Safety net: if neither path resolves (network stalled, storage blocked),
+    // unblock the UI so it can render its unauthenticated state / redirect.
+    const timeout = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 4000);
+
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
