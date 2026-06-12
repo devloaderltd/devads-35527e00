@@ -159,10 +159,41 @@ export const inspectBackup = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((d: unknown) => InspectInput.parse(d))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { backup, migratedFrom } = parseAndValidateBackup(data.payloadJson);
+
+    // Existing per-table counts from the live DB (best-effort; nulls become 0).
+    const counts = await Promise.all(
+      Object.keys(backup.tables).map(async (name) => {
+        const { count, error } = await supabaseAdmin
+          .from(name as never)
+          .select("*", { count: "exact", head: true });
+        return { name, existing: error ? null : (count ?? 0) };
+      }),
+    );
+    const existingMap = new Map(counts.map((c) => [c.name, c.existing]));
+
     const tableSummary = Object.entries(backup.tables)
-      .map(([name, rows]) => ({ name, rows: rows.length }))
+      .map(([name, rows]) => {
+        const existing = existingMap.get(name) ?? null;
+        const imported = rows.length;
+        const delta = existing == null ? null : imported - existing;
+        return {
+          name,
+          rows: imported,
+          existing,
+          delta,
+          changed: existing == null ? true : delta !== 0,
+        };
+      })
       .sort((a, b) => a.name.localeCompare(b.name));
+
+    // Live tables that the backup does NOT contain — flagged so admins notice them.
+    const backupTableSet = new Set(Object.keys(backup.tables));
+    const { data: liveTables } = await supabaseAdmin.rpc("admin_list_public_tables");
+    const missingFromBackup = ((liveTables as string[] | null) ?? [])
+      .filter((t) => !backupTableSet.has(t));
+
     return {
       ok: true as const,
       version: backup.version,
@@ -173,6 +204,8 @@ export const inspectBackup = createServerFn({ method: "POST" })
       authUserCount: backup.auth_users.length,
       tableCount: tableSummary.length,
       totalRows: tableSummary.reduce((s, t) => s + t.rows, 0),
+      changedTableCount: tableSummary.filter((t) => t.changed).length,
+      missingFromBackup,
       tables: tableSummary,
     };
   });
