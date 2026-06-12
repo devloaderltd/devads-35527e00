@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Flag, Package, Tag, MapPin,
   CreditCard, Bitcoin, Wallet, Settings, FileClock, ShieldCheck,
   ShieldAlert, Sparkles, BarChart3, Megaphone, Star, MessagesSquare, Bug, Wrench, Bell, BadgeCheck,
-  RefreshCw, AlertCircle, Inbox, Mail,
+  RefreshCw, AlertCircle, Inbox, Mail, Database,
 } from "lucide-react";
 
 import {
@@ -80,6 +80,7 @@ const groups: ReadonlyArray<Group> = [
       { title: "SMTP", url: "/admin/smtp", icon: Mail },
       { title: "Maintenance", url: "/admin/maintenance", icon: Wrench },
       { title: "Broadcasts", url: "/admin/broadcasts", icon: Megaphone, badgeKey: "broadcasts" },
+      { title: "Database", url: "/admin/database", icon: Database },
       { title: "Audit log", url: "/admin/audit", icon: FileClock },
       { title: "Bump audit", url: "/admin/bump-audit", icon: FileClock },
     ],
