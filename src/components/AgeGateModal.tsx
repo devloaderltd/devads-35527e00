@@ -3,16 +3,36 @@ import { Link } from "@tanstack/react-router";
 import { ShieldAlert } from "lucide-react";
 
 const STORAGE_KEY = "ce24.age-verified";
+const COOKIE_KEY = "ce24_age_verified";
 const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const TTL_SECONDS = 30 * 24 * 60 * 60;
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.split("; ").find((row) => row.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.split("=")[1] ?? "") : null;
+}
+
+function writeCookie(name: string, value: string) {
+  if (typeof document === "undefined") return;
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Max-Age=${TTL_SECONDS}; Path=/; SameSite=Lax${secure}`;
+}
 
 function isVerified(): boolean {
   if (typeof window === "undefined") return true;
   try {
+    const cookieTs = Number(readCookie(COOKIE_KEY));
+    if (Number.isFinite(cookieTs) && Date.now() - cookieTs < TTL_MS) return true;
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return false;
     const ts = Number(raw);
     if (!Number.isFinite(ts)) return false;
-    return Date.now() - ts < TTL_MS;
+    if (Date.now() - ts < TTL_MS) {
+      writeCookie(COOKIE_KEY, String(ts));
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
