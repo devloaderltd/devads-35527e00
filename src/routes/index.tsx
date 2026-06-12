@@ -120,11 +120,9 @@ function Home() {
     staleTime: 10 * 60_000,
   });
 
-  const featured = listings?.filter((l: any) =>
-    l.listing_promotions?.some((p: any) => new Date(p.ends_at) > new Date())
-  ) ?? [];
+  const featured = cityId ? pickCityFeatured((listings as any) ?? [], cityId) : [];
   const bumped = (listings ?? []).filter((l: any) =>
-    !featured.includes(l) && l.bumped_at && (Date.now() - new Date(l.bumped_at).getTime()) < 24 * 60 * 60 * 1000
+    !featured.includes(l) && !hasActiveFeaturedPromotion(l) && l.bumped_at && (Date.now() - new Date(l.bumped_at).getTime()) < 24 * 60 * 60 * 1000
   ).slice(0, 12);
   const recent = listings?.filter((l: any) => !featured.includes(l) && !bumped.includes(l)) ?? [];
 
