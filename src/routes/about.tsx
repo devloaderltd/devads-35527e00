@@ -5,9 +5,9 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — CallEscort24" },
-      { name: "description", content: "CallEscort24 is a modern marketplace for buying and selling across the US, UK and Canada. Learn about our mission and team." },
+      { name: "description", content: "CallEscort24 is an adult directory connecting independent providers and verified clients across the US, UK and Canada. Strictly 18+." },
       { property: "og:title", content: "About — CallEscort24" },
-      { property: "og:description", content: "A modern marketplace built for trust, speed and beautiful design." },
+      { property: "og:description", content: "An adult directory built for safety, discretion and beautiful design. Strictly 18+." },
       { property: "og:url", content: "https://callescort24.org/about" },
     ],
     links: [{ rel: "canonical", href: "https://callescort24.org/about" }],
