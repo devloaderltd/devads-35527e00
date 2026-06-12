@@ -5,9 +5,9 @@ export const Route = createFileRoute("/cookies")({
   head: () => ({
     meta: [
       { title: "Cookies Policy — CallEscort24" },
-      { name: "description", content: "How CallEscort24 uses cookies and similar technologies, and how you can manage your preferences." },
+      { name: "description", content: "How CallEscort24 uses cookies and local storage on an adult classified directory, and how you can manage your preferences." },
       { property: "og:title", content: "Cookies Policy — CallEscort24" },
-      { property: "og:description", content: "Cookies and tracking technologies used on CallEscort24." },
+      { property: "og:description", content: "Cookies and storage used on CallEscort24." },
       { property: "og:url", content: "https://callescort24.org/cookies" },
     ],
     links: [{ rel: "canonical", href: "https://callescort24.org/cookies" }],
@@ -17,62 +17,64 @@ export const Route = createFileRoute("/cookies")({
 
 function CookiesPage() {
   return (
-    <LegalLayout title="Cookies Policy" updated="May 25, 2026">
+    <LegalLayout title="Cookies Policy" updated="June 12, 2026">
       <p>
-        This Cookies Policy explains how <strong>CallEscort24</strong> uses cookies and similar storage
-        technologies (such as localStorage) on our website. For more information about how we handle
-        personal data, see our <Link to="/privacy">Privacy Policy</Link>.
+        This Cookies Policy explains how <strong>CallEscort24</strong> uses cookies and similar
+        browser-storage technologies (such as <code>localStorage</code> and <code>sessionStorage</code>)
+        on our adult classified directory. For more on how we handle personal data, see our{" "}
+        <Link to="/privacy">Privacy Policy</Link>.
       </p>
 
       <h2>1. What are cookies?</h2>
       <p>
-        Cookies are small text files stored on your device by your browser when you visit a website. They
-        let the site remember information about your visit, such as your preferred language or sign-in
-        state, and help us understand how visitors use the site.
+        Cookies are small text files stored on your device by your browser. They let the site
+        remember information about your visit — such as whether you have confirmed you are 18+, your
+        sign-in state, and your preferred city — and help us keep the site secure and reliable.
       </p>
 
-      <h2>2. Types of cookies we use</h2>
+      <h2>2. Categories of storage we use</h2>
+
       <h3>Strictly necessary</h3>
       <p>
-        Required for the site to function. They power authentication, session security, your shopping
-        wallet, fraud prevention, and load balancing. They cannot be turned off in our systems.
+        Required for the site to work. You cannot turn these off without breaking core features.
       </p>
       <ul>
-        <li><code>sb-*</code> — session and authentication tokens.</li>
-        <li><code>callescort24.city</code> — your selected browsing city (localStorage).</li>
-        <li><code>callescort24.theme</code> — light/dark mode preference (localStorage).</li>
-        <li><code>callescort24.cookie-consent</code> — your consent choice for this banner (localStorage).</li>
+        <li><code>sb-*</code> — authentication and session tokens.</li>
+        <li><code>ce24.age-verified</code> — confirms you have passed the 18+ age gate (local storage, 30 days).</li>
+        <li><code>callescort24.cookie-consent</code> — your consent choice for the cookie banner.</li>
+        <li>CSRF and load-balancing cookies set by our hosting provider.</li>
       </ul>
 
       <h3>Functional</h3>
-      <p>
-        Remember your choices to give a more personalized experience (e.g. recently viewed listings,
-        favorites, message read state).
-      </p>
+      <p>Remember your preferences to give a more personal experience.</p>
+      <ul>
+        <li><code>callescort24.city</code> — the city you are browsing.</li>
+        <li><code>callescort24.theme</code> — light or dark mode preference.</li>
+        <li>Recently viewed listings, favorites, and message read state.</li>
+      </ul>
 
-      <h3>Analytics</h3>
+      <h3>Analytics (consent-based)</h3>
       <p>
-        Help us understand how the marketplace is used so we can improve it. We record aggregate listing
-        engagement events (views, favorites, contact reveals) and basic page traffic. We do not use
-        third-party advertising trackers.
+        Only used if you accept analytics in the cookie banner. We record aggregate listing
+        engagement (views, favorites, contact reveals) and basic page traffic so we can improve
+        the directory. We do <strong>not</strong> use third-party advertising or cross-site
+        tracking, and we do not sell any data.
       </p>
 
       <h2>3. How to control cookies</h2>
       <p>
-        You can accept or decline non-essential cookies via the cookie banner shown on your first visit.
-        You can change your choice at any time by clearing your browser storage for this site. Most
-        browsers also let you block or delete cookies directly — see your browser's help pages.
-      </p>
-      <p>
-        Disabling strictly necessary cookies will prevent core features (such as signing in or posting a
-        listing) from working.
+        You can accept or decline non-essential cookies via the banner on your first visit and
+        change your choice at any time by clearing browser storage for this site. Most browsers
+        also let you block or delete cookies — see your browser's help pages. Disabling strictly
+        necessary cookies will prevent you from signing in or posting a listing.
       </p>
 
-      <h2>4. Third parties</h2>
+      <h2>4. Third-party processors</h2>
       <p>
-        Some cookies are set by service providers we use to operate the marketplace (such as our hosting
-        provider, payment processors, and email senders). These providers have their own privacy and
-        cookie policies.
+        Some cookies are set by the providers we use to operate the directory — our hosting and CDN
+        provider, payment processors, ID-verification vendors, and email senders. These providers
+        have their own privacy and cookie policies and are bound by data-protection agreements with
+        us.
       </p>
 
       <h2>5. Changes</h2>
