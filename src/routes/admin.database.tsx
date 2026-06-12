@@ -358,7 +358,64 @@ function DatabasePage() {
               </div>
             </div>
 
+            {impact && (
+              <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/10 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-xs font-semibold text-indigo-200">Estimated impact</div>
+                  <div className="text-[10px] uppercase tracking-wider text-indigo-300/70">
+                    confirm before running
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                  <Stat label="Tables to restore" value={`${impact.tableCount}/${inspection.tableCount}`} />
+                  <Stat label="Rows imported" value={impact.rowsIn.toLocaleString()} />
+                  <Stat
+                    label="Net row delta"
+                    value={(impact.netDelta > 0 ? "+" : "") + impact.netDelta.toLocaleString()}
+                  />
+                  <Stat label="Estimated duration" value={formatDuration(impact.etaMs)} />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+                  {impact.growing > 0 && (
+                    <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-300">
+                      ↑ {impact.growing} growing
+                    </span>
+                  )}
+                  {impact.shrinking > 0 && (
+                    <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-rose-300">
+                      ↓ {impact.shrinking} shrinking
+                    </span>
+                  )}
+                  {impact.unchanged > 0 && (
+                    <span className="rounded-full bg-slate-500/15 px-2 py-0.5 text-slate-300">
+                      = {impact.unchanged} unchanged
+                    </span>
+                  )}
+                  {impact.newTables > 0 && (
+                    <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-indigo-200">
+                      + {impact.newTables} new/empty
+                    </span>
+                  )}
+                  {wipeFirst && (
+                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-200">
+                      wipe first (+~2.5s)
+                    </span>
+                  )}
+                  {includeAuthUsers && inspection.authUserCount > 0 && (
+                    <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-fuchsia-200">
+                      {inspection.authUserCount} auth users
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-[11px] text-slate-400">
+                  Duration is an estimate based on ~1.5k rows/sec throughput. Large blobs or
+                  network latency can extend it.
+                </p>
+              </div>
+            )}
+
             <Button
+
               variant="destructive"
               className="w-full rounded-full"
               disabled={importMut.isPending || selectedTables.size === 0}
