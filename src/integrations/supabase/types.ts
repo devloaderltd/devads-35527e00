@@ -1606,6 +1606,15 @@ export type Database = {
         Args: { _amount: number; _description: string; _user_id: string }
         Returns: number
       }
+      admin_get_user_sessions: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          last_event_at: string
+          last_ip: string
+          last_user_agent: string
+          user_id: string
+        }[]
+      }
       admin_list_public_tables: { Args: never; Returns: string[] }
       admin_set_replica_mode: { Args: { _on: boolean }; Returns: undefined }
       admin_truncate_all_public: { Args: never; Returns: undefined }

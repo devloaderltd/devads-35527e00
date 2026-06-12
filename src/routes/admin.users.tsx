@@ -27,6 +27,7 @@ export const Route = createFileRoute("/admin/users")({ component: UsersPage });
 type ListUser = {
   id: string; email: string; display_name: string; created_at: string;
   roles: string[]; banned: boolean; banned_until: string | null; wallet_balance: number;
+  last_ip: string | null; last_user_agent: string | null; last_sign_in_at: string | null;
 };
 
 function useDebounced<T>(v: T, ms = 300) {
@@ -135,6 +136,11 @@ function UsersPage() {
                     {u.roles.map(r => <Badge key={r} variant={r === "admin" ? "default" : "secondary"} className="capitalize">{r}</Badge>)}
                   </div>
                   <div className="text-xs text-slate-400">{u.email} · ${u.wallet_balance.toFixed(2)} · joined {format(new Date(u.created_at), "MMM d, yyyy")}</div>
+                  <div className="mt-1 text-[11px] text-slate-500 flex flex-wrap gap-x-3 gap-y-0.5">
+                    <span>IP: <span className="font-mono text-slate-300">{u.last_ip ?? "—"}</span></span>
+                    {u.last_sign_in_at && <span>Last seen: {format(new Date(u.last_sign_in_at), "MMM d, HH:mm")}</span>}
+                    {u.last_user_agent && <span className="max-w-full truncate" title={u.last_user_agent}>UA: {u.last_user_agent}</span>}
+                  </div>
                 </button>
                 <div className="flex flex-wrap gap-1.5">
                   <Button size="sm" variant="outline" className="rounded-full border-white/20 bg-white/5 text-slate-100 hover:bg-white/10" onClick={() => setActive(u)}>View</Button>
