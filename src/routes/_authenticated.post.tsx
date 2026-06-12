@@ -609,7 +609,7 @@ function PostListing() {
           ? originalCityIds.length > 1
             ? `This listing is published in ${originalCityIds.length} cities. Changes apply to all of them.`
             : "Update the details below and save your changes."
-          : "Reach buyers across the country in seconds."}
+          : "Reach the right audience in your city in seconds. Strictly 18+."}
       </p>
 
       {!isEdit && previewMode && (
