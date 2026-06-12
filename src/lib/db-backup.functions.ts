@@ -39,11 +39,16 @@ export const exportDatabase = createServerFn({ method: "POST" })
       page++;
     }
 
-    return {
+    const payload = {
       version: 1 as const,
       exported_at: new Date().toISOString(),
       auth_users: authUsers,
       tables: dump,
+    };
+    return {
+      json: JSON.stringify(payload),
+      tableCount: Object.keys(dump).length,
+      userCount: authUsers.length,
     };
   });
 

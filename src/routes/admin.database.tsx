@@ -21,8 +21,8 @@ function DatabasePage() {
 
   const exportMut = useMutation({
     mutationFn: async () => {
-      const payload = await exportFn();
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const res = await exportFn();
+      const blob = new Blob([res.json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -31,9 +31,7 @@ function DatabasePage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      const tableCount = Object.keys(payload.tables ?? {}).length;
-      const userCount = (payload.auth_users ?? []).length;
-      return { tableCount, userCount };
+      return { tableCount: res.tableCount, userCount: res.userCount };
     },
     onSuccess: (r) => toast.success(`Exported ${r.tableCount} tables and ${r.userCount} users`),
     onError: (e: Error) => toast.error(e.message),
