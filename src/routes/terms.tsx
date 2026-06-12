@@ -5,9 +5,9 @@ export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
       { title: "Terms of Service — CallEscort24" },
-      { name: "description", content: "The rules and conditions governing the use of CallEscort24's online marketplace." },
+      { name: "description", content: "Terms governing use of CallEscort24, an adult escort directory and classified advertising platform for independent advertisers." },
       { property: "og:title", content: "Terms of Service — CallEscort24" },
-      { property: "og:description", content: "The rules of the road for buying, selling and posting on CallEscort24." },
+      { property: "og:description", content: "The rules governing CallEscort24, an adult classified directory for independent advertisers." },
       { property: "og:url", content: "https://callescort24.org/terms" },
     ],
     links: [{ rel: "canonical", href: "https://callescort24.org/terms" }],
@@ -17,141 +17,171 @@ export const Route = createFileRoute("/terms")({
 
 function TermsPage() {
   return (
-    <LegalLayout title="Terms of Service" updated="May 25, 2026">
+    <LegalLayout title="Terms of Service" updated="June 12, 2026">
       <p>
-        Welcome to CallEscort24. These Terms of Service ("Terms") form a binding agreement between you and
-        CallEscort24 governing your use of our marketplace, accessible at{" "}
-        <a href="https://callescort24.org">callescort24.org</a>. By creating an account, posting a listing,
-        or otherwise using the service you accept these Terms in full.
+        Welcome to <strong>CallEscort24</strong> ("we", "us", "our"). CallEscort24 is an adult
+        classified advertising directory accessible at{" "}
+        <a href="https://callescort24.org">callescort24.org</a> where independent adult service
+        providers ("Advertisers") publish listings and visitors ("Visitors") may contact them
+        directly. These Terms of Service ("Terms") form a binding agreement between you and
+        CallEscort24. By accessing the site, creating an account, or posting a listing you accept
+        these Terms in full. If you do not agree, you must not use the service.
       </p>
 
-      <h2>1. Eligibility</h2>
-      <p>
-        You must be at least 18 years old (or the age of majority in your jurisdiction) and able to enter
-        into a binding contract. You must provide accurate information and keep your account credentials
-        secure.
-      </p>
-
-      <h2>2. Your account</h2>
+      <h2>1. Eligibility — strictly 18+</h2>
       <ul>
-        <li>You are responsible for all activity on your account.</li>
-        <li>One person, one account. Multiple accounts to evade limits, suspensions or bans are prohibited.</li>
-        <li>Notify us immediately of any unauthorized access.</li>
+        <li>You must be at least <strong>18 years old</strong> (or the age of majority in your jurisdiction, whichever is higher).</li>
+        <li>You must have the legal capacity to enter into binding contracts.</li>
+        <li>Viewing adult content must be lawful in your country, state, or region.</li>
+        <li>You confirm that you are accessing the site of your own free will and are not offended by adult material.</li>
       </ul>
 
-      <h2>3. Marketplace role</h2>
+      <h2>2. Our role — directory only, no endorsement</h2>
       <p>
-        CallEscort24 is a venue that connects buyers and sellers. We are <strong>not</strong> a party to any
-        transaction between users. We do not pre-screen listings, do not take possession of items, do not
-        handle payments between buyer and seller (except where explicitly offered), and provide no warranty
-        on items listed.
+        CallEscort24 is <strong>only a classified advertising platform</strong>. We do not provide,
+        offer, broker, arrange, or endorse any services advertised on the site. We are not a party
+        to any communication, agreement, or transaction between Visitors and Advertisers. All
+        Advertisers are independent third parties and are solely responsible for the content,
+        legality, accuracy, and performance of their listings.
+      </p>
+      <p>
+        Nothing on this site constitutes an offer of, solicitation for, or agreement to provide
+        sexual services in exchange for money where doing so is illegal. Advertisers and Visitors
+        are responsible for complying with the laws that apply to them.
       </p>
 
-      <h2>4. Listings</h2>
+      <h2>3. Prohibited content and conduct — zero tolerance</h2>
+      <p>The following are strictly forbidden and will result in immediate removal, permanent ban, and reporting to law enforcement where applicable:</p>
       <ul>
-        <li>You may only list items you own and have the right to sell.</li>
-        <li>Listings must accurately describe the item, condition, price, and location.</li>
-        <li>You are responsible for compliance with all applicable laws (taxes, import/export, consumer rights).</li>
-        <li>We may remove listings, suspend accounts, or refuse service at our discretion when content violates these Terms or applicable law.</li>
+        <li><strong>Any content involving minors</strong> (anyone under 18), whether real, fictional, simulated, or AI-generated.</li>
+        <li><strong>Human trafficking, coercion, exploitation, or non-consensual content</strong> of any kind.</li>
+        <li>Content depicting violence, rape, bestiality, incest, necrophilia, or other illegal acts.</li>
+        <li>Listings advertising drugs, weapons, stolen goods, identity documents, or other illegal items.</li>
+        <li>Impersonation, identity theft, or use of another person's photos or likeness without consent.</li>
+        <li>Doxxing, harassment, threats, hate speech, or discriminatory content.</li>
+        <li>Spam, scraping, automated mass posting, phishing, malware, or circumvention of security controls.</li>
+        <li>Fraud, money laundering, tax evasion, or any activity that violates applicable law.</li>
+      </ul>
+      <p>
+        We cooperate with the National Center for Missing &amp; Exploited Children (NCMEC), Interpol,
+        and other authorities when illegal content is identified.
+      </p>
+
+      <h2>4. Advertiser responsibilities</h2>
+      <ul>
+        <li>You are at least 18 and every person depicted in your listing is at least 18.</li>
+        <li>You own or have full rights to every photo, video, and text you upload.</li>
+        <li>Your listing accurately reflects who you are and what you advertise.</li>
+        <li>You comply with every law that applies to you — including local rules on advertising, taxation, immigration, and adult services.</li>
+        <li>You agree to identity verification (KYC) when requested. We may require government-issued ID, a selfie, and proof of age before publishing or at any time afterward.</li>
+        <li>You may not list services that are illegal in the jurisdiction where the service would be performed.</li>
+        <li>You indemnify CallEscort24 against any claims arising from your listing.</li>
       </ul>
 
-      <h3>Prohibited items and conduct</h3>
+      <h2>5. Visitor responsibilities</h2>
       <ul>
-        <li>Illegal goods, weapons, drugs, stolen items, counterfeit or recalled products.</li>
-        <li>Adult content, hate speech, harassment, threats, doxxing, or discriminatory content.</li>
-        <li>Spam, repeated low-quality listings, manipulated reviews, fake engagement.</li>
-        <li>Phishing, malware, scraping, automated mass posting, or circumventing security controls.</li>
-        <li>Tax evasion, money laundering, or other unlawful financial activity.</li>
+        <li>You will treat Advertisers with respect and dignity.</li>
+        <li>You will not contact an Advertiser to request or arrange anything illegal.</li>
+        <li>You will not record, share, or redistribute private communications without consent.</li>
+        <li>You take full responsibility for any meeting you arrange with an Advertiser, including verifying their identity and ensuring your own safety.</li>
       </ul>
 
-      <h2>5. Promotions and paid features</h2>
-      <p>
-        We offer paid features such as listing bumps and featured placements. Prices, durations and
-        availability are shown at purchase time and may change. Wallet credits and promotional purchases
-        are generally non-refundable except where required by law.
-      </p>
+      <h2>6. Account rules</h2>
+      <ul>
+        <li>One person, one account. Multi-accounting to evade limits or bans is prohibited.</li>
+        <li>You are responsible for everything done from your account and for keeping credentials secret.</li>
+        <li>You must notify us immediately of unauthorized access.</li>
+      </ul>
 
-      <h2>6. Wallet and payments</h2>
+      <h2>7. Payments, credits, and refunds</h2>
       <p>
-        Wallet balances are denominated in USD and can be topped up via supported payment methods
-        (including cryptocurrency). Once credited, wallet funds may be spent on CallEscort24 features. Refunds
-        and chargebacks may result in deduction of the corresponding wallet credit.
+        Paid features (listing bumps, featured placements, verification badges) are billed as
+        wallet credits purchased via supported payment methods, including cryptocurrency.
       </p>
+      <ul>
+        <li>All purchases are <strong>final and non-refundable</strong> except where required by law.</li>
+        <li>Wallet credits have no cash value and cannot be transferred or withdrawn.</li>
+        <li>Chargebacks or payment reversals will result in immediate account suspension.</li>
+        <li>Prices may change at any time; the price shown at checkout applies to that purchase.</li>
+      </ul>
 
-      <h2>7. Content licence and DMCA</h2>
+      <h2>8. Content licence and DMCA</h2>
       <p>
         You retain ownership of content you upload. You grant CallEscort24 a worldwide, non-exclusive,
-        royalty-free licence to host, display, reproduce, and distribute that content as needed to operate
-        and promote the service.
+        royalty-free licence to host, store, reproduce, display, and distribute that content as
+        needed to operate, promote, and improve the service.
       </p>
       <p>
-        CallEscort24 respects intellectual property rights. If you believe content on the service infringes
-        your copyright, please follow the procedure in our{" "}
-        <Link to="/dmca">DMCA Copyright Policy</Link> to submit a takedown notice or counter-notification.
+        If you believe content on the service infringes your copyright or uses your image without
+        consent, follow our <Link to="/dmca">DMCA / Image Removal Policy</Link> to submit a takedown
+        notice. We respond to valid notices promptly.
       </p>
 
-      <h2>8. Reviews and reports</h2>
+      <h2>9. Record-keeping and verification</h2>
       <p>
-        Reviews must be honest and based on a real interaction. We may remove reviews that violate these
-        Terms. Users may report listings or other users they believe violate our rules; we will review
-        reports in good faith but cannot guarantee any specific outcome.
+        Where required by law, Advertisers must provide and keep on file documentation proving the
+        age and identity of every person depicted in their content. CallEscort24 retains verification
+        records associated with paid listings for as long as required by applicable record-keeping
+        rules.
       </p>
 
-
-      <h2>9. Suspension and termination</h2>
+      <h2>10. Moderation and termination</h2>
       <p>
-        We may suspend or terminate access at any time, with or without notice, for violations of these
-        Terms, suspected fraud, or to protect the platform and its users. You may close your account at
-        any time via the dashboard.
+        We may remove any listing, suspend any account, refuse service, or terminate access at any
+        time — with or without notice — for any reason we consider necessary to protect users, the
+        platform, or to comply with the law. You may close your account at any time from your
+        dashboard; we may retain certain records as required by law.
       </p>
 
-      <h2>10. Disclaimers</h2>
+      <h2>11. Disclaimers</h2>
       <p>
-        The service is provided "as is" and "as available" without warranties of any kind, whether
-        express or implied, including merchantability, fitness for a particular purpose, and
-        non-infringement. We do not warrant that listings are accurate, that users are who they claim to
-        be, or that the service will be uninterrupted or error-free.
+        The service is provided "as is" and "as available" without warranties of any kind, express
+        or implied. We do not verify Advertisers beyond the documentation they provide and we do
+        not guarantee the accuracy of any listing, the legality of any service, or the safety of
+        any interaction. You use the service entirely at your own risk.
       </p>
 
-      <h2>11. Limitation of liability</h2>
+      <h2>12. Limitation of liability</h2>
       <p>
         To the maximum extent permitted by law, CallEscort24 shall not be liable for any indirect,
-        incidental, special, consequential, or punitive damages, or any loss of profits, revenue, data, or
-        goodwill arising from your use of the service. Our aggregate liability shall not exceed the
-        greater of (a) the amounts you paid to CallEscort24 in the twelve months preceding the claim, or
-        (b) USD 100.
+        incidental, special, consequential, or punitive damages, or any loss of profits, revenue,
+        data, reputation, or goodwill arising from your use of the service or from any interaction
+        between Visitors and Advertisers. Our aggregate liability shall not exceed the greater of
+        (a) the amounts you paid to CallEscort24 in the twelve months preceding the claim, or (b)
+        USD 100.
       </p>
 
-      <h2>12. Indemnity</h2>
+      <h2>13. Indemnity</h2>
       <p>
-        You agree to indemnify and hold CallEscort24, its officers, employees, and affiliates harmless from
-        any claims, damages, or expenses (including reasonable legal fees) arising from your listings,
-        your use of the service, or your violation of these Terms.
+        You agree to indemnify and hold CallEscort24, its officers, employees, and affiliates
+        harmless from any claims, damages, fines, or expenses (including reasonable legal fees)
+        arising from your listings, your conduct, your interactions with other users, or your
+        violation of these Terms or any law.
       </p>
 
-      <h2>13. Governing law, disputes, and arbitration</h2>
+      <h2>14. Governing law and disputes</h2>
       <p>
-        These Terms are governed by the laws of the jurisdiction in which CallEscort24 is established,
-        excluding conflict-of-law principles. Before filing a claim, you agree to first try to resolve
-        the dispute informally by contacting us through our <Link to="/contact">contact page</Link>; we
-        will likewise contact you. If a dispute is not resolved within 60 days, you and CallEscort24 agree
-        to resolve any remaining dispute through final and binding individual arbitration, and not in a
-        class, collective, or representative action. You and CallEscort24 waive any right to a jury trial
-        and any right to participate in a class action. Nothing in this section prevents either party
-        from seeking injunctive or equitable relief in a court of competent jurisdiction, or, where
-        mandatory consumer law grants you the right to bring proceedings elsewhere, from doing so.
+        These Terms are governed by the laws of the jurisdiction in which CallEscort24 is
+        established, excluding conflict-of-law rules. Before filing a claim, you agree to first
+        attempt informal resolution by contacting us through our{" "}
+        <Link to="/contact">contact page</Link>. If a dispute is not resolved within 60 days, you
+        and CallEscort24 agree to resolve any remaining dispute through final and binding
+        individual arbitration, and not in a class, collective, or representative action. Nothing
+        in this section prevents either party from seeking injunctive relief or, where mandatory
+        consumer law grants you the right to bring proceedings elsewhere, from doing so.
       </p>
 
-
-      <h2>14. Changes</h2>
+      <h2>15. Changes</h2>
       <p>
-        We may update these Terms from time to time. Continued use of CallEscort24 after changes are posted
-        constitutes acceptance of the updated Terms.
+        We may update these Terms at any time. Material changes will be highlighted on the site.
+        Continued use after changes are posted constitutes acceptance of the updated Terms.
       </p>
 
-      <h2>15. Contact</h2>
+      <h2>16. Contact</h2>
       <p>
-        Questions? Reach us through our <Link to="/contact">contact page</Link>.
+        Questions, abuse reports, or legal notices? Reach us through our{" "}
+        <Link to="/contact">contact page</Link>. Abuse reports involving minors or trafficking are
+        reviewed with the highest priority.
       </p>
     </LegalLayout>
   );

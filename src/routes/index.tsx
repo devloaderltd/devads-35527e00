@@ -1,11 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { SiteBanner } from "@/components/SiteBanner";
-import { RecentlyViewedRail } from "@/components/RecentlyViewedRail";
-import { TrendingInCityRail } from "@/components/TrendingInCityRail";
+const RecentlyViewedRail = lazy(() =>
+  import("@/components/RecentlyViewedRail").then((m) => ({ default: m.RecentlyViewedRail })),
+);
+const TrendingInCityRail = lazy(() =>
+  import("@/components/TrendingInCityRail").then((m) => ({ default: m.TrendingInCityRail })),
+);
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Users } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
@@ -399,8 +404,16 @@ function Home() {
 
 
       {cityId && (<>
-      {sections.recently_viewed && <RecentlyViewedRail />}
-      {sections.trending_rail && <TrendingInCityRail cityId={cityId} cityName={cityName} />}
+      {sections.recently_viewed && (
+        <Suspense fallback={null}>
+          <RecentlyViewedRail />
+        </Suspense>
+      )}
+      {sections.trending_rail && (
+        <Suspense fallback={null}>
+          <TrendingInCityRail cityId={cityId} cityName={cityName} />
+        </Suspense>
+      )}
       {/* Featured row */}
       {sections.featured_row && featured.length > 0 && (
         <section className="container mx-auto px-4 pt-10">
