@@ -643,7 +643,7 @@ function PostListing() {
           <Input
             id="title" maxLength={140} value={title}
             onChange={(e) => { setTitle(e.target.value); if (errors.title) setErrors((p) => ({ ...p, title: undefined })); }}
-            placeholder="e.g. 2019 Trek Marlin 7 — Like new"
+            placeholder="e.g. Looking for some fun"
             className={cn("bg-white/70", errCls("title"))}
           />
           {errors.title && <p className="text-xs font-medium text-destructive">{errors.title}</p>}
