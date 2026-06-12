@@ -73,7 +73,7 @@ export const importDatabase = createServerFn({ method: "POST" })
 
     let parsed: ImportPayload;
     try {
-      parsed = JSON.parse(parsedJson) as ImportPayload;
+      parsed = JSON.parse(data.payloadJson) as ImportPayload;
     } catch {
       throw new Error("Invalid backup JSON");
     }
