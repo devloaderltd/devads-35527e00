@@ -34,6 +34,7 @@ import { AuthErrorFallback } from "@/components/AuthErrorFallback";
 import { isChunkLoadError, reloadOnceForChunkError } from "@/lib/chunk-reload";
 import { RecoveryOverlay } from "@/components/RecoveryOverlay";
 import { SessionWatcher } from "@/lib/session-watcher";
+import { AgeGateModal } from "@/components/AgeGateModal";
 
 
 import appCss from "../styles.css?url";
@@ -190,6 +191,7 @@ function RootComponent() {
             )}
             {!isAdminArea && <CitySelectorDialog dismissable />}
             {!isAdminArea && <CookieConsent />}
+            {!isAdminArea && <AgeGateModal />}
           </CompareProvider>
         </CityProvider>
       </ThemeProvider>
