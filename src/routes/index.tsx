@@ -404,8 +404,16 @@ function Home() {
 
 
       {cityId && (<>
-      {sections.recently_viewed && <RecentlyViewedRail />}
-      {sections.trending_rail && <TrendingInCityRail cityId={cityId} cityName={cityName} />}
+      {sections.recently_viewed && (
+        <Suspense fallback={null}>
+          <RecentlyViewedRail />
+        </Suspense>
+      )}
+      {sections.trending_rail && (
+        <Suspense fallback={null}>
+          <TrendingInCityRail cityId={cityId} cityName={cityName} />
+        </Suspense>
+      )}
       {/* Featured row */}
       {sections.featured_row && featured.length > 0 && (
         <section className="container mx-auto px-4 pt-10">
