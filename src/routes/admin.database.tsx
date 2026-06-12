@@ -22,6 +22,16 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `~${ms} ms`;
+  if (ms < 60_000) return `~${(ms / 1000).toFixed(1)} s`;
+  const mins = Math.floor(ms / 60_000);
+  const secs = Math.round((ms % 60_000) / 1000);
+  return `~${mins}m ${secs}s`;
+}
+
+
+
 function makeFilename(): string {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   return `db-backup-${ts}.json`;
@@ -146,6 +156,41 @@ function DatabasePage() {
       return a.name.localeCompare(b.name);
     });
   }, [inspection]);
+
+  // Estimated impact across the selected tables (recomputes as the admin toggles).
+  const impact = useMemo(() => {
+    if (!inspection) return null;
+    const selected = inspection.tables.filter((t) => selectedTables.has(t.name));
+    let rowsIn = 0, netDelta = 0, growing = 0, shrinking = 0, unchanged = 0, newTables = 0;
+    for (const t of selected) {
+      rowsIn += t.rows;
+      if (t.existing == null || t.existing === 0) newTables++;
+      const d = t.delta ?? t.rows;
+      netDelta += d;
+      if (d > 0) growing++;
+      else if (d < 0) shrinking++;
+      else unchanged++;
+    }
+    // Heuristic: ~1500 rows/sec upsert throughput + 120ms per-table overhead.
+    // Wipe ≈ 2.5s. Auth user create ≈ 180ms each (when included).
+    const ROWS_PER_SEC = 1500;
+    const PER_TABLE_MS = 120;
+    const WIPE_MS = wipeFirst ? 2500 : 0;
+    const AUTH_MS = includeAuthUsers ? inspection.authUserCount * 180 : 0;
+    const dataMs = Math.ceil((rowsIn / ROWS_PER_SEC) * 1000) + selected.length * PER_TABLE_MS;
+    const totalMs = WIPE_MS + AUTH_MS + dataMs;
+    return {
+      tableCount: selected.length,
+      rowsIn,
+      netDelta,
+      growing,
+      shrinking,
+      unchanged,
+      newTables,
+      etaMs: totalMs,
+    };
+  }, [inspection, selectedTables, wipeFirst, includeAuthUsers]);
+
 
   return (
     <div>
@@ -323,7 +368,64 @@ function DatabasePage() {
               </div>
             </div>
 
+            {impact && (
+              <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/10 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-xs font-semibold text-indigo-200">Estimated impact</div>
+                  <div className="text-[10px] uppercase tracking-wider text-indigo-300/70">
+                    confirm before running
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                  <Stat label="Tables to restore" value={`${impact.tableCount}/${inspection.tableCount}`} />
+                  <Stat label="Rows imported" value={impact.rowsIn.toLocaleString()} />
+                  <Stat
+                    label="Net row delta"
+                    value={(impact.netDelta > 0 ? "+" : "") + impact.netDelta.toLocaleString()}
+                  />
+                  <Stat label="Estimated duration" value={formatDuration(impact.etaMs)} />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+                  {impact.growing > 0 && (
+                    <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-300">
+                      ↑ {impact.growing} growing
+                    </span>
+                  )}
+                  {impact.shrinking > 0 && (
+                    <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-rose-300">
+                      ↓ {impact.shrinking} shrinking
+                    </span>
+                  )}
+                  {impact.unchanged > 0 && (
+                    <span className="rounded-full bg-slate-500/15 px-2 py-0.5 text-slate-300">
+                      = {impact.unchanged} unchanged
+                    </span>
+                  )}
+                  {impact.newTables > 0 && (
+                    <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-indigo-200">
+                      + {impact.newTables} new/empty
+                    </span>
+                  )}
+                  {wipeFirst && (
+                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-200">
+                      wipe first (+~2.5s)
+                    </span>
+                  )}
+                  {includeAuthUsers && inspection.authUserCount > 0 && (
+                    <span className="rounded-full bg-fuchsia-500/15 px-2 py-0.5 text-fuchsia-200">
+                      {inspection.authUserCount} auth users
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-[11px] text-slate-400">
+                  Duration is an estimate based on ~1.5k rows/sec throughput. Large blobs or
+                  network latency can extend it.
+                </p>
+              </div>
+            )}
+
             <Button
+
               variant="destructive"
               className="w-full rounded-full"
               disabled={importMut.isPending || selectedTables.size === 0}
