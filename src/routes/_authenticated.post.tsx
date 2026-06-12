@@ -656,7 +656,7 @@ function PostListing() {
               value={description}
               onChange={(v) => { setDescription(v); if (errors.description) setErrors((p) => ({ ...p, description: undefined })); }}
               maxLength={4000}
-              placeholder="Condition, size, history, why you're selling…"
+              placeholder="Introduce yourself — a little about you, what makes time with you special, availability, rates, and how to reach you. Be respectful, accurate, and never include explicit or illegal content."
             />
           </div>
           {errors.description && <p className="text-xs font-medium text-destructive">{errors.description}</p>}
