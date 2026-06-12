@@ -40,9 +40,8 @@ function DatabasePage() {
   const importMut = useMutation({
     mutationFn: async (file: File) => {
       const text = await file.text();
-      const payload = JSON.parse(text);
-      if (!payload?.tables) throw new Error("Invalid backup file: missing 'tables' field");
-      return importFn({ data: { payload, wipeFirst } });
+      try { JSON.parse(text); } catch { throw new Error("Selected file is not valid JSON"); }
+      return importFn({ data: { payloadJson: text, wipeFirst } });
     },
     onSuccess: (r) => {
       setResult({ log: r.log, errors: r.errors });

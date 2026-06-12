@@ -73,7 +73,7 @@ export const importDatabase = createServerFn({ method: "POST" })
 
     let parsed: ImportPayload;
     try {
-      parsed = JSON.parse(data.payloadJson) as ImportPayload;
+      parsed = JSON.parse(parsedJson) as ImportPayload;
     } catch {
       throw new Error("Invalid backup JSON");
     }
@@ -103,7 +103,7 @@ export const importDatabase = createServerFn({ method: "POST" })
       log.push("existing auth users deleted");
     }
 
-    for (const u of data.payload.auth_users ?? []) {
+    for (const u of parsed.auth_users ?? []) {
       const user = u as Record<string, unknown>;
       const { error } = await supabaseAdmin.auth.admin.createUser({
         id: user.id as string,
@@ -116,17 +116,17 @@ export const importDatabase = createServerFn({ method: "POST" })
       });
       if (error) errors.push(`create user ${user.email}: ${error.message}`);
     }
-    log.push(`auth users restored: ${(data.payload.auth_users ?? []).length}`);
+    log.push(`auth users restored: ${(parsed.auth_users ?? []).length}`);
 
     const priority = ["profiles", "user_roles", "wallets", "categories", "cities"];
-    const allTables = Object.keys(data.payload.tables);
+    const allTables = Object.keys(parsed.tables);
     const ordered = [
       ...priority.filter((t) => allTables.includes(t)),
       ...allTables.filter((t) => !priority.includes(t)),
     ];
 
     for (const t of ordered) {
-      const rows = data.payload.tables[t] ?? [];
+      const rows = parsed.tables[t] ?? [];
       if (!rows.length) { log.push(`${t}: empty`); continue; }
       const BATCH = 500;
       let ok = 0;
