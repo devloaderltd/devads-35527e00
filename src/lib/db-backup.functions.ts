@@ -2,7 +2,105 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdmin } from "./admin-middleware";
 
-/** Export full public schema + auth users metadata as a JSON dump. Admin only. */
+// ─── Backup schema + migration ──────────────────────────────────────────────
+
+export const LATEST_BACKUP_VERSION = 2 as const;
+
+/**
+ * Strict zod schema for the current backup payload shape (v2).
+ * Reject anything that doesn't match after migration so we never apply garbage.
+ */
+const RowSchema = z.record(z.unknown());
+const TablesSchema = z.record(z.array(RowSchema));
+
+const AuthUserSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  email_confirmed_at: z.union([z.string(), z.null()]).optional(),
+  phone_confirmed_at: z.union([z.string(), z.null()]).optional(),
+  user_metadata: z.record(z.unknown()).optional(),
+  app_metadata: z.record(z.unknown()).optional(),
+}).passthrough();
+
+const BackupV2Schema = z.object({
+  version: z.literal(LATEST_BACKUP_VERSION),
+  exported_at: z.string().min(1),
+  source: z.string().optional(),
+  auth_users: z.array(AuthUserSchema).default([]),
+  tables: TablesSchema,
+});
+
+export type BackupV2 = z.infer<typeof BackupV2Schema>;
+
+/**
+ * Migrate older backup shapes to v2. Returns null when the shape is too foreign
+ * to safely upgrade (caller should reject).
+ *
+ * Supported upgrades:
+ *  - no `version` field, but has `tables`        → v1 (assume legacy admin dump)
+ *  - `version: 1`                                 → v2 (add empty source, normalize)
+ *  - already v2                                   → returned untouched
+ */
+function migrateBackup(raw: unknown): { ok: true; data: unknown; from: number; to: number } | { ok: false; reason: string } {
+  if (!raw || typeof raw !== "object") return { ok: false, reason: "Backup is not an object" };
+  const obj = raw as Record<string, unknown>;
+
+  if (!("tables" in obj) || typeof obj.tables !== "object" || obj.tables === null) {
+    return { ok: false, reason: "Backup is missing a 'tables' object" };
+  }
+
+  const from = typeof obj.version === "number" ? obj.version : 0;
+  if (from > LATEST_BACKUP_VERSION) {
+    return { ok: false, reason: `Backup version ${from} is newer than supported (${LATEST_BACKUP_VERSION}). Upgrade the app first.` };
+  }
+
+  let working: Record<string, unknown> = { ...obj };
+
+  // v0 (no version) → v1: assume the legacy `/api/public/db-backup` shape.
+  if (from === 0) {
+    working = {
+      version: 1,
+      exported_at: typeof working.exported_at === "string" ? working.exported_at : new Date(0).toISOString(),
+      auth_users: Array.isArray(working.auth_users) ? working.auth_users : [],
+      tables: working.tables,
+    };
+  }
+
+  // v1 → v2: add `source`, ensure auth_users is an array, drop unknown top-level junk.
+  if ((working.version as number) === 1) {
+    working = {
+      version: 2,
+      exported_at: typeof working.exported_at === "string" ? working.exported_at : new Date().toISOString(),
+      source: typeof working.source === "string" ? working.source : "legacy-v1",
+      auth_users: Array.isArray(working.auth_users) ? working.auth_users : [],
+      tables: working.tables,
+    };
+  }
+
+  return { ok: true, data: working, from, to: LATEST_BACKUP_VERSION };
+}
+
+/** Validate (and migrate) raw JSON text. Throws Error with a user-readable message on failure. */
+function parseAndValidateBackup(jsonText: string): { backup: BackupV2; migratedFrom: number } {
+  let raw: unknown;
+  try { raw = JSON.parse(jsonText); }
+  catch { throw new Error("Backup file is not valid JSON"); }
+
+  const migrated = migrateBackup(raw);
+  if (!migrated.ok) throw new Error(migrated.reason);
+
+  const parsed = BackupV2Schema.safeParse(migrated.data);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    const path = first?.path?.join(".") || "(root)";
+    throw new Error(`Backup failed schema validation at ${path}: ${first?.message ?? "unknown error"}`);
+  }
+  return { backup: parsed.data, migratedFrom: migrated.from };
+}
+
+// ─── Export ─────────────────────────────────────────────────────────────────
+
 export const exportDatabase = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .handler(async () => {
@@ -39,10 +137,11 @@ export const exportDatabase = createServerFn({ method: "POST" })
       page++;
     }
 
-    const payload = {
-      version: 1 as const,
+    const payload: BackupV2 = {
+      version: LATEST_BACKUP_VERSION,
       exported_at: new Date().toISOString(),
-      auth_users: authUsers,
+      source: process.env.SUPABASE_URL ?? "unknown",
+      auth_users: authUsers as never,
       tables: dump,
     };
     return {
@@ -52,15 +151,40 @@ export const exportDatabase = createServerFn({ method: "POST" })
     };
   });
 
+// ─── Inspect (dry-run) ──────────────────────────────────────────────────────
+
+const InspectInput = z.object({ payloadJson: z.string().min(2) });
+
+export const inspectBackup = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((d: unknown) => InspectInput.parse(d))
+  .handler(async ({ data }) => {
+    const { backup, migratedFrom } = parseAndValidateBackup(data.payloadJson);
+    const tableSummary = Object.entries(backup.tables)
+      .map(([name, rows]) => ({ name, rows: rows.length }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    return {
+      ok: true as const,
+      version: backup.version,
+      migratedFrom,
+      migrated: migratedFrom !== backup.version,
+      exportedAt: backup.exported_at,
+      source: backup.source ?? null,
+      authUserCount: backup.auth_users.length,
+      tableCount: tableSummary.length,
+      totalRows: tableSummary.reduce((s, t) => s + t.rows, 0),
+      tables: tableSummary,
+    };
+  });
+
+// ─── Import ─────────────────────────────────────────────────────────────────
+
 const ImportInput = z.object({
   payloadJson: z.string().min(2),
   wipeFirst: z.boolean().default(true),
+  includeAuthUsers: z.boolean().default(true),
+  onlyTables: z.array(z.string().min(1)).optional(),
 });
-
-type ImportPayload = {
-  auth_users?: Array<Record<string, unknown>>;
-  tables: Record<string, Array<Record<string, unknown>>>;
-};
 
 /** Restore a JSON dump created by exportDatabase. Admin only. DESTRUCTIVE. */
 export const importDatabase = createServerFn({ method: "POST" })
@@ -71,62 +195,72 @@ export const importDatabase = createServerFn({ method: "POST" })
     const log: string[] = [];
     const errors: string[] = [];
 
-    let parsed: ImportPayload;
-    try {
-      parsed = JSON.parse(data.payloadJson) as ImportPayload;
-    } catch {
-      throw new Error("Invalid backup JSON");
-    }
-    if (!parsed?.tables || typeof parsed.tables !== "object") {
-      throw new Error("Invalid backup: missing 'tables'");
+    const { backup, migratedFrom } = parseAndValidateBackup(data.payloadJson);
+    if (migratedFrom !== backup.version) {
+      log.push(`migrated backup v${migratedFrom} → v${backup.version}`);
+    } else {
+      log.push(`backup schema v${backup.version} validated`);
     }
 
+    const includedTables = new Set(
+      data.onlyTables && data.onlyTables.length > 0
+        ? data.onlyTables.filter((t) => t in backup.tables)
+        : Object.keys(backup.tables),
+    );
+    if (data.onlyTables && includedTables.size === 0) {
+      throw new Error("None of the selected tables exist in the backup");
+    }
 
     if (data.wipeFirst) {
       const { error } = await supabaseAdmin.rpc("admin_truncate_all_public");
       if (error) throw new Error("truncate failed: " + error.message);
       log.push("public schema truncated");
 
-      let delPage = 1;
-      while (true) {
-        const { data: list, error: lErr } = await supabaseAdmin.auth.admin.listUsers({
-          page: delPage, perPage: 1000,
-        });
-        if (lErr) { errors.push("list users: " + lErr.message); break; }
-        if (!list.users.length) break;
-        for (const u of list.users) {
-          const { error: de } = await supabaseAdmin.auth.admin.deleteUser(u.id);
-          if (de) errors.push(`delete user ${u.email}: ${de.message}`);
+      if (data.includeAuthUsers) {
+        let delPage = 1;
+        while (true) {
+          const { data: list, error: lErr } = await supabaseAdmin.auth.admin.listUsers({
+            page: delPage, perPage: 1000,
+          });
+          if (lErr) { errors.push("list users: " + lErr.message); break; }
+          if (!list.users.length) break;
+          for (const u of list.users) {
+            const { error: de } = await supabaseAdmin.auth.admin.deleteUser(u.id);
+            if (de) errors.push(`delete user ${u.email}: ${de.message}`);
+          }
+          if (list.users.length < 1000) break;
         }
-        if (list.users.length < 1000) break;
+        log.push("existing auth users deleted");
       }
-      log.push("existing auth users deleted");
     }
 
-    for (const u of parsed.auth_users ?? []) {
-      const user = u as Record<string, unknown>;
-      const { error } = await supabaseAdmin.auth.admin.createUser({
-        id: user.id as string,
-        email: user.email as string | undefined,
-        phone: user.phone as string | undefined,
-        email_confirm: !!user.email_confirmed_at,
-        phone_confirm: !!user.phone_confirmed_at,
-        user_metadata: (user.user_metadata as Record<string, unknown>) ?? {},
-        app_metadata: (user.app_metadata as Record<string, unknown>) ?? {},
-      });
-      if (error) errors.push(`create user ${user.email}: ${error.message}`);
+    if (data.includeAuthUsers) {
+      for (const user of backup.auth_users) {
+        const { error } = await supabaseAdmin.auth.admin.createUser({
+          id: user.id,
+          email: (user.email as string | undefined) ?? undefined,
+          phone: (user.phone as string | undefined) ?? undefined,
+          email_confirm: !!user.email_confirmed_at,
+          phone_confirm: !!user.phone_confirmed_at,
+          user_metadata: (user.user_metadata as Record<string, unknown>) ?? {},
+          app_metadata: (user.app_metadata as Record<string, unknown>) ?? {},
+        });
+        if (error) errors.push(`create user ${user.email ?? user.id}: ${error.message}`);
+      }
+      log.push(`auth users restored: ${backup.auth_users.length}`);
+    } else {
+      log.push("auth users skipped");
     }
-    log.push(`auth users restored: ${(parsed.auth_users ?? []).length}`);
 
     const priority = ["profiles", "user_roles", "wallets", "categories", "cities"];
-    const allTables = Object.keys(parsed.tables);
+    const allTables = Object.keys(backup.tables).filter((t) => includedTables.has(t));
     const ordered = [
       ...priority.filter((t) => allTables.includes(t)),
       ...allTables.filter((t) => !priority.includes(t)),
     ];
 
     for (const t of ordered) {
-      const rows = parsed.tables[t] ?? [];
+      const rows = backup.tables[t] ?? [];
       if (!rows.length) { log.push(`${t}: empty`); continue; }
       const BATCH = 500;
       let ok = 0;
@@ -143,5 +277,5 @@ export const importDatabase = createServerFn({ method: "POST" })
       log.push(`${t}: ${ok}/${rows.length}`);
     }
 
-    return { ok: errors.length === 0, log, errors };
+    return { ok: errors.length === 0, log, errors, migratedFrom, version: backup.version };
   });
