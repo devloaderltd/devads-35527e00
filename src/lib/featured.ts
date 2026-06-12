@@ -57,7 +57,9 @@ export function resolveHeroFeatured(args: {
   now?: Date;
 }): FeaturedListing | null {
   const now = args.now ?? new Date();
-  const cityListings = (args.cityListings ?? []).filter((l) => isDisplayable(l, now));
+  const cityListings = (args.cityListings ?? []).filter(
+    (l) => isDisplayable(l, now) && (!args.cityId || l.city_id === args.cityId),
+  );
 
   if (args.pinned && isDisplayable(args.pinned, now) && args.pinned.city_id === args.cityId) {
     return args.pinned;
