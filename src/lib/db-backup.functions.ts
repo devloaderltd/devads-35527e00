@@ -53,12 +53,14 @@ export const exportDatabase = createServerFn({ method: "POST" })
   });
 
 const ImportInput = z.object({
-  payload: z.object({
-    auth_users: z.array(z.record(z.unknown())).optional(),
-    tables: z.record(z.array(z.record(z.unknown()))),
-  }),
+  payloadJson: z.string().min(2),
   wipeFirst: z.boolean().default(true),
 });
+
+type ImportPayload = {
+  auth_users?: Array<Record<string, unknown>>;
+  tables: Record<string, Array<Record<string, unknown>>>;
+};
 
 /** Restore a JSON dump created by exportDatabase. Admin only. DESTRUCTIVE. */
 export const importDatabase = createServerFn({ method: "POST" })
@@ -68,6 +70,17 @@ export const importDatabase = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const log: string[] = [];
     const errors: string[] = [];
+
+    let parsed: ImportPayload;
+    try {
+      parsed = JSON.parse(data.payloadJson) as ImportPayload;
+    } catch {
+      throw new Error("Invalid backup JSON");
+    }
+    if (!parsed?.tables || typeof parsed.tables !== "object") {
+      throw new Error("Invalid backup: missing 'tables'");
+    }
+
 
     if (data.wipeFirst) {
       const { error } = await supabaseAdmin.rpc("admin_truncate_all_public");
