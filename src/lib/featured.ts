@@ -9,6 +9,8 @@ export type FeaturedListing = {
   listing_promotions?: Array<{ type: string; ends_at: string }> | null;
   bumped_at?: string | null;
   created_at?: string | null;
+  // Allow additional render-time fields (title, cities, listing_images, etc.)
+  [key: string]: any;
 };
 
 /** A listing is "displayable" only if active, not hidden, and (if published_at is tracked) already published. */
