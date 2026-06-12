@@ -128,30 +128,29 @@ function Home() {
 
   const pinnedId = config.bento_featured.pinned_listing_id;
   const { data: pinnedListing } = useQuery({
-    queryKey: ["pinned-listing", pinnedId],
-    enabled: !!pinnedId,
+    queryKey: ["pinned-listing", pinnedId, cityId],
+    enabled: !!pinnedId && !!cityId,
     queryFn: async () => {
       const { data } = await supabase
         .from("listings")
-        .select(`id, slug, title, cities(name, region, country), listing_images(url, sort_order)`)
+        .select(`id, slug, title, status, city_id, cities(name, region, country), listing_images(url, sort_order)`)
         .eq("id", pinnedId!)
+        .eq("status", "active")
+        .eq("city_id", cityId!)
         .maybeSingle();
       return data;
     },
   });
 
-  // Global fallback: newest active listing with an unexpired Featured promotion,
-  // otherwise the most recently bumped/created active listing site-wide. Runs
-  // only when no admin-pinned listing AND no in-city featured pick is available.
-  const needGlobalFallback = !pinnedId && !featured[0] && !listings?.[0];
+  // Global fallback: only when the chosen city has zero displayable listings.
+  const needGlobalFallback = !pinnedListing && (listings?.length ?? 0) === 0;
   const { data: globalFeatured } = useQuery({
     queryKey: ["global-featured-fallback"],
     enabled: needGlobalFallback,
     queryFn: async () => {
-      // Try active featured promotion first
       const { data: promo } = await supabase
         .from("listings")
-        .select(`id, slug, title, cities(name, region, country), listing_images(url, sort_order), listing_promotions!inner(type, ends_at)`)
+        .select(`id, slug, title, status, city_id, cities(name, region, country), listing_images(url, sort_order), listing_promotions!inner(type, ends_at)`)
         .eq("status", "active")
         .eq("listing_promotions.type", "featured")
         .gt("listing_promotions.ends_at", new Date().toISOString())
@@ -159,10 +158,9 @@ function Home() {
         .limit(1)
         .maybeSingle();
       if (promo) return promo;
-      // Fallback: newest active listing globally (by bumped_at, then created_at)
       const { data: latest } = await supabase
         .from("listings")
-        .select(`id, slug, title, cities(name, region, country), listing_images(url, sort_order)`)
+        .select(`id, slug, title, status, city_id, cities(name, region, country), listing_images(url, sort_order)`)
         .eq("status", "active")
         .order("bumped_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false })
@@ -173,7 +171,12 @@ function Home() {
     staleTime: 60_000,
   });
 
-  const heroFeatured = (pinnedListing as any) ?? featured[0] ?? listings?.[0] ?? (globalFeatured as any);
+  const heroFeatured = resolveHeroFeatured({
+    pinned: pinnedListing as any,
+    cityListings: (listings as any) ?? [],
+    cityId,
+    globalFallback: globalFeatured as any,
+  });
 
   const heroImg = heroFeatured?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ?? emptyListingImg;
 
