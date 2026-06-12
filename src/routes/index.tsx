@@ -16,6 +16,7 @@ import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Users }
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import { useCity } from "@/lib/city-context";
 import { getHomepageConfig, DEFAULT_HOMEPAGE_CONFIG, type BentoTile } from "@/lib/homepage-config.functions";
+import { resolveHeroFeatured, hasActiveFeaturedPromotion, pickCityFeatured } from "@/lib/featured";
 import catForSale from "@/assets/cat-for-sale.jpg";
 import catVehicles from "@/assets/cat-vehicles.jpg";
 import catHousing from "@/assets/cat-housing.jpg";
