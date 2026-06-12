@@ -223,12 +223,31 @@ const ImportInput = z.object({
 export const importDatabase = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((d: unknown) => ImportInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const log: string[] = [];
     const errors: string[] = [];
+    const tableOutcomes: Array<{ name: string; inserted: number; total: number; errors: number }> = [];
+    const startedAt = Date.now();
 
-    const { backup, migratedFrom } = parseAndValidateBackup(data.payloadJson);
+    // Validate first so we can audit validation failures separately.
+    let backup: BackupV2;
+    let migratedFrom = 0;
+    try {
+      const v = parseAndValidateBackup(data.payloadJson);
+      backup = v.backup;
+      migratedFrom = v.migratedFrom;
+    } catch (e) {
+      await supabaseAdmin.rpc("log_admin_action", {
+        _actor: context.userId,
+        _action: "db.import.validation_failed",
+        _target_type: "database",
+        _target_id: "import",
+        _metadata: { error: (e as Error).message, payload_bytes: data.payloadJson.length } as never,
+      });
+      throw e;
+    }
+
     if (migratedFrom !== backup.version) {
       log.push(`migrated backup v${migratedFrom} → v${backup.version}`);
     } else {
@@ -267,6 +286,7 @@ export const importDatabase = createServerFn({ method: "POST" })
       }
     }
 
+    let authUsersCreated = 0;
     if (data.includeAuthUsers) {
       for (const user of backup.auth_users) {
         const { error } = await supabaseAdmin.auth.admin.createUser({
@@ -279,8 +299,9 @@ export const importDatabase = createServerFn({ method: "POST" })
           app_metadata: (user.app_metadata as Record<string, unknown>) ?? {},
         });
         if (error) errors.push(`create user ${user.email ?? user.id}: ${error.message}`);
+        else authUsersCreated++;
       }
-      log.push(`auth users restored: ${backup.auth_users.length}`);
+      log.push(`auth users restored: ${authUsersCreated}/${backup.auth_users.length}`);
     } else {
       log.push("auth users skipped");
     }
@@ -294,21 +315,57 @@ export const importDatabase = createServerFn({ method: "POST" })
 
     for (const t of ordered) {
       const rows = backup.tables[t] ?? [];
-      if (!rows.length) { log.push(`${t}: empty`); continue; }
+      if (!rows.length) {
+        log.push(`${t}: empty`);
+        tableOutcomes.push({ name: t, inserted: 0, total: 0, errors: 0 });
+        continue;
+      }
       const BATCH = 500;
       let ok = 0;
+      let tErrors = 0;
       for (let i = 0; i < rows.length; i += BATCH) {
         const chunk = rows.slice(i, i + BATCH);
         const { error } = await supabaseAdmin
           .from(t as never).upsert(chunk as never, { onConflict: "id" });
         if (error) {
           const { error: e2 } = await supabaseAdmin.from(t as never).insert(chunk as never);
-          if (e2) { errors.push(`${t}[${i}]: ${error.message} / ${e2.message}`); continue; }
+          if (e2) {
+            errors.push(`${t}[${i}]: ${error.message} / ${e2.message}`);
+            tErrors++;
+            continue;
+          }
         }
         ok += chunk.length;
       }
       log.push(`${t}: ${ok}/${rows.length}`);
+      tableOutcomes.push({ name: t, inserted: ok, total: rows.length, errors: tErrors });
     }
 
-    return { ok: errors.length === 0, log, errors, migratedFrom, version: backup.version };
+    const durationMs = Date.now() - startedAt;
+    const ok = errors.length === 0;
+
+    // Audit: who imported, backup metadata, options, per-table outcomes.
+    await supabaseAdmin.rpc("log_admin_action", {
+      _actor: context.userId,
+      _action: ok ? "db.import.completed" : "db.import.completed_with_errors",
+      _target_type: "database",
+      _target_id: "import",
+      _metadata: {
+        backup_version: backup.version,
+        migrated_from: migratedFrom,
+        exported_at: backup.exported_at,
+        source: backup.source ?? null,
+        options: {
+          wipe_first: data.wipeFirst,
+          include_auth_users: data.includeAuthUsers,
+          only_tables: data.onlyTables ?? null,
+        },
+        auth_users: { restored: authUsersCreated, in_backup: backup.auth_users.length },
+        tables: tableOutcomes,
+        error_count: errors.length,
+        duration_ms: durationMs,
+      } as never,
+    });
+
+    return { ok, log, errors, migratedFrom, version: backup.version, tableOutcomes, durationMs };
   });
