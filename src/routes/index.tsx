@@ -1,11 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { SiteBanner } from "@/components/SiteBanner";
-import { RecentlyViewedRail } from "@/components/RecentlyViewedRail";
-import { TrendingInCityRail } from "@/components/TrendingInCityRail";
+const RecentlyViewedRail = lazy(() =>
+  import("@/components/RecentlyViewedRail").then((m) => ({ default: m.RecentlyViewedRail })),
+);
+const TrendingInCityRail = lazy(() =>
+  import("@/components/TrendingInCityRail").then((m) => ({ default: m.TrendingInCityRail })),
+);
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, ChevronRight, Flame, MapPin, ShieldCheck, Users } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
