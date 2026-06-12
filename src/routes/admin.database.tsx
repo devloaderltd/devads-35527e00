@@ -28,6 +28,8 @@ function formatDuration(ms: number): string {
   const mins = Math.floor(ms / 60_000);
   const secs = Math.round((ms % 60_000) / 1000);
   return `~${mins}m ${secs}s`;
+}
+
 
 
 function makeFilename(): string {
