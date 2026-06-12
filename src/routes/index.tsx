@@ -98,17 +98,7 @@ function Home() {
         .order("created_at", { ascending: false })
         .limit(24);
       if (error) throw error;
-      if (data && data.length > 0) return data;
-      // Fallback: no listings in selected city — show latest globally
-      const { data: globalData, error: gErr } = await supabase
-        .from("listings")
-        .select(baseSelect)
-        .eq("status", "active")
-        .order("bumped_at", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false })
-        .limit(24);
-      if (gErr) throw gErr;
-      return globalData ?? [];
+      return data ?? [];
     },
   });
 
