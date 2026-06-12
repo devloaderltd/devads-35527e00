@@ -1,3 +1,4 @@
+// @ts-expect-error - bun:test types are not installed; this file runs under `bun test`
 import { describe, it, expect } from "bun:test";
 import {
   isDisplayable,
