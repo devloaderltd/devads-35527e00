@@ -84,7 +84,7 @@ function Home() {
     enabled: !!cityId,
     queryFn: async () => {
       const baseSelect = `
-          id, slug, title, condition, created_at, bumped_at, verified_at,
+          id, slug, title, condition, created_at, bumped_at, verified_at, status, city_id,
           categories(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),
