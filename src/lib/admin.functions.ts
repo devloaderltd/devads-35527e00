@@ -92,15 +92,20 @@ export const listUsersAdmin = createServerFn({ method: "POST" })
     const profilesRes = ids.length ? await supabaseAdmin.from("profiles").select("id, display_name, created_at, city_id").in("id", ids) : { data: [] };
     const rolesRes = ids.length ? await supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids) : { data: [] };
     const walletsRes = ids.length ? await supabaseAdmin.from("wallets").select("user_id, balance_usd").in("user_id", ids) : { data: [] };
+    const sessionsRes = ids.length
+      ? await supabaseAdmin.rpc("admin_get_user_sessions", { _user_ids: ids })
+      : { data: [] as any[] };
     const profiles = profilesRes.data ?? [];
     const roles = rolesRes.data ?? [];
     const wallets = walletsRes.data ?? [];
+    const sessions = (sessionsRes.data ?? []) as Array<{ user_id: string; last_ip: string | null; last_user_agent: string | null; last_event_at: string | null }>;
 
     let out = collected.map((u) => {
       const profile = profiles.find((p) => p.id === u.id);
       const userRoles = roles.filter((r) => r.user_id === u.id).map((r) => r.role as string);
       const banned = !!u.banned_until && new Date(u.banned_until).getTime() > Date.now();
       const balance = Number(wallets.find((w) => w.user_id === u.id)?.balance_usd ?? 0);
+      const session = sessions.find((s) => s.user_id === u.id);
       return {
         id: u.id,
         email: u.email ?? "",
@@ -110,6 +115,9 @@ export const listUsersAdmin = createServerFn({ method: "POST" })
         banned,
         banned_until: u.banned_until ?? null,
         wallet_balance: balance,
+        last_ip: session?.last_ip ?? null,
+        last_user_agent: session?.last_user_agent ?? (u as any).user_metadata?.user_agent ?? null,
+        last_sign_in_at: (u as any).last_sign_in_at ?? session?.last_event_at ?? null,
       };
     });
 
