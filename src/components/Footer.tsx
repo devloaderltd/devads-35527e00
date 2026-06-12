@@ -54,7 +54,7 @@ export function Footer() {
               <span className="gradient-text">CallEscort24</span>
             </Link>
             <p className="mt-3 max-w-xs text-muted-foreground">
-              A modern marketplace for buying and selling across the US, UK and Canada.
+              An adult directory connecting independent providers and verified clients across the US, UK and Canada. Strictly 18+.
             </p>
             <div className="mt-4 flex items-center gap-2">
               <a

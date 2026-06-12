@@ -637,36 +637,13 @@ function PostListing() {
 
       <form ref={formRef} onSubmit={submit} className={cn("mt-6 space-y-5 rounded-3xl border border-white/40 bg-white/60 p-6 shadow-[var(--shadow-float)] backdrop-blur-xl", !isEdit && previewMode && "hidden")}>
 
-        {!isEdit && (
-          <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 p-4">
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <Sparkles className="h-4 w-4 text-primary" /> AI listing writer
-            </div>
-            <p className="mb-2 text-xs text-muted-foreground">
-              Add a quick hint (and optionally a photo above) and we'll draft a title + description for you.
-            </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Input
-                value={aiHint}
-                onChange={(e) => setAiHint(e.target.value)}
-                maxLength={400}
-                placeholder='e.g. "Sony WH-1000XM4 headphones, used 6 months, all accessories"'
-                className="bg-white/80"
-              />
-              <Button type="button" onClick={runAi} disabled={aiLoading} className="btn-gradient shrink-0">
-                {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
-                {aiLoading ? "Writing…" : "Generate"}
-              </Button>
-            </div>
-          </div>
-        )}
 
         <div className="space-y-2" data-error={!!errors.title}>
           <Label htmlFor="title">Title</Label>
           <Input
             id="title" maxLength={140} value={title}
             onChange={(e) => { setTitle(e.target.value); if (errors.title) setErrors((p) => ({ ...p, title: undefined })); }}
-            placeholder="e.g. 2019 Trek Marlin 7 — Like new"
+            placeholder="e.g. Looking for some fun"
             className={cn("bg-white/70", errCls("title"))}
           />
           {errors.title && <p className="text-xs font-medium text-destructive">{errors.title}</p>}
@@ -679,7 +656,7 @@ function PostListing() {
               value={description}
               onChange={(v) => { setDescription(v); if (errors.description) setErrors((p) => ({ ...p, description: undefined })); }}
               maxLength={4000}
-              placeholder="Condition, size, history, why you're selling…"
+              placeholder="Introduce yourself — a little about you, what makes time with you special, availability, rates, and how to reach you. Be respectful, accurate, and never include explicit or illegal content."
             />
           </div>
           {errors.description && <p className="text-xs font-medium text-destructive">{errors.description}</p>}
@@ -758,7 +735,7 @@ function PostListing() {
                 >
                   <span className="truncate">
                     {cityIds.length === 0
-                      ? (country ? "Search & pick" : "Select country first")
+                      ? (country ? "Choose location" : "Select country first")
                       : `${cityIds.length} selected`}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
