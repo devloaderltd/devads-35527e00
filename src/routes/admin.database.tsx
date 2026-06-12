@@ -22,6 +22,14 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `~${ms} ms`;
+  if (ms < 60_000) return `~${(ms / 1000).toFixed(1)} s`;
+  const mins = Math.floor(ms / 60_000);
+  const secs = Math.round((ms % 60_000) / 1000);
+  return `~${mins}m ${secs}s`;
+
+
 function makeFilename(): string {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   return `db-backup-${ts}.json`;
