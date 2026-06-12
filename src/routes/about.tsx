@@ -27,11 +27,11 @@ function AboutPage() {
     <div className="container mx-auto max-w-5xl px-4 py-10">
       <header className="text-center">
         <h1 className="font-display text-4xl font-bold md:text-5xl">
-          A marketplace that <span className="gradient-text">feels good to use</span>
+          An adult directory that <span className="gradient-text">feels good to use</span>
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-          CallEscort24 is a modern classifieds platform for buying and selling across the US, UK and Canada.
-          We're rebuilding the experience from the ground up — fast, secure and a delight to look at.
+          CallEscort24 connects independent adult providers with verified clients across the US, UK and Canada.
+          We're rebuilding the experience from the ground up — safe, discreet and a delight to look at. Strictly 18+.
         </p>
       </header>
 
