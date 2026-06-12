@@ -37,9 +37,9 @@ export const aiWriteListing = createServerFn({ method: "POST" })
     const userContent: any[] = [
       {
         type: "text",
-        text: `Write a marketplace listing in JSON with keys "title" (max 80 chars), "description" (120-400 chars, friendly, scannable), "tags" (array of 3-6 short lowercase tags).
-Hint from seller: "${data.hint}"${data.category ? `\nCategory: ${data.category}` : ""}
-Return JSON only.`,
+        text: `Write an adult companion directory listing in JSON with keys "title" (max 80 chars, catchy, tasteful, no explicit terms), "description" (160-450 chars, written in first person, friendly and welcoming, mentions personality, availability and how to get in touch, no explicit sexual content, no illegal services), "tags" (array of 3-6 short lowercase tags like "outcall", "incall", "dinner-date", "travel").
+Hint from the advertiser: "${data.hint}"${data.category ? `\nCategory: ${data.category}` : ""}
+Return JSON only. Never write anything illegal, never reference anyone under 18, never describe sexual acts for money.`,
       },
     ];
     if (data.imageDataUrl) {
@@ -47,7 +47,7 @@ Return JSON only.`,
     }
     const raw = await callGateway(
       [
-        { role: "system", content: "You write concise, honest, high-converting marketplace listings. Never fabricate specs you don't see." },
+        { role: "system", content: "You write tasteful, first-person profile copy for an adult companion directory. Strictly 18+. No explicit acts, no illegal content, no fabricated personal details." },
         { role: "user", content: userContent },
       ],
       { json: true }
