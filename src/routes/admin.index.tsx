@@ -53,30 +53,45 @@ function DashboardPage() {
     if (typeof window !== "undefined") window.localStorage.setItem(RANGE_KEY, String(range));
   }, [range]);
 
+  // Only fire RPCs once the Supabase session has hydrated on the client; the
+  // attacher reads it from storage to set the Authorization header. Without
+  // this guard, queries can race the auth bootstrap and 401.
+  const { user, session } = useAuth();
+  const ready = !!user && !!session?.access_token;
+  const sharedOpts = {
+    enabled: ready,
+    retry: (n: number, e: unknown) => !isUnauthorizedError(e) && n < 2,
+  };
+
   const overview = useQuery({
     queryKey: ["admin-overview", range],
     queryFn: () => overviewFn({ data: { days: range } }),
     staleTime: 60_000,
+    ...sharedOpts,
   });
 
-  const quick = useQuery({ queryKey: ["admin-quick-stats"], queryFn: () => quickStatsFn() });
-  const activity = useQuery({ queryKey: ["admin-activity"], queryFn: () => activityFn() });
+  const quick = useQuery({ queryKey: ["admin-quick-stats"], queryFn: () => quickStatsFn(), ...sharedOpts });
+  const activity = useQuery({ queryKey: ["admin-activity"], queryFn: () => activityFn(), ...sharedOpts });
   const sparks = useQuery({
     queryKey: ["admin-sparklines", range],
     queryFn: () => sparklinesFn({ data: { days: range } }),
     staleTime: 60_000,
+    ...sharedOpts,
   });
   const funnel = useQuery({
     queryKey: ["admin-funnel", range],
     queryFn: () => funnelFn({ data: { days: range } }),
     staleTime: 60_000,
+    ...sharedOpts,
   });
   const health = useQuery({
     queryKey: ["admin-system-health"],
     queryFn: () => healthFn(),
     staleTime: 30_000,
-    refetchInterval: 60_000,
+    refetchInterval: ready ? 60_000 : false,
+    ...sharedOpts,
   });
+
 
   const charts = overview.data
     ? {
