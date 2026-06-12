@@ -57,9 +57,9 @@ export function AgeGateModal() {
   if (!open) return null;
 
   const accept = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, String(Date.now()));
-    } catch {}
+    const ts = String(Date.now());
+    try { localStorage.setItem(STORAGE_KEY, ts); } catch {}
+    writeCookie(COOKIE_KEY, ts);
     setOpen(false);
   };
   const decline = () => {
