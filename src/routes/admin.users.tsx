@@ -27,6 +27,7 @@ export const Route = createFileRoute("/admin/users")({ component: UsersPage });
 type ListUser = {
   id: string; email: string; display_name: string; created_at: string;
   roles: string[]; banned: boolean; banned_until: string | null; wallet_balance: number;
+  last_ip: string | null; last_user_agent: string | null; last_sign_in_at: string | null;
 };
 
 function useDebounced<T>(v: T, ms = 300) {
