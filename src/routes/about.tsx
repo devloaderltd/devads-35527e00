@@ -70,7 +70,7 @@ function AboutPage() {
             to="/search"
             className="rounded-full border border-white/50 bg-white/70 px-6 py-2.5 text-sm font-semibold hover:bg-white"
           >
-            Browse marketplace
+            Browse directory
           </Link>
         </div>
       </section>
