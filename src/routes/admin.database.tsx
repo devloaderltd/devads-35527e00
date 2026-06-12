@@ -147,6 +147,41 @@ function DatabasePage() {
     });
   }, [inspection]);
 
+  // Estimated impact across the selected tables (recomputes as the admin toggles).
+  const impact = useMemo(() => {
+    if (!inspection) return null;
+    const selected = inspection.tables.filter((t) => selectedTables.has(t.name));
+    let rowsIn = 0, netDelta = 0, growing = 0, shrinking = 0, unchanged = 0, newTables = 0;
+    for (const t of selected) {
+      rowsIn += t.rows;
+      if (t.existing == null || t.existing === 0) newTables++;
+      const d = t.delta ?? t.rows;
+      netDelta += d;
+      if (d > 0) growing++;
+      else if (d < 0) shrinking++;
+      else unchanged++;
+    }
+    // Heuristic: ~1500 rows/sec upsert throughput + 120ms per-table overhead.
+    // Wipe ≈ 2.5s. Auth user create ≈ 180ms each (when included).
+    const ROWS_PER_SEC = 1500;
+    const PER_TABLE_MS = 120;
+    const WIPE_MS = wipeFirst ? 2500 : 0;
+    const AUTH_MS = includeAuthUsers ? inspection.authUserCount * 180 : 0;
+    const dataMs = Math.ceil((rowsIn / ROWS_PER_SEC) * 1000) + selected.length * PER_TABLE_MS;
+    const totalMs = WIPE_MS + AUTH_MS + dataMs;
+    return {
+      tableCount: selected.length,
+      rowsIn,
+      netDelta,
+      growing,
+      shrinking,
+      unchanged,
+      newTables,
+      etaMs: totalMs,
+    };
+  }, [inspection, selectedTables, wipeFirst, includeAuthUsers]);
+
+
   return (
     <div>
       <AdminPageHeader title="Database" subtitle="Export, validate, and restore JSON backups with schema migration and audit logging" />
