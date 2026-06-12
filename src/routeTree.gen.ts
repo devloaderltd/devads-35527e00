@@ -53,6 +53,7 @@ import { Route as AdminHomepageEditorRouteImport } from './routes/admin.homepage
 import { Route as AdminHomepageRouteImport } from './routes/admin.homepage'
 import { Route as AdminErrorsRouteImport } from './routes/admin.errors'
 import { Route as AdminDebugRouteImport } from './routes/admin.debug'
+import { Route as AdminDatabaseRouteImport } from './routes/admin.database'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminBumpAuditRouteImport } from './routes/admin.bump-audit'
@@ -307,6 +308,11 @@ const AdminDebugRoute = AdminDebugRouteImport.update({
   path: '/debug',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDatabaseRoute = AdminDatabaseRouteImport.update({
+  id: '/database',
+  path: '/database',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCitiesRoute = AdminCitiesRouteImport.update({
   id: '/cities',
   path: '/cities',
@@ -526,6 +532,7 @@ export interface FileRoutesByFullPath {
   '/admin/bump-audit': typeof AdminBumpAuditRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
+  '/admin/database': typeof AdminDatabaseRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/homepage': typeof AdminHomepageRoute
@@ -603,6 +610,7 @@ export interface FileRoutesByTo {
   '/admin/bump-audit': typeof AdminBumpAuditRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
+  '/admin/database': typeof AdminDatabaseRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/homepage': typeof AdminHomepageRoute
@@ -684,6 +692,7 @@ export interface FileRoutesById {
   '/admin/bump-audit': typeof AdminBumpAuditRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/cities': typeof AdminCitiesRoute
+  '/admin/database': typeof AdminDatabaseRoute
   '/admin/debug': typeof AdminDebugRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/homepage': typeof AdminHomepageRoute
@@ -765,6 +774,7 @@ export interface FileRouteTypes {
     | '/admin/bump-audit'
     | '/admin/categories'
     | '/admin/cities'
+    | '/admin/database'
     | '/admin/debug'
     | '/admin/errors'
     | '/admin/homepage'
@@ -842,6 +852,7 @@ export interface FileRouteTypes {
     | '/admin/bump-audit'
     | '/admin/categories'
     | '/admin/cities'
+    | '/admin/database'
     | '/admin/debug'
     | '/admin/errors'
     | '/admin/homepage'
@@ -922,6 +933,7 @@ export interface FileRouteTypes {
     | '/admin/bump-audit'
     | '/admin/categories'
     | '/admin/cities'
+    | '/admin/database'
     | '/admin/debug'
     | '/admin/errors'
     | '/admin/homepage'
@@ -1316,6 +1328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDebugRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/database': {
+      id: '/admin/database'
+      path: '/database'
+      fullPath: '/admin/database'
+      preLoaderRoute: typeof AdminDatabaseRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/cities': {
       id: '/admin/cities'
       path: '/cities'
@@ -1612,6 +1631,7 @@ interface AdminRouteChildren {
   AdminBumpAuditRoute: typeof AdminBumpAuditRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCitiesRoute: typeof AdminCitiesRoute
+  AdminDatabaseRoute: typeof AdminDatabaseRoute
   AdminDebugRoute: typeof AdminDebugRoute
   AdminErrorsRoute: typeof AdminErrorsRoute
   AdminHomepageRoute: typeof AdminHomepageRoute
@@ -1643,6 +1663,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBumpAuditRoute: AdminBumpAuditRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCitiesRoute: AdminCitiesRoute,
+  AdminDatabaseRoute: AdminDatabaseRoute,
   AdminDebugRoute: AdminDebugRoute,
   AdminErrorsRoute: AdminErrorsRoute,
   AdminHomepageRoute: AdminHomepageRoute,
@@ -1710,13 +1731,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

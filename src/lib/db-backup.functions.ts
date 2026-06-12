@@ -12,9 +12,9 @@ export const exportDatabase = createServerFn({ method: "POST" })
     if (tErr) throw new Error("list tables: " + tErr.message);
     const tables: string[] = (tableList as string[]) ?? [];
 
-    const dump: Record<string, unknown[]> = {};
+    const dump: Record<string, Array<Record<string, unknown>>> = {};
     for (const t of tables) {
-      const rows: unknown[] = [];
+      const rows: Array<Record<string, unknown>> = [];
       let from = 0;
       const PAGE = 1000;
       while (true) {
@@ -22,25 +22,25 @@ export const exportDatabase = createServerFn({ method: "POST" })
           .from(t as never).select("*").range(from, from + PAGE - 1);
         if (error) throw new Error(`${t}: ${error.message}`);
         if (!data || data.length === 0) break;
-        rows.push(...data);
+        rows.push(...(data as Array<Record<string, unknown>>));
         if (data.length < PAGE) break;
         from += PAGE;
       }
       dump[t] = rows;
     }
 
-    const authUsers: unknown[] = [];
+    const authUsers: Array<Record<string, unknown>> = [];
     let page = 1;
     while (true) {
       const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
       if (error) throw new Error("list users: " + error.message);
-      authUsers.push(...data.users);
+      authUsers.push(...(data.users as unknown as Array<Record<string, unknown>>));
       if (data.users.length < 1000) break;
       page++;
     }
 
     return {
-      version: 1,
+      version: 1 as const,
       exported_at: new Date().toISOString(),
       auth_users: authUsers,
       tables: dump,
