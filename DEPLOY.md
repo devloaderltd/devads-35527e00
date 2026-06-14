@@ -54,5 +54,6 @@ In CloudPanel UI → create a **Node.js site** with App Port `3000`, then
 
 ## Updating
 ```bash
-git pull && bun install && bun run build && pm2 restart callescort
+git pull && bun install && BUILD_TARGET=node bun run build && pm2 restart callescort
 ```
+
