@@ -10,7 +10,7 @@ import { createServer } from "node:http";
 import { createReadStream, statSync } from "node:fs";
 import { extname, join, normalize, resolve } from "node:path";
 import { Readable } from "node:stream";
-import handlerMod from "./dist/server/server.js";
+import handlerMod from "../dist/server/server.js";
 
 const handler = handlerMod.default ?? handlerMod;
 const PORT = Number(process.env.PORT) || 3000;
