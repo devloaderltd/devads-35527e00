@@ -1,13 +1,18 @@
 # VPS Deployment (CloudPanel + PM2 + Node 20)
 
-This project is configured to build a **Node server bundle** at
-`.output/server/index.mjs`. Deploy it on any VPS (CloudPanel, Plesk, plain
-Ubuntu) behind Nginx.
+This project builds a **Node SSR bundle** at `dist/server/server.js` plus
+static client assets in `dist/client/`. A small launcher (`server.mjs`)
+serves static files and delegates SSR to the bundle. Deploy on any VPS
+(CloudPanel, Plesk, plain Ubuntu) behind Nginx.
+
+Verified locally: `BUILD_TARGET=node bun run build` → `node server.mjs` →
+HTTP 200 on `/`.
 
 ## 1. On the VPS — install runtime
 ```bash
 curl -fsSL https://bun.sh/install | bash
 export PATH="$HOME/.bun/bin:$PATH"
+apt -y install nodejs   # Node 20+ required for server.mjs
 npm install -g pm2
 ```
 
@@ -16,7 +21,7 @@ npm install -g pm2
 cd ~/htdocs/callescort24.org
 git clone <YOUR_REPO_URL> .
 bun install
-bun run build
+BUILD_TARGET=node bun run build   # MUST set BUILD_TARGET=node for VPS
 ```
 
 ## 3. Create `.env` (same folder)
