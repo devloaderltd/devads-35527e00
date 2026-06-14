@@ -6,7 +6,7 @@ module.exports = {
   apps: [
     {
       name: "callescort",
-      script: "server.mjs",
+      script: "scripts/vps-server.mjs",
       cwd: ".",
       interpreter: "node",
       instances: 1,
