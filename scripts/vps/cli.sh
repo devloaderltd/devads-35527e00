@@ -22,7 +22,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 maybe_dry_shim() {
   [ "${DRY_RUN:-0}" = "1" ] || return 0
   local shim; shim="$(mktemp -d -t dryrun.XXXXXX)"
-  for cmd in clpctl certbot pm2 systemctl docker docker-compose pg_restore pg_dump psql; do
+  for cmd in clpctl certbot pm2 systemctl docker docker-compose pg_restore pg_dump psql pg_isready pg_isready; do
     cat > "$shim/$cmd" <<EOF
 #!/usr/bin/env bash
 echo "[dry-run] $cmd \$*"
