@@ -54,6 +54,17 @@ EOF
   echo "    credentials -> $CRED_FILE"
 fi
 
+# Remap Kong host ports to avoid clashes with CloudPanel (admin UI on 8443).
+# Kong stays on 8000/8443 *inside* the container; we just change the host bind.
+KONG_HTTP_HOST_PORT="${KONG_HTTP_HOST_PORT:-8000}"
+KONG_HTTPS_HOST_PORT="${KONG_HTTPS_HOST_PORT:-8444}"
+if ! grep -q '^KONG_HTTP_PORT=' .env;  then echo "KONG_HTTP_PORT=${KONG_HTTP_HOST_PORT}"   >> .env; fi
+if ! grep -q '^KONG_HTTPS_PORT=' .env; then echo "KONG_HTTPS_PORT=${KONG_HTTPS_HOST_PORT}" >> .env; fi
+sed -i \
+  -e "s|^KONG_HTTP_PORT=.*|KONG_HTTP_PORT=${KONG_HTTP_HOST_PORT}|" \
+  -e "s|^KONG_HTTPS_PORT=.*|KONG_HTTPS_PORT=${KONG_HTTPS_HOST_PORT}|" \
+  .env
+
 docker compose pull
 docker compose up -d
 if [ "${DRY_RUN:-0}" = "1" ]; then

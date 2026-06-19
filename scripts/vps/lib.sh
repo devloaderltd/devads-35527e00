@@ -116,7 +116,14 @@ db_snapshot() {
   pg_pw="$(grep ^POSTGRES_PASSWORD /opt/supabase/docker/.env 2>/dev/null | cut -d= -f2-)"
   [ -n "$pg_pw" ] || { echo "no postgres password — skipping snapshot"; return 0; }
   if is_dry; then echo "[dry-run] would pg_dump -> $out"; echo "$out"; return; fi
-  PGPASSWORD="$pg_pw" pg_dump -h 127.0.0.1 -U postgres -d postgres -Fc -f "$out"
+  # Skip if postgres isn't reachable (e.g. first deploy, stack not started yet)
+  if ! pg_isready -h 127.0.0.1 -p 5432 -U postgres -t 3 >/dev/null 2>&1; then
+    echo "postgres not reachable on 127.0.0.1:5432 — skipping pre-deploy snapshot" >&2
+    return 0
+  fi
+  PGPASSWORD="$pg_pw" pg_dump -h 127.0.0.1 -U postgres -d postgres -Fc -f "$out" || {
+    echo "pg_dump failed — skipping snapshot (continuing deploy)" >&2; return 0;
+  }
   echo "$out"
 }
 
