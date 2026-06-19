@@ -75,8 +75,9 @@ fi
 # Backups + health
 bash "$HERE/50-backup-cron.sh"
 
-# Monitoring stack (Prometheus + Grafana + exporters)
+# Monitoring stack (Prometheus + Grafana + exporters) + alert rules
 DOMAIN="$DOMAIN" bash "$HERE/80-monitoring.sh" up || echo "!! monitoring stack failed, continuing"
+bash "$HERE/81-alerts.sh" || echo "!! alerts install failed, continuing"
 
 # Hourly health-check cron — writes Prometheus textfile metrics
 cat > /etc/cron.d/supabase-healthcheck <<EOF
