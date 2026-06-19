@@ -28,8 +28,10 @@ maybe_dry_shim() {
 echo "[dry-run] $cmd \$*"
 # pretend success and fake output for the few commands that scripts parse
 case "$cmd \$1 \${2:-}" in
+  "pg_isready"*)       exit 0 ;;
   "docker ps"*)        echo "supabase-kong   Up 1 hour" ;;
   "pm2 jlist"*)        echo '[{"name":"app","pm2_env":{"status":"online"}}]' ;;
+  "pm2 startup"*)      echo "echo pm2-startup-stub" ;;
   "clpctl site:list"*) echo "" ;;
 esac
 exit 0
