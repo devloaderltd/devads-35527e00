@@ -463,10 +463,60 @@ function Home() {
       {/* Recent listings */}
       {sections.latest && (
         <section className="container mx-auto px-4 pt-10 pb-16">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-2xl font-semibold">Latest listings</h2>
-            <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
+            <div className="flex items-center gap-2">
+              <div className="inline-flex rounded-full glass p-1 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => { setSortMode("newest"); setPageCount(1); }}
+                  className={`rounded-full px-3 py-1 transition ${sortMode === "newest" ? "btn-gradient text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-pressed={sortMode === "newest"}
+                >
+                  Newest first
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSortMode("bumped"); setPageCount(1); }}
+                  className={`rounded-full px-3 py-1 transition ${sortMode === "bumped" ? "btn-gradient text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-pressed={sortMode === "bumped"}
+                >
+                  Most bumped
+                </button>
+              </div>
+              <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
+            </div>
           </div>
+
+          {/* Quick filters */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={openPicker}
+              className="inline-flex items-center gap-1 rounded-full glass px-3 py-1 text-xs font-medium hover:border-primary/50"
+            >
+              <MapPin className="h-3 w-3 text-primary" />
+              {cityName ?? "Choose city"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setCategoryFilter(null); setPageCount(1); }}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${categoryFilter === null ? "btn-gradient text-white" : "glass hover:border-primary/50"}`}
+            >
+              All
+            </button>
+            {categories?.slice(0, 8).map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { setCategoryFilter(c.slug); setPageCount(1); }}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${categoryFilter === c.slug ? "btn-gradient text-white" : "glass hover:border-primary/50"}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+
           {isLoading ? (
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -476,12 +526,25 @@ function Home() {
           ) : recent.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl glass p-10 text-center text-muted-foreground">
               <img src={emptyListingImg} alt="" width={160} height={160} loading="lazy" className="h-40 w-40 object-contain" />
-              <div>No listings yet. <Link to="/post" className="font-medium text-primary hover:underline">Be the first to post!</Link></div>
+              <div>No listings match these filters. <Link to="/post" className="font-medium text-primary hover:underline">Post one!</Link></div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {recent.map((l: any) => <ListingCard key={l.id} listing={l} />)}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                {recent.map((l: any) => <ListingCard key={l.id} listing={l} newBadgeHours={NEW_BADGE_HOURS} />)}
+              </div>
+              {hasMore && (
+                <div className="mt-8 flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setPageCount((p) => p + 1)}
+                    className="rounded-full px-6"
+                  >
+                    Load more
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </section>
       )}
