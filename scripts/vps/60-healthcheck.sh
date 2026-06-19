@@ -21,7 +21,7 @@ PASS=0; FAIL=0
 FAIL_LINES=()
 bad()  { echo "  [FAIL] $*"; FAIL=$((FAIL+1)); FAIL_LINES+=("$*"); }
 ok()   { echo "  [ OK ] $*"; PASS=$((PASS+1)); }
-bad()  { echo "  [FAIL] $*"; FAIL=$((FAIL+1)); }
+
 
 ANON=$(grep ^ANON_KEY "$ENV_FILE" | cut -d= -f2-)
 
