@@ -65,16 +65,16 @@ sudo bash scripts/vps/cli.sh restore --apply
 
 ```bash
 # 1. Healthcheck passes
-sudo DOMAIN=devads.example.com bash scripts/vps/cli.sh verify
+sudo DOMAIN=callescort24.org bash scripts/vps/cli.sh verify
 
 # 2. Smoke test passes
-sudo DOMAIN=devads.example.com bash scripts/vps/65-smoke-test.sh
+sudo DOMAIN=callescort24.org bash scripts/vps/65-smoke-test.sh
 
 # 3. App returns 200
-curl -I https://devads.example.com/
+curl -I https://callescort24.org/
 
 # 4. Studio still gated (expect 401/403)
-curl -I https://studio.devads.example.com/
+curl -I https://studio.callescort24.org/
 
 # 5. No firing alerts
 curl -s http://127.0.0.1:9090/api/v1/alerts | jq '.data.alerts[] | select(.state=="firing")'

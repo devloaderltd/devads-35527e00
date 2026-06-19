@@ -1,4 +1,4 @@
-# devads — One-Page VPS Deploy Checklist
+# callescort24 — One-Page VPS Deploy Checklist
 
 Run top-to-bottom. Every command is copy-pasteable.
 
@@ -9,23 +9,23 @@ Run top-to-bottom. Every command is copy-pasteable.
 - [ ] Ubuntu 22.04 or 24.04 LTS VPS, root SSH access.
 - [ ] **CloudPanel installed** on it (so `clpctl` exists).
 - [ ] DNS A records pointing at the VPS:
-      `devads.example.com`, `api.devads.example.com`, `studio.devads.example.com`,
-      and (optional) `grafana.devads.example.com`.
+      `callescort24.org`, `api.callescort24.org`, `studio.callescort24.org`,
+      and (optional) `grafana.callescort24.org`.
 - [ ] Deploy key / PAT for the git repo added to the VPS user (`callescort` by default).
 - [ ] You have the Lovable Cloud `SUPABASE_DB_URL` available locally for the
-      one-time dump (see step C).
+      one-time dump (see step B).
 - [ ] Off-server location ready to receive `/etc/supabase-vault/master.key`
       after deploy (1Password, Bitwarden, encrypted USB — anywhere but the VPS).
 
 ### Required environment variables for `deploy.sh`
 
-| Var          | Required | Example                                  |
-|--------------|----------|------------------------------------------|
-| `DOMAIN`     | yes      | `devads.example.com`                     |
-| `EMAIL`      | yes      | `you@example.com`  (Let's Encrypt)       |
-| `REPO`       | yes      | `git@github.com:you/devads.git`          |
-| `APP_USER`   | no       | `callescort` (default)                   |
-| `DUMP_FILE`  | no       | `/root/devads-cloud-20260619-120000.dump`|
+| Var          | Required | Example                                       |
+|--------------|----------|-----------------------------------------------|
+| `DOMAIN`     | yes      | `callescort24.org`                            |
+| `EMAIL`      | yes      | `you@callescort24.org` (Let's Encrypt)        |
+| `REPO`       | yes      | `git@github.com:you/callescort24.git`         |
+| `APP_USER`   | no       | `callescort` (default)                        |
+| `DUMP_FILE`  | no       | `/root/callescort24-cloud-20260619-120000.dump` |
 
 The stack itself self-generates: JWT secret, anon/service keys, DB password,
 Grafana admin password — all sealed into `/etc/supabase-vault/`.
@@ -35,19 +35,19 @@ Grafana admin password — all sealed into `/etc/supabase-vault/`.
 ## B. Dump the Lovable Cloud DB (on your laptop)
 
 ```bash
-# Install pg client once:
-sudo apt install -y postgresql-client     # or: brew install libpq
+# Install pg client once (must match cloud server version, currently 17.x):
+sudo apt install -y postgresql-client-17     # or: brew install libpq
 
 # Run the dumper (the URL is in your Cloud backend panel → DB connection string):
 SUPABASE_DB_URL='postgres://postgres:PASS@db.<ref>.supabase.co:5432/postgres' \
   bash scripts/cloud-db-dump.sh
-# → ./backups/devads-cloud-YYYYMMDD-HHMMSS.dump
+# → ./backups/callescort24-cloud-YYYYMMDD-HHMMSS.dump
 ```
 
 Ship it to the VPS:
 ```bash
-scp ./backups/devads-cloud-*.dump root@<vps>:/root/
-ssh root@<vps> 'chmod 600 /root/devads-cloud-*.dump'
+scp ./backups/callescort24-cloud-*.dump root@<vps>:/root/
+ssh root@<vps> 'chmod 600 /root/callescort24-cloud-*.dump'
 ```
 
 ---
@@ -56,13 +56,13 @@ ssh root@<vps> 'chmod 600 /root/devads-cloud-*.dump'
 
 ```bash
 ssh root@<vps>
-git clone <REPO> /opt/devads && cd /opt/devads
+git clone <REPO> /opt/callescort24 && cd /opt/callescort24
 
-sudo DOMAIN=devads.example.com \
-     EMAIL=you@example.com \
-     REPO=git@github.com:you/devads.git \
+sudo DOMAIN=callescort24.org \
+     EMAIL=you@callescort24.org \
+     REPO=git@github.com:you/callescort24.git \
      APP_USER=callescort \
-     DUMP_FILE=/root/devads-cloud-20260619-120000.dump \
+     DUMP_FILE=/root/callescort24-cloud-20260619-120000.dump \
      bash scripts/vps/cli.sh deploy --dry-run
 ```
 
@@ -75,11 +75,11 @@ stop and fix env vars before continuing.
 ## D. Real deploy (one command)
 
 ```bash
-sudo DOMAIN=devads.example.com \
-     EMAIL=you@example.com \
-     REPO=git@github.com:you/devads.git \
+sudo DOMAIN=callescort24.org \
+     EMAIL=you@callescort24.org \
+     REPO=git@github.com:you/callescort24.git \
      APP_USER=callescort \
-     DUMP_FILE=/root/devads-cloud-20260619-120000.dump \
+     DUMP_FILE=/root/callescort24-cloud-20260619-120000.dump \
      bash scripts/vps/cli.sh deploy
 ```
 
@@ -96,16 +96,16 @@ Rollback is automatic if any step fails (see `ROLLBACK.md`).
 
 ```bash
 # Off-server: back up the vault master key NOW
-scp root@<vps>:/etc/supabase-vault/master.key ~/secure/devads-master.key
+scp root@<vps>:/etc/supabase-vault/master.key ~/secure/callescort24-master.key
 
 # Healthcheck + smoke test
-sudo DOMAIN=devads.example.com bash scripts/vps/cli.sh verify
-sudo DOMAIN=devads.example.com bash scripts/vps/65-smoke-test.sh
+sudo DOMAIN=callescort24.org bash scripts/vps/cli.sh verify
+sudo DOMAIN=callescort24.org bash scripts/vps/65-smoke-test.sh
 
 # Visit
-open https://devads.example.com
-open https://api.devads.example.com/auth/v1/health
-open https://studio.devads.example.com           # should ask for basic auth
+open https://callescort24.org
+open https://api.callescort24.org/auth/v1/health
+open https://studio.callescort24.org           # should ask for basic auth
 
 # Grafana (after you add the reverse-proxy site)
 sudo bash scripts/vps/cli.sh secrets get GRAFANA_ADMIN_PASSWORD

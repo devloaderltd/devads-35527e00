@@ -18,7 +18,7 @@ const GOOGLE_REDIRECT_URI = `https://${SUPABASE_PROJECT_REF}.supabase.co/auth/v1
 const GOOGLE_AUTHORIZED_ORIGINS = [
   "https://callescort24.org",
   "https://www.callescort24.org",
-  "https://devads.lovable.app",
+  "https://callescort24.lovable.app",
   "https://id-preview--4e817e8c-6b6f-4c13-a579-a3b9b7d44ed7.lovable.app",
 ].join("\n");
 const BACKEND_GOOGLE_PROVIDER_URL = `https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/auth/providers?provider=Google`;

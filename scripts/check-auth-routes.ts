@@ -6,7 +6,7 @@
  *
  * Usage:
  *   bun run check:auth
- *   BASE_URL=https://devads.lovable.app bun run check:auth
+ *   BASE_URL=https://callescort24.org bun run check:auth
  *
  * Requires VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY in env (or .env).
  * Rotates demo credentials via /api/public/seed-demo (bootstrap or with
@@ -14,7 +14,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 
-const BASE_URL = (process.env.BASE_URL ?? "https://devads.lovable.app").replace(/\/$/, "");
+const BASE_URL = (process.env.BASE_URL ?? "https://callescort24.org").replace(/\/$/, "");
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
 const SUPABASE_ANON = process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
 const SEED_TOKEN = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
