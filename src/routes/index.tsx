@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { SiteBanner } from "@/components/SiteBanner";
@@ -79,29 +79,42 @@ function Home() {
     },
   });
 
+  const PAGE_SIZE = 12;
+  const NEW_BADGE_HOURS = 24;
+  const [sortMode, setSortMode] = useState<"newest" | "bumped">("newest");
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [pageCount, setPageCount] = useState(1);
+
   const { data: listings, isLoading } = useQuery({
-    queryKey: ["listings", "home", cityId],
+    queryKey: ["listings", "home", cityId, sortMode, categoryFilter, pageCount],
     enabled: !!cityId,
     queryFn: async () => {
       const baseSelect = `
           id, slug, title, condition, created_at, bumped_at, verified_at, status, city_id,
-          categories(name, slug),
+          categories!inner(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),
           listing_promotions(type, ends_at)
         `;
-      const { data, error } = await supabase
+      let q = supabase
         .from("listings")
         .select(baseSelect)
         .eq("status", "active")
-        .eq("city_id", cityId!)
-        .order("created_at", { ascending: false })
-        .order("bumped_at", { ascending: false, nullsFirst: false })
-        .limit(24);
+        .eq("city_id", cityId!);
+      if (categoryFilter) q = q.eq("categories.slug", categoryFilter);
+      if (sortMode === "newest") {
+        q = q.order("created_at", { ascending: false })
+             .order("bumped_at", { ascending: false, nullsFirst: false });
+      } else {
+        q = q.order("bumped_at", { ascending: false, nullsFirst: false })
+             .order("created_at", { ascending: false });
+      }
+      const { data, error } = await q.limit(PAGE_SIZE * pageCount);
       if (error) throw error;
       return data ?? [];
     },
   });
+  const hasMore = (listings?.length ?? 0) >= PAGE_SIZE * pageCount;
 
   const { data: siteStats } = useQuery({
     queryKey: ["site-stats"],
@@ -450,10 +463,60 @@ function Home() {
       {/* Recent listings */}
       {sections.latest && (
         <section className="container mx-auto px-4 pt-10 pb-16">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-2xl font-semibold">Latest listings</h2>
-            <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
+            <div className="flex items-center gap-2">
+              <div className="inline-flex rounded-full glass p-1 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => { setSortMode("newest"); setPageCount(1); }}
+                  className={`rounded-full px-3 py-1 transition ${sortMode === "newest" ? "btn-gradient text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-pressed={sortMode === "newest"}
+                >
+                  Newest first
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSortMode("bumped"); setPageCount(1); }}
+                  className={`rounded-full px-3 py-1 transition ${sortMode === "bumped" ? "btn-gradient text-white" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-pressed={sortMode === "bumped"}
+                >
+                  Most bumped
+                </button>
+              </div>
+              <Link to="/search" className="text-sm font-medium text-primary hover:underline">View all →</Link>
+            </div>
           </div>
+
+          {/* Quick filters */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={openPicker}
+              className="inline-flex items-center gap-1 rounded-full glass px-3 py-1 text-xs font-medium hover:border-primary/50"
+            >
+              <MapPin className="h-3 w-3 text-primary" />
+              {cityName ?? "Choose city"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setCategoryFilter(null); setPageCount(1); }}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${categoryFilter === null ? "btn-gradient text-white" : "glass hover:border-primary/50"}`}
+            >
+              All
+            </button>
+            {categories?.slice(0, 8).map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { setCategoryFilter(c.slug); setPageCount(1); }}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${categoryFilter === c.slug ? "btn-gradient text-white" : "glass hover:border-primary/50"}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+
           {isLoading ? (
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -463,12 +526,25 @@ function Home() {
           ) : recent.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl glass p-10 text-center text-muted-foreground">
               <img src={emptyListingImg} alt="" width={160} height={160} loading="lazy" className="h-40 w-40 object-contain" />
-              <div>No listings yet. <Link to="/post" className="font-medium text-primary hover:underline">Be the first to post!</Link></div>
+              <div>No listings match these filters. <Link to="/post" className="font-medium text-primary hover:underline">Post one!</Link></div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {recent.map((l: any) => <ListingCard key={l.id} listing={l} />)}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                {recent.map((l: any) => <ListingCard key={l.id} listing={l} newBadgeHours={NEW_BADGE_HOURS} />)}
+              </div>
+              {hasMore && (
+                <div className="mt-8 flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setPageCount((p) => p + 1)}
+                    className="rounded-full px-6"
+                  >
+                    Load more
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </section>
       )}

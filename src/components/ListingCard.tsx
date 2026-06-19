@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MapPin, Sparkles, Flame, Scale, Check, BadgeCheck, Eye } from "lucide-react";
+import { MapPin, Sparkles, Flame, Scale, Check, BadgeCheck, Eye, Clock } from "lucide-react";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { useCompare, COMPARE_MAX } from "@/lib/compare-context";
 import { toast } from "sonner";
@@ -21,18 +21,24 @@ type Listing = {
   listing_promotions?: { type: string; ends_at: string }[] | null;
 };
 
+export const NEW_BADGE_HOURS = 24;
+
 export function ListingCard({
   listing,
   featured,
   variant = "grid",
+  newBadgeHours = NEW_BADGE_HOURS,
 }: {
   listing: Listing;
   featured?: boolean;
   variant?: "grid" | "list";
+  newBadgeHours?: number;
 }) {
   const img = listing.listing_images?.sort((a, b) => a.sort_order - b.sort_order)[0]?.url;
   const isFeatured = featured || listing.listing_promotions?.some((p) => new Date(p.ends_at) > new Date());
   const isBumped = !isFeatured && listing.bumped_at && (Date.now() - new Date(listing.bumped_at).getTime()) < 24 * 60 * 60 * 1000;
+  const isNew = !isFeatured && !isBumped && listing.created_at &&
+    (Date.now() - new Date(listing.created_at).getTime()) < newBadgeHours * 60 * 60 * 1000;
   const isVerified = !!listing.verified_at;
   const { has, toggle, ids } = useCompare();
   const selected = has(listing.id);
@@ -127,6 +133,11 @@ export function ListingCard({
             <Flame className="h-3 w-3" /> Bumped
           </span>
         )}
+        {isNew && !isBumped && !isFeatured && (
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow">
+            <Clock className="h-3 w-3" /> New
+          </span>
+        )}
         {isVerified && (
           <span
             title="Verified seller"
@@ -156,6 +167,11 @@ export function ListingCard({
           <div className="mt-auto flex items-center gap-1 pt-1 text-xs text-muted-foreground">
             <MapPin className="h-3 w-3" />
             {listing.cities.name}, {listing.cities.region}
+          </div>
+        )}
+        {listing.created_at && (
+          <div className="text-[11px] text-muted-foreground/80">
+            {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
           </div>
         )}
       </div>
