@@ -89,7 +89,7 @@ run would perform — read it before running for real.
 
 ```bash
 sudo DOMAIN=callescort24.org \
-     EMAIL=you@callescort24.org \
+     EMAIL=support@callescort24.org \
      REPO=https://github.com/devloaderltd/devads-35527e00.git \
      APP_USER=callescort \
      DUMP_FILE=/root/callescort24-cloud-20260619-131523.dump \
