@@ -56,6 +56,10 @@ fi
 
 docker compose pull
 docker compose up -d
-echo "    waiting for kong:8000 ..."
-for i in {1..60}; do curl -fsS http://127.0.0.1:8000/ >/dev/null 2>&1 && break; sleep 3; done
+if [ "${DRY_RUN:-0}" = "1" ]; then
+  echo "    [dry-run] skipping wait for kong:8000"
+else
+  echo "    waiting for kong:8000 ..."
+  for i in {1..60}; do curl -fsS http://127.0.0.1:8000/ >/dev/null 2>&1 && break; sleep 3; done
+fi
 echo "done."
