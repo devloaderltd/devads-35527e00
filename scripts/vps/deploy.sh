@@ -11,14 +11,28 @@ set -euo pipefail
 APP_USER="${APP_USER:-callescort}"
 APP_DIR="/home/${APP_USER}/htdocs/${DOMAIN}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
+source "$HERE/lib.sh"
 
+# Step 1: base packages
 bash "$HERE/00-install.sh"
+
+# Step 2: supabase stack — snapshot existing DB first if present so we can roll back
+if [ -f /opt/supabase/docker/.env ]; then
+  SNAP="$(db_snapshot pre-deploy || true)"
+  [ -n "$SNAP" ] && push_rollback "restore pre-deploy DB snapshot" "bash $HERE/restore.sh --apply <<<'APPLY' DUMP_FILE=$SNAP || true"
+fi
 DOMAIN="$DOMAIN" bash "$HERE/10-supabase-stack.sh"
 
-# CloudPanel sites + SSL (requires CloudPanel already installed on this VPS)
+# Step 2b: migrate secrets into encrypted vault
+bash "$HERE/05-secrets.sh"
+
+# Step 3 + 4: CloudPanel sites + SSL (with rollback that removes the sites)
 if command -v clpctl >/dev/null; then
   DOMAIN="$DOMAIN" APP_USER="$APP_USER" bash "$HERE/20-cloudpanel-sites.sh"
-  DOMAIN="$DOMAIN" EMAIL="$EMAIL"        bash "$HERE/30-ssl.sh"
+  for d in "${DOMAIN}" "api.${DOMAIN}" "studio.${DOMAIN}"; do
+    push_rollback "remove CloudPanel site $d" "clpctl site:delete --domainName=$d --force || true"
+  done
+  DOMAIN="$DOMAIN" EMAIL="$EMAIL" bash "$HERE/30-ssl.sh"
 else
   echo "!! clpctl not found — install CloudPanel first, then re-run 20-/30- scripts."
 fi
