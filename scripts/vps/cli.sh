@@ -22,14 +22,16 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 maybe_dry_shim() {
   [ "${DRY_RUN:-0}" = "1" ] || return 0
   local shim; shim="$(mktemp -d -t dryrun.XXXXXX)"
-  for cmd in clpctl certbot pm2 systemctl docker docker-compose pg_restore pg_dump psql; do
+  for cmd in clpctl certbot pm2 systemctl docker docker-compose pg_restore pg_dump psql pg_isready pg_isready; do
     cat > "$shim/$cmd" <<EOF
 #!/usr/bin/env bash
 echo "[dry-run] $cmd \$*"
 # pretend success and fake output for the few commands that scripts parse
 case "$cmd \$1 \${2:-}" in
+  "pg_isready"*)       exit 0 ;;
   "docker ps"*)        echo "supabase-kong   Up 1 hour" ;;
   "pm2 jlist"*)        echo '[{"name":"app","pm2_env":{"status":"online"}}]' ;;
+  "pm2 startup"*)      echo "echo pm2-startup-stub" ;;
   "clpctl site:list"*) echo "" ;;
 esac
 exit 0
