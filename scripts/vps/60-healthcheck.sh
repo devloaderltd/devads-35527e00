@@ -76,4 +76,9 @@ esac
 
 echo
 echo "passed=$PASS  failed=$FAIL"
+
+if [ "$FAIL" -gt 0 ] && command -v alert_send >/dev/null; then
+  alert_send "🚨 healthcheck on $(hostname) — $FAIL failed:
+- $(printf '%s\n- ' "${FAIL_LINES[@]}" | sed '$ d')"
+fi
 [ "$FAIL" -eq 0 ]
