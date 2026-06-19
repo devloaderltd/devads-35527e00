@@ -1,0 +1,64 @@
+# =============================================================================
+# One-stack docker-compose: Caddy (auto-SSL) + app + Supabase.
+#
+# Supabase services are NOT defined here — they live in /opt/supabase/docker
+# (the official self-host repo). We attach to that network so Caddy can route
+# api.<domain> → kong:8000 and studio.<domain> → studio:3000.
+#
+# Bring up:
+#   bash docker/bootstrap.sh
+# =============================================================================
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+      STUDIO_BASIC_AUTH_USER: ${STUDIO_BASIC_AUTH_USER}
+      STUDIO_BASIC_AUTH_HASH: ${STUDIO_BASIC_AUTH_HASH}
+    networks:
+      - supabase_default
+    depends_on:
+      app:
+        condition: service_healthy
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: callescort-app:latest
+    container_name: app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      SUPABASE_URL: https://api.${APP_DOMAIN}
+      SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      VITE_SUPABASE_URL: https://api.${APP_DOMAIN}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+      VITE_SUPABASE_PROJECT_ID: local
+    networks:
+      - supabase_default
+    expose:
+      - "3000"
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  supabase_default:
+    external: true
