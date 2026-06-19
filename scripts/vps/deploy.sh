@@ -86,8 +86,9 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 17 * * * * root DOMAIN=${DOMAIN} bash ${HERE}/60-healthcheck.sh >> /var/log/supabase-healthcheck.log 2>&1
 EOF
 
-# Final gate: if healthcheck fails, the whole deploy rolls back
+# Final gate: if healthcheck or smoke test fails, the whole deploy rolls back
 DOMAIN="$DOMAIN" bash "$HERE/60-healthcheck.sh"
+DOMAIN="$DOMAIN" bash "$HERE/65-smoke-test.sh"
 disable_rollback   # success — keep the changes
 metric_emit supabase_deploy_succeeded 1 2>/dev/null || true
 metric_emit supabase_deploy_last_run "$(date +%s)" 2>/dev/null || true
