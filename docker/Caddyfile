@@ -1,0 +1,44 @@
+# =============================================================================
+# Caddyfile — one reverse proxy + automatic Let's Encrypt for the whole stack.
+# Domains come from environment substitution in docker-compose.yml.
+# =============================================================================
+
+{
+	# Global options
+	email {$ACME_EMAIL}
+	# Uncomment for staging certs while testing:
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+# ----------- Main app (TanStack Start) -----------
+{$APP_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "interest-cohort=()"
+	}
+	reverse_proxy app:3000
+}
+
+# ----------- Supabase API gateway (Kong) -----------
+api.{$APP_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		Access-Control-Allow-Origin "https://{$APP_DOMAIN}"
+		Access-Control-Allow-Credentials "true"
+	}
+	reverse_proxy kong:8000
+}
+
+# ----------- Supabase Studio (admin UI) -----------
+# Protected by Caddy basicauth — set STUDIO_BASIC_AUTH in .env
+studio.{$APP_DOMAIN} {
+	encode zstd gzip
+	basicauth /* {
+		{$STUDIO_BASIC_AUTH_USER} {$STUDIO_BASIC_AUTH_HASH}
+	}
+	reverse_proxy studio:3000
+}
