@@ -68,6 +68,12 @@ cmd_restore() {
 cmd_verify() {
   require_env DOMAIN
   bash "$HERE/60-healthcheck.sh"
+  bash "$HERE/65-smoke-test.sh"
+}
+
+cmd_smoke() {
+  require_env DOMAIN
+  bash "$HERE/65-smoke-test.sh"
 }
 
 cmd_rollback() {
