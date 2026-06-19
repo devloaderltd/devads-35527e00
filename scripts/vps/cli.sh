@@ -127,6 +127,7 @@ case "$cmd" in
   redeploy)   cmd_redeploy "$@" ;;
   restore)    cmd_restore "$@" ;;
   verify)     cmd_verify "$@" ;;
+  smoke)      cmd_smoke "$@" ;;
   rollback)   cmd_rollback "$@" ;;
   snapshot)   cmd_snapshot ;;
   prune)      cmd_prune ;;
