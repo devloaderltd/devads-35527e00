@@ -14,16 +14,16 @@
 #   OUT_DIR=./backups bash scripts/cloud-db-dump.sh
 #
 # Output:
-#   ./backups/devads-cloud-YYYYMMDD-HHMMSS.dump
-#   ./backups/devads-cloud-YYYYMMDD-HHMMSS.sql.gz   (plain text, for diff/inspect)
+#   ./backups/callescort24-cloud-YYYYMMDD-HHMMSS.dump
+#   ./backups/callescort24-cloud-YYYYMMDD-HHMMSS.sql.gz   (plain text, for diff/inspect)
 #
 # Then copy to the VPS:
-#   scp ./backups/devads-cloud-*.dump root@<vps>:/root/
-#   ssh root@<vps> 'DUMP_FILE=/root/devads-cloud-*.dump bash /path/to/scripts/vps/40-restore-db.sh'
+#   scp ./backups/callescort24-cloud-*.dump root@<vps>:/root/
+#   ssh root@<vps> 'DUMP_FILE=/root/callescort24-cloud-*.dump bash /path/to/scripts/vps/40-restore-db.sh'
 #
 # Or pass directly when running deploy.sh the first time:
 #   sudo DOMAIN=... EMAIL=... REPO=... \
-#        DUMP_FILE=/root/devads-cloud-20260619-120000.dump \
+#        DUMP_FILE=/root/callescort24-cloud-20260619-120000.dump \
 #        bash scripts/vps/cli.sh deploy
 set -euo pipefail
 : "${SUPABASE_DB_URL:?set SUPABASE_DB_URL to the cloud postgres connection string}"
@@ -33,8 +33,8 @@ mkdir -p "$OUT_DIR"
 
 command -v pg_dump >/dev/null || { echo "install postgresql-client first (apt install postgresql-client)"; exit 1; }
 
-DUMP="${OUT_DIR}/devads-cloud-${TS}.dump"
-SQL="${OUT_DIR}/devads-cloud-${TS}.sql.gz"
+DUMP="${OUT_DIR}/callescort24-cloud-${TS}.dump"
+SQL="${OUT_DIR}/callescort24-cloud-${TS}.sql.gz"
 
 echo "==> dumping cloud DB → ${DUMP} (custom format, for pg_restore)"
 pg_dump "$SUPABASE_DB_URL" \
