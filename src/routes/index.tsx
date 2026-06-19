@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingCard } from "@/components/ListingCard";
 import { SiteBanner } from "@/components/SiteBanner";
@@ -79,29 +79,42 @@ function Home() {
     },
   });
 
+  const PAGE_SIZE = 12;
+  const NEW_BADGE_HOURS = 24;
+  const [sortMode, setSortMode] = useState<"newest" | "bumped">("newest");
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [pageCount, setPageCount] = useState(1);
+
   const { data: listings, isLoading } = useQuery({
-    queryKey: ["listings", "home", cityId],
+    queryKey: ["listings", "home", cityId, sortMode, categoryFilter, pageCount],
     enabled: !!cityId,
     queryFn: async () => {
       const baseSelect = `
           id, slug, title, condition, created_at, bumped_at, verified_at, status, city_id,
-          categories(name, slug),
+          categories!inner(name, slug),
           cities(name, region, country),
           listing_images(url, sort_order),
           listing_promotions(type, ends_at)
         `;
-      const { data, error } = await supabase
+      let q = supabase
         .from("listings")
         .select(baseSelect)
         .eq("status", "active")
-        .eq("city_id", cityId!)
-        .order("created_at", { ascending: false })
-        .order("bumped_at", { ascending: false, nullsFirst: false })
-        .limit(24);
+        .eq("city_id", cityId!);
+      if (categoryFilter) q = q.eq("categories.slug", categoryFilter);
+      if (sortMode === "newest") {
+        q = q.order("created_at", { ascending: false })
+             .order("bumped_at", { ascending: false, nullsFirst: false });
+      } else {
+        q = q.order("bumped_at", { ascending: false, nullsFirst: false })
+             .order("created_at", { ascending: false });
+      }
+      const { data, error } = await q.limit(PAGE_SIZE * pageCount);
       if (error) throw error;
       return data ?? [];
     },
   });
+  const hasMore = (listings?.length ?? 0) >= PAGE_SIZE * pageCount;
 
   const { data: siteStats } = useQuery({
     queryKey: ["site-stats"],
