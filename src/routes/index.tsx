@@ -95,8 +95,8 @@ function Home() {
         .select(baseSelect)
         .eq("status", "active")
         .eq("city_id", cityId!)
-        .order("bumped_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false })
+        .order("bumped_at", { ascending: false, nullsFirst: false })
         .limit(24);
       if (error) throw error;
       return data ?? [];
