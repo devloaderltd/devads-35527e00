@@ -75,7 +75,10 @@ fi
 # Backups + health
 bash "$HERE/50-backup-cron.sh"
 
-# Hourly health-check cron (alerts via vault TELEGRAM_*/ALERT_EMAIL)
+# Monitoring stack (Prometheus + Grafana + exporters)
+DOMAIN="$DOMAIN" bash "$HERE/80-monitoring.sh" up || echo "!! monitoring stack failed, continuing"
+
+# Hourly health-check cron — writes Prometheus textfile metrics
 cat > /etc/cron.d/supabase-healthcheck <<EOF
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -85,18 +88,18 @@ EOF
 # Final gate: if healthcheck fails, the whole deploy rolls back
 DOMAIN="$DOMAIN" bash "$HERE/60-healthcheck.sh"
 disable_rollback   # success — keep the changes
-
-alert_send "✅ Deploy succeeded on $(hostname) for ${DOMAIN}"
+metric_emit supabase_deploy_succeeded 1 2>/dev/null || true
+metric_emit supabase_deploy_last_run "$(date +%s)" 2>/dev/null || true
 
 cat <<EOF
 
 ================ DEPLOY COMPLETE ================
 Secrets vault : /etc/supabase-vault/secrets.env.enc
 Master key    : /etc/supabase-vault/master.key   <-- BACK UP OFF-SERVER
-Backups dir   : /var/backups/supabase            (nightly 03:15, 14-day retention)
-Restore tool  : sudo bash ${HERE}/restore.sh [--apply]
-Healthcheck   : sudo DOMAIN=${DOMAIN} bash ${HERE}/60-healthcheck.sh   (hourly cron installed)
-Staging stack : sudo DOMAIN=${DOMAIN} bash ${HERE}/70-staging.sh up
+Backups dir   : /var/backups/supabase            (nightly 03:15, GFS retention 7d/4w/12m)
+CLI wrapper   : sudo bash ${HERE}/cli.sh {deploy|restore|verify|rollback|prune|snapshot|monitoring|staging|secrets}
+Healthcheck   : sudo DOMAIN=${DOMAIN} bash ${HERE}/cli.sh verify   (hourly cron installed)
+Grafana       : http://127.0.0.1:3030  → proxy to grafana.${DOMAIN} via CloudPanel
+Staging stack : sudo DOMAIN=${DOMAIN} bash ${HERE}/cli.sh staging up
 =================================================
 EOF
-echo "================================================="

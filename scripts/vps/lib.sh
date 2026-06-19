@@ -1,25 +1,30 @@
 #!/usr/bin/env bash
-# Shared library — rollback stack, secret vault, alerting.
+# Shared library — rollback stack, secret vault, dry-run shim, metric emit.
 # Source from any vps/*.sh: `source "$(dirname "$0")/lib.sh"`
 set -uo pipefail
 
 # ─── paths ──────────────────────────────────────────────────────────────────
 VAULT_DIR="${VAULT_DIR:-/etc/supabase-vault}"
 VAULT_FILE="${VAULT_DIR}/secrets.env.enc"
-VAULT_KEY="${VAULT_DIR}/master.key"   # 0400 root:root
+VAULT_KEY="${VAULT_DIR}/master.key"
 SNAPSHOT_DIR="${SNAPSHOT_DIR:-/var/backups/supabase/snapshots}"
 ROLLBACK_LOG="${ROLLBACK_LOG:-/var/log/supabase-rollback.log}"
+METRICS_DIR="${METRICS_DIR:-/var/lib/node_exporter/textfile_collector}"
 
-mkdir -p "$VAULT_DIR" "$SNAPSHOT_DIR" 2>/dev/null || true
+mkdir -p "$VAULT_DIR" "$SNAPSHOT_DIR" "$METRICS_DIR" 2>/dev/null || true
 chmod 700 "$VAULT_DIR" 2>/dev/null || true
 
+# ─── dry-run mode ───────────────────────────────────────────────────────────
+# When DRY_RUN=1 the CLI wrapper prepends a stub-bin dir to PATH so that
+# clpctl / certbot / docker / pm2 / pg_restore just echo their args.
+DRY_RUN="${DRY_RUN:-0}"
+is_dry() { [ "$DRY_RUN" = "1" ]; }
+
 # ─── rollback stack ─────────────────────────────────────────────────────────
-# Push undo commands onto a stack; popped in reverse order on failure.
 ROLLBACK_STACK_FILE="$(mktemp -t rollback.XXXXXX)"
 trap 'on_exit_rollback $?' EXIT
 
 push_rollback() {
-  # usage: push_rollback "description" "shell command to undo"
   printf '%s\t%s\n' "$1" "$2" >> "$ROLLBACK_STACK_FILE"
 }
 
@@ -28,12 +33,16 @@ run_rollback() {
   if [ ! -s "$ROLLBACK_STACK_FILE" ]; then
     echo "    nothing on the stack." | tee -a "$ROLLBACK_LOG"; return
   fi
-  # reverse order
   tac "$ROLLBACK_STACK_FILE" | while IFS=$'\t' read -r desc cmd; do
     echo "    undo: $desc" | tee -a "$ROLLBACK_LOG"
-    bash -c "$cmd" >>"$ROLLBACK_LOG" 2>&1 || echo "      (undo failed, continuing)" | tee -a "$ROLLBACK_LOG"
+    if is_dry; then
+      echo "      [dry-run] would run: $cmd" | tee -a "$ROLLBACK_LOG"
+    else
+      bash -c "$cmd" >>"$ROLLBACK_LOG" 2>&1 \
+        || echo "      (undo failed, continuing)" | tee -a "$ROLLBACK_LOG"
+    fi
   done
-  alert_send "❌ Deploy ROLLED BACK on $(hostname). See $ROLLBACK_LOG"
+  metric_emit supabase_deploy_rolled_back 1
 }
 
 on_exit_rollback() {
@@ -47,7 +56,6 @@ on_exit_rollback() {
 disable_rollback() { ROLLBACK_ENABLED=0; }
 
 # ─── encrypted secret vault ─────────────────────────────────────────────────
-# AES-256-CBC via openssl, master key in /etc/supabase-vault/master.key (chmod 400).
 vault_init() {
   if [ ! -f "$VAULT_KEY" ]; then
     openssl rand -hex 32 > "$VAULT_KEY"
@@ -57,7 +65,6 @@ vault_init() {
 }
 
 vault_put() {
-  # vault_put KEY VALUE — appends/replaces a KEY=VALUE line in the encrypted store
   local key="$1" val="$2" tmp
   vault_init
   tmp="$(mktemp)"
@@ -81,31 +88,34 @@ vault_dump() {
   openssl enc -aes-256-cbc -pbkdf2 -d -in "$VAULT_FILE" -pass "file:${VAULT_KEY}"
 }
 
-# ─── alerting (Telegram + Email) ────────────────────────────────────────────
-alert_send() {
-  local msg="$1"
-  local tg_token tg_chat email_to
-  tg_token="$(vault_get TELEGRAM_BOT_TOKEN 2>/dev/null || true)"
-  tg_chat="$( vault_get TELEGRAM_CHAT_ID   2>/dev/null || true)"
-  email_to="$(vault_get ALERT_EMAIL        2>/dev/null || true)"
-
-  if [ -n "$tg_token" ] && [ -n "$tg_chat" ]; then
-    curl -fsS -X POST "https://api.telegram.org/bot${tg_token}/sendMessage" \
-      --data-urlencode "chat_id=${tg_chat}" \
-      --data-urlencode "text=${msg}" >/dev/null || true
+# ─── Prometheus textfile metrics (replaces telegram/email alerts) ───────────
+metric_emit() {
+  # metric_emit NAME VALUE [LABELS]
+  # LABELS example:  'check="kong",severity="critical"'
+  local name="$1" val="$2" labels="${3:-}"
+  mkdir -p "$METRICS_DIR" 2>/dev/null || return 0
+  local file="${METRICS_DIR}/${name}.prom"
+  local tmp="${file}.$$"
+  if [ -n "$labels" ]; then
+    printf '# TYPE %s gauge\n%s{%s} %s\n' "$name" "$name" "$labels" "$val" > "$tmp"
+  else
+    printf '# TYPE %s gauge\n%s %s\n' "$name" "$name" "$val" > "$tmp"
   fi
-  if [ -n "$email_to" ] && command -v mail >/dev/null; then
-    echo "$msg" | mail -s "[supabase-vps] $(hostname)" "$email_to" || true
-  fi
+  mv "$tmp" "$file"
 }
 
-# ─── snapshot helpers (used by rollback + restore) ──────────────────────────
+# Back-compat shim — older scripts may still call alert_send. No-op now;
+# Prometheus / Grafana own observability. Keep so sourced scripts don't fail.
+alert_send() { :; }
+
+# ─── snapshot helpers ───────────────────────────────────────────────────────
 db_snapshot() {
   local tag="${1:-auto}" ts out pg_pw
   ts="$(date +%Y%m%d-%H%M%S)"
   out="${SNAPSHOT_DIR}/snap-${tag}-${ts}.dump"
   pg_pw="$(grep ^POSTGRES_PASSWORD /opt/supabase/docker/.env 2>/dev/null | cut -d= -f2-)"
   [ -n "$pg_pw" ] || { echo "no postgres password — skipping snapshot"; return 0; }
+  if is_dry; then echo "[dry-run] would pg_dump -> $out"; echo "$out"; return; fi
   PGPASSWORD="$pg_pw" pg_dump -h 127.0.0.1 -U postgres -d postgres -Fc -f "$out"
   echo "$out"
 }

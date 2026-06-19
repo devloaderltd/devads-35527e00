@@ -70,14 +70,14 @@ cmd_restore() {
   echo "==> restored $dump into staging"
 }
 
-cmd_verify-latest() {
+cmd_verify_latest() {
   local latest; latest=$(ls -1t /var/backups/supabase/*.dump | head -1)
   [ -n "$latest" ] || { echo "no dumps"; exit 1; }
   cmd_up
   if cmd_restore "$latest"; then
-    alert_send "✅ Nightly staging restore-verify OK ($(basename "$latest"))"
+    metric_emit supabase_staging_verify_ok 1 2>/dev/null || true
   else
-    alert_send "❌ Nightly staging restore-verify FAILED ($(basename "$latest"))"
+    metric_emit supabase_staging_verify_ok 0 2>/dev/null || true
     exit 2
   fi
 }
@@ -86,6 +86,6 @@ case "${1:-}" in
   up)             cmd_up ;;
   down)           cmd_down ;;
   restore)        shift; cmd_restore "$@" ;;
-  verify-latest)  cmd_verify-latest ;;
+  verify-latest)  cmd_verify_latest ;;
   *) echo "usage: $0 {up|down|restore <dump>|verify-latest}"; exit 1 ;;
 esac
