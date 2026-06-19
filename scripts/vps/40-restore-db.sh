@@ -7,6 +7,10 @@
 #
 # Reads POSTGRES_PASSWORD from /opt/supabase/docker/.env.
 set -euo pipefail
+if [ "${DRY_RUN:-0}" = "1" ]; then
+  echo "[dry-run] skipping 40-restore-db.sh (DUMP_FILE=${DUMP_FILE:-unset})"
+  exit 0
+fi
 : "${DUMP_FILE:?set DUMP_FILE=/path/to/dump}"
 [ -f "$DUMP_FILE" ] || { echo "DUMP_FILE not found: $DUMP_FILE"; exit 1; }
 
