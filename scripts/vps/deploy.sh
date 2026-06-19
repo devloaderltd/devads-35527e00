@@ -64,6 +64,7 @@ chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
 
 sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && bun install && BUILD_TARGET=node bun run build"
 sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && pm2 start ecosystem.config.cjs && pm2 save"
+push_rollback "stop PM2 app" "sudo -u $APP_USER pm2 delete all || true"
 env PATH=$PATH:/usr/bin pm2 startup systemd -u "$APP_USER" --hp "/home/${APP_USER}" | tail -1 | bash || true
 
 # Optional: restore an existing dump
@@ -73,12 +74,29 @@ fi
 
 # Backups + health
 bash "$HERE/50-backup-cron.sh"
-DOMAIN="$DOMAIN" bash "$HERE/60-healthcheck.sh" || true
 
-echo
-echo "================ DEPLOY COMPLETE ================"
-echo "Credentials : /root/supabase-credentials.txt"
-echo "Backups dir : /var/backups/supabase   (nightly 03:15, 14-day retention)"
-echo "Restore now : sudo DUMP_FILE=/path/to.dump bash $HERE/40-restore-db.sh"
-echo "Healthcheck : sudo DOMAIN=${DOMAIN} bash $HERE/60-healthcheck.sh"
+# Hourly health-check cron (alerts via vault TELEGRAM_*/ALERT_EMAIL)
+cat > /etc/cron.d/supabase-healthcheck <<EOF
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+17 * * * * root DOMAIN=${DOMAIN} bash ${HERE}/60-healthcheck.sh >> /var/log/supabase-healthcheck.log 2>&1
+EOF
+
+# Final gate: if healthcheck fails, the whole deploy rolls back
+DOMAIN="$DOMAIN" bash "$HERE/60-healthcheck.sh"
+disable_rollback   # success — keep the changes
+
+alert_send "✅ Deploy succeeded on $(hostname) for ${DOMAIN}"
+
+cat <<EOF
+
+================ DEPLOY COMPLETE ================
+Secrets vault : /etc/supabase-vault/secrets.env.enc
+Master key    : /etc/supabase-vault/master.key   <-- BACK UP OFF-SERVER
+Backups dir   : /var/backups/supabase            (nightly 03:15, 14-day retention)
+Restore tool  : sudo bash ${HERE}/restore.sh [--apply]
+Healthcheck   : sudo DOMAIN=${DOMAIN} bash ${HERE}/60-healthcheck.sh   (hourly cron installed)
+Staging stack : sudo DOMAIN=${DOMAIN} bash ${HERE}/70-staging.sh up
+=================================================
+EOF
 echo "================================================="
