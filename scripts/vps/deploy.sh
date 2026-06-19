@@ -62,10 +62,18 @@ VITE_SUPABASE_PROJECT_ID=local
 EOF
 chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
 
-sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && bun install && BUILD_TARGET=node bun run build"
-sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && pm2 start ecosystem.config.cjs && pm2 save"
-push_rollback "stop PM2 app" "sudo -u $APP_USER pm2 delete all || true"
-env PATH=$PATH:/usr/bin pm2 startup systemd -u "$APP_USER" --hp "/home/${APP_USER}" | tail -1 | bash || true
+if [ "${DRY_RUN:-0}" = "1" ]; then
+  echo "[dry-run] skipping: bun install / build / pm2 start / pm2 startup"
+else
+  sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && bun install && BUILD_TARGET=node bun run build"
+  sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && pm2 start ecosystem.config.cjs && pm2 save"
+  push_rollback "stop PM2 app" "sudo -u $APP_USER pm2 delete all || true"
+  STARTUP_CMD=$(env PATH=$PATH:/usr/bin pm2 startup systemd -u "$APP_USER" --hp "/home/${APP_USER}" | tail -1)
+  case "$STARTUP_CMD" in
+    sudo*|env*|/*) bash -c "$STARTUP_CMD" || true ;;
+    *) echo "!! could not parse pm2 startup command: $STARTUP_CMD" ;;
+  esac
+fi
 
 # Optional: restore an existing dump
 if [ -n "${DUMP_FILE:-}" ]; then
