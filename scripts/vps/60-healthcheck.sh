@@ -14,10 +14,14 @@
 # Usage: DOMAIN=example.com bash scripts/vps/60-healthcheck.sh
 set -uo pipefail
 : "${DOMAIN:?set DOMAIN=yourdomain.com}"
+source "$(dirname "$0")/lib.sh" 2>/dev/null || true
+disable_rollback 2>/dev/null || true
 ENV_FILE="/opt/supabase/docker/.env"
 PASS=0; FAIL=0
+FAIL_LINES=()
+bad()  { echo "  [FAIL] $*"; FAIL=$((FAIL+1)); FAIL_LINES+=("$*"); }
 ok()   { echo "  [ OK ] $*"; PASS=$((PASS+1)); }
-bad()  { echo "  [FAIL] $*"; FAIL=$((FAIL+1)); }
+
 
 ANON=$(grep ^ANON_KEY "$ENV_FILE" | cut -d= -f2-)
 
@@ -72,4 +76,9 @@ esac
 
 echo
 echo "passed=$PASS  failed=$FAIL"
+
+if [ "$FAIL" -gt 0 ] && command -v alert_send >/dev/null; then
+  alert_send "🚨 healthcheck on $(hostname) — $FAIL failed:
+- $(printf '%s\n- ' "${FAIL_LINES[@]}" | sed '$ d')"
+fi
 [ "$FAIL" -eq 0 ]

@@ -11,14 +11,28 @@ set -euo pipefail
 APP_USER="${APP_USER:-callescort}"
 APP_DIR="/home/${APP_USER}/htdocs/${DOMAIN}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
+source "$HERE/lib.sh"
 
+# Step 1: base packages
 bash "$HERE/00-install.sh"
+
+# Step 2: supabase stack — snapshot existing DB first if present so we can roll back
+if [ -f /opt/supabase/docker/.env ]; then
+  SNAP="$(db_snapshot pre-deploy || true)"
+  [ -n "$SNAP" ] && push_rollback "restore pre-deploy DB snapshot" "bash $HERE/restore.sh --apply <<<'APPLY' DUMP_FILE=$SNAP || true"
+fi
 DOMAIN="$DOMAIN" bash "$HERE/10-supabase-stack.sh"
 
-# CloudPanel sites + SSL (requires CloudPanel already installed on this VPS)
+# Step 2b: migrate secrets into encrypted vault
+bash "$HERE/05-secrets.sh"
+
+# Step 3 + 4: CloudPanel sites + SSL (with rollback that removes the sites)
 if command -v clpctl >/dev/null; then
   DOMAIN="$DOMAIN" APP_USER="$APP_USER" bash "$HERE/20-cloudpanel-sites.sh"
-  DOMAIN="$DOMAIN" EMAIL="$EMAIL"        bash "$HERE/30-ssl.sh"
+  for d in "${DOMAIN}" "api.${DOMAIN}" "studio.${DOMAIN}"; do
+    push_rollback "remove CloudPanel site $d" "clpctl site:delete --domainName=$d --force || true"
+  done
+  DOMAIN="$DOMAIN" EMAIL="$EMAIL" bash "$HERE/30-ssl.sh"
 else
   echo "!! clpctl not found — install CloudPanel first, then re-run 20-/30- scripts."
 fi
@@ -50,6 +64,7 @@ chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
 
 sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && bun install && BUILD_TARGET=node bun run build"
 sudo -u "$APP_USER" bash -lc "cd '$APP_DIR' && pm2 start ecosystem.config.cjs && pm2 save"
+push_rollback "stop PM2 app" "sudo -u $APP_USER pm2 delete all || true"
 env PATH=$PATH:/usr/bin pm2 startup systemd -u "$APP_USER" --hp "/home/${APP_USER}" | tail -1 | bash || true
 
 # Optional: restore an existing dump
@@ -59,12 +74,29 @@ fi
 
 # Backups + health
 bash "$HERE/50-backup-cron.sh"
-DOMAIN="$DOMAIN" bash "$HERE/60-healthcheck.sh" || true
 
-echo
-echo "================ DEPLOY COMPLETE ================"
-echo "Credentials : /root/supabase-credentials.txt"
-echo "Backups dir : /var/backups/supabase   (nightly 03:15, 14-day retention)"
-echo "Restore now : sudo DUMP_FILE=/path/to.dump bash $HERE/40-restore-db.sh"
-echo "Healthcheck : sudo DOMAIN=${DOMAIN} bash $HERE/60-healthcheck.sh"
+# Hourly health-check cron (alerts via vault TELEGRAM_*/ALERT_EMAIL)
+cat > /etc/cron.d/supabase-healthcheck <<EOF
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+17 * * * * root DOMAIN=${DOMAIN} bash ${HERE}/60-healthcheck.sh >> /var/log/supabase-healthcheck.log 2>&1
+EOF
+
+# Final gate: if healthcheck fails, the whole deploy rolls back
+DOMAIN="$DOMAIN" bash "$HERE/60-healthcheck.sh"
+disable_rollback   # success — keep the changes
+
+alert_send "✅ Deploy succeeded on $(hostname) for ${DOMAIN}"
+
+cat <<EOF
+
+================ DEPLOY COMPLETE ================
+Secrets vault : /etc/supabase-vault/secrets.env.enc
+Master key    : /etc/supabase-vault/master.key   <-- BACK UP OFF-SERVER
+Backups dir   : /var/backups/supabase            (nightly 03:15, 14-day retention)
+Restore tool  : sudo bash ${HERE}/restore.sh [--apply]
+Healthcheck   : sudo DOMAIN=${DOMAIN} bash ${HERE}/60-healthcheck.sh   (hourly cron installed)
+Staging stack : sudo DOMAIN=${DOMAIN} bash ${HERE}/70-staging.sh up
+=================================================
+EOF
 echo "================================================="
