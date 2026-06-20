@@ -92,6 +92,31 @@ The patched bootstrap removes Supabase's host-published ports entirely, so Kong,
 | Stop everything | `docker compose -f docker/docker-compose.yml down && cd /opt/supabase/docker && docker compose down` |
 | Backup Postgres | `docker exec supabase-db pg_dump -U postgres -d postgres -Fc > /root/backups/$(date +%F).dump` |
 
+## If you see `Unknown lockfile version` or `The "wa" variable is not set`
+
+Pull the latest changes, quote the existing Studio bcrypt hash in `docker/.env` once, then rebuild:
+
+```bash
+cd /opt/app && git pull
+python3 - <<'PY'
+from pathlib import Path
+p = Path('docker/.env')
+lines = p.read_text().splitlines()
+out = []
+for line in lines:
+    if line.startswith('STUDIO_BASIC_AUTH_HASH='):
+        key, value = line.split('=', 1)
+        value = value.strip().strip("'").strip('"')
+        line = f"{key}='{value}'"
+    out.append(line)
+p.write_text('\n'.join(out) + '\n')
+PY
+docker compose -f docker/docker-compose.yml --env-file docker/.env build --no-cache app
+docker compose -f docker/docker-compose.yml --env-file docker/.env up -d app caddy
+```
+
+The Dockerfile now uses Bun 1.3.x, which can read the current `bun.lock`. The one-time `.env` quote stops Docker Compose from treating bcrypt hash fragments such as `$wa` as variables.
+
 ## If the app image build loops on `routeTree.gen.ts`
 
 Pull the latest changes and rebuild the app image without cache:
