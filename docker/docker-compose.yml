@@ -37,6 +37,10 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      args:
+        VITE_SUPABASE_URL: https://api.${APP_DOMAIN}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+        VITE_SUPABASE_PROJECT_ID: local
     image: callescort-app:latest
     container_name: app
     restart: unless-stopped
