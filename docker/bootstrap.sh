@@ -102,19 +102,31 @@ EOF
   echo "    credentials -> /root/supabase-credentials.txt"
 fi
 
-# ── 5. Patch Supabase compose to NOT publish Kong/Studio ports to host ───────
-# (Caddy is the only public entrypoint. Kong/Studio reachable only on the
-#  internal docker network.)
+# ── 5. Patch Supabase compose to NOT publish backend ports to host ───────────
+# (Caddy is the only public entrypoint. Kong/Studio/DB/Pooler stay reachable
+#  only on the internal docker network.)
 COMPOSE_FILE="${SUPA_DIR}/docker-compose.yml"
-if grep -q '^\s*-\s*"\?\${KONG_HTTP_PORT' "$COMPOSE_FILE" 2>/dev/null; then
-  echo "==> removing Kong/Studio host port publishing"
+if [ -f "$COMPOSE_FILE" ]; then
+  echo "==> removing Supabase host port publishing"
   python3 - "$COMPOSE_FILE" <<'PY'
 import sys, re
 p = sys.argv[1]
-src = open(p).read()
-# Comment out any ports: entry that mentions KONG_HTTP_PORT, KONG_HTTPS_PORT, STUDIO_PORT
-src = re.sub(r'(-\s*"\$\{(KONG_HTTP_PORT|KONG_HTTPS_PORT|STUDIO_PORT)[^"]*")', r'# \1', src)
-open(p, 'w').write(src)
+blocked = {
+    'KONG_HTTP_PORT', 'KONG_HTTPS_PORT', 'STUDIO_PORT',
+    'POSTGRES_PORT', 'POOLER_PROXY_PORT_TRANSACTION', 'POOLER_PROXY_PORT_SESSION',
+}
+lines = []
+for line in open(p):
+    stripped = line.lstrip()
+    if stripped.startswith('#'):
+        lines.append(line)
+        continue
+    match = re.match(r'(\s*)-\s*["\']?\$\{([A-Z0-9_]+)\}', line)
+    if match and match.group(2) in blocked:
+        lines.append(f"{match.group(1)}# {stripped}")
+    else:
+        lines.append(line)
+open(p, 'w').writelines(lines)
 PY
 fi
 

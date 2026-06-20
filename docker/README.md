@@ -35,7 +35,7 @@ That's it. The script:
 2. Opens UFW for 22 / 80 / 443
 3. Clones `supabase/supabase` into `/opt/supabase`
 4. Generates Supabase secrets (Postgres password, JWT secret, ANON & SERVICE_ROLE keys, Studio password) — saved to `/root/supabase-credentials.txt`
-5. Strips Kong/Studio host port bindings from the Supabase compose file so only Caddy is public-facing
+5. Strips Kong/Studio/Postgres/Pooler host port bindings from the Supabase compose file so only Caddy is public-facing
 6. Boots the Supabase stack (`docker compose up -d` inside `/opt/supabase/docker`)
 7. Builds the app image from `docker/Dockerfile`
 8. Generates `docker/.env` (incl. bcrypt-hashed Caddy basic-auth for Studio)
@@ -66,6 +66,20 @@ docker exec supabase-db psql -U postgres -d postgres \
   -c "NOTIFY pgrst, 'reload schema';"
 ```
 
+## If setup failed with “port 5432 already in use”
+
+This means an existing host Postgres service is already using 5432, while the backend pooler tried to publish the same host port. Pull the latest repo changes, tear down the half-started backend stack, then re-run bootstrap:
+
+```bash
+cd /opt/supabase/docker && docker compose down
+cd /opt/app && git pull
+sudo APP_DOMAIN=callescort24.org \
+     ACME_EMAIL=support@callescort24.org \
+     bash docker/bootstrap.sh
+```
+
+The patched bootstrap keeps Postgres and the pooler internal-only, so host port 5432 can remain occupied without breaking setup.
+
 ## Day-2 Operations
 
 | Task | Command |
@@ -93,7 +107,7 @@ docker/
 
 - **Master credentials** live in `/root/supabase-credentials.txt` (mode 600). Copy off-server immediately (1Password, encrypted USB, etc.) — losing them means losing all data.
 - **Studio is behind Caddy basicauth**. Username/password are in the credentials file. Rotate with `htpasswd -nbB admin <newpass>` and update `STUDIO_BASIC_AUTH_HASH` in `docker/.env`.
-- **Postgres is NOT exposed** to the public internet. Only services inside the `supabase_default` docker network can reach it. If you need external access (e.g. a desktop DB client), tunnel via SSH: `ssh -L 5432:127.0.0.1:5432 user@vps`.
+- **Postgres is NOT exposed** to the public internet. Only services inside the `supabase_default` docker network can reach it. For database access, run commands through the container, e.g. `docker exec -it supabase-db psql -U postgres -d postgres`.
 - **Service role key** is mounted into the app container as `SUPABASE_SERVICE_ROLE_KEY`. Don't log it.
 
 ## Why no CloudPanel?
