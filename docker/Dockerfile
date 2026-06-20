@@ -4,8 +4,9 @@
 # TanStack Router repeatedly rewrite routeTree.gen.ts during Docker builds.
 FROM node:22-alpine AS builder
 WORKDIR /app
+ARG BUN_VERSION=1.3.3
 
-RUN npm install -g bun@1.1.45
+RUN npm install -g bun@${BUN_VERSION}
 
 # Cache deps
 COPY package.json bun.lock bunfig.toml ./
@@ -21,10 +22,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
+ARG BUN_VERSION=1.3.3
 
 # Install prod deps for the Node launcher (dotenv etc.)
 COPY package.json bun.lock ./
-RUN npm install -g bun@1.1.45 && bun install --production --frozen-lockfile || bun install --production
+RUN npm install -g bun@${BUN_VERSION} && bun install --production --frozen-lockfile || bun install --production
 
 # Copy built output (dist/client + dist/server) and launcher
 COPY --from=builder /app/dist ./dist
