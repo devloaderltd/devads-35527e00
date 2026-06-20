@@ -13,7 +13,6 @@ RUN bun install --frozen-lockfile || bun install
 
 # Copy source + build
 COPY . .
-ENV BUILD_TARGET=node
 RUN rm -f src/routeTree.gen.ts && node ./node_modules/vite/bin/vite.js build
 
 # Stage 2: lean Node runtime
@@ -23,10 +22,13 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
 
-# Copy only what's needed to run
-COPY --from=builder /app/.output ./.output
+# Install prod deps for the Node launcher (dotenv etc.)
+COPY package.json bun.lock ./
+RUN npm install -g bun@1.1.45 && bun install --production --frozen-lockfile || bun install --production
+
+# Copy built output (dist/client + dist/server) and launcher
+COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/scripts/vps-server.mjs ./scripts/vps-server.mjs
-COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
