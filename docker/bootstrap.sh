@@ -152,6 +152,9 @@ STUDIO_USER="${STUDIO_BASIC_AUTH_USER:-admin}"
 STUDIO_PW="${STUDIO_PASSWORD:-$(openssl rand -hex 12)}"
 # Caddy expects bcrypt; htpasswd from apache2-utils generates it.
 STUDIO_HASH=$(htpasswd -nbB "$STUDIO_USER" "$STUDIO_PW" | cut -d: -f2)
+# Docker Compose interpolates $VAR patterns in .env values, while bcrypt hashes
+# contain $ separators. Escape them so hashes like $2y$... stay intact.
+STUDIO_HASH_ESCAPED=$(printf '%s' "$STUDIO_HASH" | sed 's/\$/$$/g')
 
 cat > "$HERE/.env" <<EOF
 APP_DOMAIN=${APP_DOMAIN}
@@ -159,7 +162,7 @@ ACME_EMAIL=${ACME_EMAIL}
 ANON_KEY=${ANON_KEY}
 SERVICE_ROLE_KEY=${SRV_KEY}
 STUDIO_BASIC_AUTH_USER=${STUDIO_USER}
-STUDIO_BASIC_AUTH_HASH=${STUDIO_HASH}
+STUDIO_BASIC_AUTH_HASH=${STUDIO_HASH_ESCAPED}
 EOF
 chmod 600 "$HERE/.env"
 

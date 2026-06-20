@@ -1,16 +1,20 @@
 # Multi-stage build for the TanStack Start app, served by Node via scripts/vps-server.mjs.
-# Stage 1: install deps + build with bun
-FROM oven/bun:1.1-alpine AS builder
+# Stage 1: install deps with bun, then run the Vite build with Node.
+# Running the build under Node avoids Bun/overlayfs timestamp churn that can make
+# TanStack Router repeatedly rewrite routeTree.gen.ts during Docker builds.
+FROM node:22-alpine AS builder
 WORKDIR /app
 
+RUN npm install -g bun@1.1.45
+
 # Cache deps
-COPY package.json bun.lockb* bunfig.toml* ./
+COPY package.json bun.lock bunfig.toml ./
 RUN bun install --frozen-lockfile || bun install
 
 # Copy source + build
 COPY . .
 ENV BUILD_TARGET=node
-RUN bun run build
+RUN rm -f src/routeTree.gen.ts && node ./node_modules/vite/bin/vite.js build
 
 # Stage 2: lean Node runtime
 FROM node:22-alpine AS runner

@@ -87,10 +87,22 @@ The patched bootstrap removes Supabase's host-published ports entirely, so Kong,
 |---|---|
 | View logs | `docker compose -f docker/docker-compose.yml logs -f app` |
 | Restart app only | `docker compose -f docker/docker-compose.yml restart app` |
-| Rebuild app after `git pull` | `cd /opt/app && git pull && docker compose -f docker/docker-compose.yml --env-file docker/.env build app && docker compose -f docker/docker-compose.yml --env-file docker/.env up -d app` |
+| Rebuild app after `git pull` | `cd /opt/app && git pull && docker compose -f docker/docker-compose.yml --env-file docker/.env build --no-cache app && docker compose -f docker/docker-compose.yml --env-file docker/.env up -d app` |
 | Restart Supabase | `cd /opt/supabase/docker && docker compose restart` |
 | Stop everything | `docker compose -f docker/docker-compose.yml down && cd /opt/supabase/docker && docker compose down` |
 | Backup Postgres | `docker exec supabase-db pg_dump -U postgres -d postgres -Fc > /root/backups/$(date +%F).dump` |
+
+## If the app image build loops on `routeTree.gen.ts`
+
+Pull the latest changes and rebuild the app image without cache:
+
+```bash
+cd /opt/app && git pull
+docker compose -f docker/docker-compose.yml --env-file docker/.env build --no-cache app
+docker compose -f docker/docker-compose.yml --env-file docker/.env up -d app caddy
+```
+
+The Dockerfile now runs the Vite build with Node and regenerates `src/routeTree.gen.ts` inside the container, preventing the repeated `File /app/src/routeTree.gen.ts was modified by another process during processing` loop.
 
 ## File Layout
 
