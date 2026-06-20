@@ -108,25 +108,33 @@ fi
 COMPOSE_FILE="${SUPA_DIR}/docker-compose.yml"
 if [ -f "$COMPOSE_FILE" ]; then
   echo "==> removing Supabase host port publishing"
+  # PyYAML ships with Ubuntu's python3; install on the off-chance it doesn't.
+  python3 -c "import yaml" 2>/dev/null || apt-get install -y python3-yaml >/dev/null
   python3 - "$COMPOSE_FILE" <<'PY'
-import sys, re
+import sys, yaml
 p = sys.argv[1]
-blocked = {
+blocked = (
     'KONG_HTTP_PORT', 'KONG_HTTPS_PORT', 'STUDIO_PORT',
     'POSTGRES_PORT', 'POOLER_PROXY_PORT_TRANSACTION', 'POOLER_PROXY_PORT_SESSION',
-}
-lines = []
-for line in open(p):
-    stripped = line.lstrip()
-    if stripped.startswith('#'):
-        lines.append(line)
+)
+with open(p) as f:
+    doc = yaml.safe_load(f)
+for name, svc in (doc.get('services') or {}).items():
+    ports = svc.get('ports')
+    if not ports:
         continue
-    match = re.match(r'(\s*)-\s*["\']?\$\{([A-Z0-9_]+)\}', line)
-    if match and match.group(2) in blocked:
-        lines.append(f"{match.group(1)}# {stripped}")
+    kept = []
+    for entry in ports:
+        s = entry if isinstance(entry, str) else str(entry.get('published', ''))
+        if any(b in s for b in blocked):
+            continue
+        kept.append(entry)
+    if kept:
+        svc['ports'] = kept
     else:
-        lines.append(line)
-open(p, 'w').writelines(lines)
+        svc.pop('ports', None)
+with open(p, 'w') as f:
+    yaml.safe_dump(doc, f, sort_keys=False)
 PY
 fi
 
