@@ -1,0 +1,40 @@
+.git
+.gitignore
+node_modules
+dist
+.output
+.vite
+.cache
+.lovable
+.husky
+.vscode
+.idea
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env (secrets are injected via docker compose --env-file)
+.env
+.env.*
+!.env.example
+
+# Tests / dev-only
+tests
+playwright-report
+test-results
+coverage
+*.spec.ts
+*.test.ts
+
+# Docs / scripts unrelated to the runtime image
+DEPLOY*.md
+ROLLBACK.md
+SECURITY_HARDENING.md
+GOOGLE_OAUTH_SETUP.md
+scripts/vps
+supabase
+
+# Don't ship the host docker dir into itself
+docker
