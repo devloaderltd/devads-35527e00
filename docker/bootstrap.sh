@@ -112,27 +112,18 @@ if [ -f "$COMPOSE_FILE" ]; then
   python3 -c "import yaml" 2>/dev/null || apt-get install -y python3-yaml >/dev/null
   python3 - "$COMPOSE_FILE" <<'PY'
 import sys, yaml
+
 p = sys.argv[1]
-blocked = (
-    'KONG_HTTP_PORT', 'KONG_HTTPS_PORT', 'STUDIO_PORT',
-    'POSTGRES_PORT', 'POOLER_PROXY_PORT_TRANSACTION', 'POOLER_PROXY_PORT_SESSION',
-)
 with open(p) as f:
-    doc = yaml.safe_load(f)
-for name, svc in (doc.get('services') or {}).items():
-    ports = svc.get('ports')
-    if not ports:
-        continue
-    kept = []
-    for entry in ports:
-        s = entry if isinstance(entry, str) else str(entry.get('published', ''))
-        if any(b in s for b in blocked):
-            continue
-        kept.append(entry)
-    if kept:
-        svc['ports'] = kept
-    else:
+    doc = yaml.safe_load(f) or {}
+
+# Caddy is the only public entrypoint. Docker service discovery still works
+# without host-published ports, and this also repairs earlier failed patches
+# that left entries such as `ports:` / `ports: null` behind.
+for svc in (doc.get('services') or {}).values():
+    if isinstance(svc, dict):
         svc.pop('ports', None)
+
 with open(p, 'w') as f:
     yaml.safe_dump(doc, f, sort_keys=False)
 PY

@@ -35,7 +35,7 @@ That's it. The script:
 2. Opens UFW for 22 / 80 / 443
 3. Clones `supabase/supabase` into `/opt/supabase`
 4. Generates Supabase secrets (Postgres password, JWT secret, ANON & SERVICE_ROLE keys, Studio password) — saved to `/root/supabase-credentials.txt`
-5. Strips Kong/Studio/Postgres/Pooler host port bindings from the Supabase compose file so only Caddy is public-facing
+5. Strips all Supabase host port bindings from the Supabase compose file so only Caddy is public-facing
 6. Boots the Supabase stack (`docker compose up -d` inside `/opt/supabase/docker`)
 7. Builds the app image from `docker/Dockerfile`
 8. Generates `docker/.env` (incl. bcrypt-hashed Caddy basic-auth for Studio)
@@ -66,19 +66,20 @@ docker exec supabase-db psql -U postgres -d postgres \
   -c "NOTIFY pgrst, 'reload schema';"
 ```
 
-## If setup failed with “port 5432 already in use”
+## If setup failed with “ports must be an array” or “port already in use”
 
-This means an existing host Postgres service is already using 5432, while the backend pooler tried to publish the same host port. Pull the latest repo changes, tear down the half-started backend stack, then re-run bootstrap:
+This means an earlier run left a half-patched backend compose file or an existing host service is using one of the backend ports. Pull the latest repo changes, reset the backend compose file from the official repo, then re-run bootstrap:
 
 ```bash
 cd /opt/supabase/docker && docker compose down
+git -C /opt/supabase checkout -- docker/docker-compose.yml
 cd /opt/app && git pull
 sudo APP_DOMAIN=callescort24.org \
      ACME_EMAIL=support@callescort24.org \
      bash docker/bootstrap.sh
 ```
 
-The patched bootstrap keeps Postgres and the pooler internal-only, so host port 5432 can remain occupied without breaking setup.
+The patched bootstrap removes Supabase's host-published ports entirely, so Kong, Studio, Postgres, and Supavisor stay internal-only and host port conflicts no longer block setup.
 
 ## Day-2 Operations
 
